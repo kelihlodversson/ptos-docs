@@ -170,6 +170,7 @@ article, section { min-width: 0; }
   overflow-wrap: anywhere;
 }
 .prm-rule-table th { font-weight: 700; }
+.prm-key-table th:first-child { width: 1%; white-space: nowrap; }
 .table-scroll { overflow: auto; }
 .prm-code {
   margin: .65rem 0 1.4rem;
@@ -245,6 +246,7 @@ figure figcaption { margin-top: .4rem; color: var(--prm-muted); font-size: .8rem
   border-top: 1px solid var(--prm-line);
 }
 .manual-index-symbol { font-weight: 700; }
+.manual-index li > a:only-child { grid-column: 1 / -1; }
 .manual-index small { color: var(--prm-muted); }
 .site-search { margin-bottom: .75rem; }
 .site-search label { display: block; font-weight: 650; }
