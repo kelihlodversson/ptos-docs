@@ -1,0 +1,35 @@
+---
+import { sourceLink } from '../data/catalog';
+
+interface Props { subject: string }
+const { subject } = Astro.props;
+const introduction = sourceLink(['tos', 'tos/tos_en.ui', 'TOS and GEM in the original UDO source']);
+---
+{subject === 'subsystems' && <>
+  <p>Atari introduced TOS in 1985 with the ST and developed it further for the STE, Mega ST, TT and Falcon.
+    Its programming interfaces are grouped by responsibility. GEMDOS provides file, memory and process services.
+    BIOS handles basic device I/O and system vectors, and XBIOS provides extended hardware services.</p>
+  <p>The graphical environment, GEM, uses AES for interaction with the user and VDI for drawing.
+    Line-A provides low-level 68k graphics operations. The PMMU functions-handler covers 68k memory management,
+    and XHDI defines a common interface to block storage drivers. For other TOS-compatible systems, see
+    <a href="/os-variants/">OS variants and extensions</a>.</p>
+</>}
+{subject === 'aes' && <>
+  <p>GEM, the Graphics Environment Manager, is the graphical interface through which users interact with TOS.
+    Digital Research developed GEM for Intel-based PCs in 1984. The Atari ST brought it to a wider audience.
+    Other versions included GEM on X for Unix and X/GEM for FlexOS.</p>
+  <p>Application Environment Services (AES) organizes the user environment through applications, windows,
+    menus, dialogs and events. The <a href="/subsystems/vdi/">Virtual Device Interface</a> provides the graphics
+    used to draw that environment. Follow the <a href="/conventions/programming-guidelines/style-guidelines/">GEM style guidelines</a>
+    when designing user-facing programs.</p>
+</>}
+{subject === 'vdi' && <>
+  <p>The Virtual Device Interface (VDI) is GEM’s standardized graphics system. It gives programs a common
+    vocabulary for drawing lines, filled shapes, text and raster images through device workstations.
+    <a href="/subsystems/aes/">AES</a> manages the application environment and uses VDI to draw its interface.</p>
+</>}
+{['subsystems', 'aes', 'vdi'].includes(subject) &&
+  <p class="revision-note">Adapted from <a href={introduction.href}>{introduction.label}</a>.</p>}
+{subject === 'ptos' && <p>pTOS is an EmuTOS-derived operating system with native builds for 68k, ARM and x32.
+  Its boot files depend on the target and build configuration. These sections cover executable handlers,
+  external EmuDesk and EmuCON, fonts, and the startup ABI for dynamically linked ELF programs.</p>}

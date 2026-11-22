@@ -11,7 +11,7 @@ import MemoryLayout from './MemoryLayout.astro';
 import SourceList from './SourceList.astro';
 import { historicalReference, referenceLocation, referencePath } from '../data/catalog';
 import type { Historical, Source } from '../data/catalog';
-import { manualBreadcrumbs } from '../data/manual-structure';
+import { elfEntryPath, manualBreadcrumbs } from '../data/manual-structure';
 import { overlays, pexecModes } from '../data/overlays';
 import abi from '../data/abi.json';
 import translation from '../data/translation-review.json';
@@ -110,7 +110,7 @@ const sources: Source[] = [
         {record?.related.map(({ label, href }) => <li><a href={historicalReference(label, href)}>{label}</a></li>)}
         {name === 'Fclose' && <li><a href={referencePath('Pexec')}>Pexec</a></li>}
         {name === 'Pexec' && <>
-          <li><a href="/abi/elf-entry/">ELF32 process entry</a></li>
+          <li><a href={elfEntryPath}>ELF32 process entry</a></li>
           <li><a href="/reference/pfork/">Pfork</a></li>
           <li><a href="/reference/pvfork/">Pvfork</a></li>
           <li><a href="/reference/pwaitpid/">Pwaitpid</a></li>

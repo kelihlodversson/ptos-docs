@@ -1,6 +1,7 @@
 ---
 import '../styles/manual.css';
 import { targets } from '../data/targets';
+import { manualAreas, upstreamTosHyp } from '../data/manual-structure';
 
 interface Props {
   title: string;
@@ -36,9 +37,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       </header>
       <nav class="site-nav" aria-label="Manual">
         <a href="/functions/">Function index</a>
-        <a href="/subsystems/">Subsystems</a>
+        {manualAreas.map(({ name, href }) => <a href={href}>{name}</a>)}
         <a href="/topics/">Topics</a>
-        <a href="/historical/">Historical TOS</a>
+        <a href={upstreamTosHyp}>tos.hyp</a>
         <a href="/gfa-basic/">GFA BASIC</a>
         <a href="/search/">Search</a>
       </nav>

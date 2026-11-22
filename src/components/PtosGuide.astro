@@ -1,0 +1,16 @@
+---
+import Layout from './Layout.astro';
+import SourceList from './SourceList.astro';
+import type { Source } from '../data/catalog';
+import { manualBreadcrumbs } from '../data/manual-structure';
+
+interface Props { title: string; description: string; sources: Source[] }
+const { title, description, sources } = Astro.props;
+---
+<Layout {title} {description} running="pTOS" breadcrumbs={manualBreadcrumbs('ptos')}>
+  <article>
+    <header class="directory-head"><h1>{title}</h1><p>{description}</p></header>
+    <slot />
+    <SourceList {sources} />
+  </article>
+</Layout>

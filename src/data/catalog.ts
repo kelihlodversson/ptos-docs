@@ -3,7 +3,7 @@ import revisions from './sources.json';
 import { nativeCalls, nativePath } from './native-calls';
 import { records } from './historical';
 import type { HistoricalFunction } from './historical';
-import { chapterLocation, location, nativeSection } from './manual-structure';
+import { chapterLocation, elfEntryPath, location, nativeSection } from './manual-structure';
 
 export { targets } from './targets';
 export type { Target, CPU } from './targets';
@@ -46,9 +46,9 @@ export const catalog = [
   { name: 'Ssystem', description: 'Read console dimensions with S_CONSOLE_DIM', subsystem: 'GEMDOS',
     ...nativeLocation('Ssystem'), href: referencePath('Ssystem') },
   { name: 'CUIS ABI', description: 'Private x32 syscall selector and session query', subsystem: 'AES',
-    ...chapterLocation('aes', 'cuis'), href: '/abi/cuis/' },
+    ...chapterLocation('aes', 'cuis'), href: '/abi/cuis/', kind: 'abi' as const },
   { name: 'ELF32 process entry', description: 'Initial stack for dynamically interpreted ELF programs',
-    subsystem: 'GEMDOS', ...nativeLocation('Pexec'), href: '/abi/elf-entry/' },
+    subsystem: 'pTOS', ...chapterLocation('ptos', 'elf-entry'), href: elfEntryPath, kind: 'abi' as const },
 ].map(entry => ({ ...entry, group: entry.section?.name ?? entry.chapter?.name ?? entry.subsystem }))
   .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase(), 'en'));
 

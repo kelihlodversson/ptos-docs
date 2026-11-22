@@ -102,7 +102,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for path in / /subsystems/gemdos/process-functions/ /subsystems/aes/ /reference/fclose/ /reference/pexec/ /reference/appl_init/ /reference/ssystem/ /abi/cuis/ /abi/elf-entry/ /historical/en/fopen/ /historical/de/contents/ /reference/pclone/ /gfa-basic/; do
+          for path in / /subsystems/ /subsystems/gemdos/process-functions/ /subsystems/aes/ \
+            /os-variants/ /os-variants/ptos/ /os-variants/ptos/ptos-ini/ /os-variants/ptos/desktop-and-console/ \
+            /os-variants/ptos/fonts/ /os-variants/ptos/elf-entry/ /conventions/ /conventions/protocols/xcontrol/ \
+            /reference/fclose/ /reference/pexec/ /reference/appl_init/ /reference/ssystem/ /abi/cuis/ \
+            /historical/en/fopen/ /historical/de/contents/ /reference/pclone/ /gfa-basic/; do
             url="https://docs.ptos.dev${path}"
             file="$(mktemp)"
             for attempt in {1..12}; do

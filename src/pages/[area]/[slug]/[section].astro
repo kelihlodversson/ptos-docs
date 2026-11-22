@@ -2,11 +2,11 @@
 import Layout from '../../../components/Layout.astro';
 import CatalogList from '../../../components/CatalogList.astro';
 import { catalog } from '../../../data/catalog';
-import { chapters, historicalSectionBody, manualBreadcrumbs } from '../../../data/manual-structure';
+import { chapters, historicalPath, historicalSectionBody, manualBreadcrumbs } from '../../../data/manual-structure';
 
 export function getStaticPaths() {
-  return chapters.flatMap(chapter => chapter.sections.filter(section => !section.directEntry).map(section => ({
-    params: { slug: chapter.slug, section: section.slug }, props: { chapter, section },
+  return chapters.flatMap(chapter => chapter.sections.filter(section => !section.standalone).map(section => ({
+    params: { area: chapter.area.slug, slug: chapter.slug, section: section.slug }, props: { chapter, section },
   })));
 }
 interface Props {
@@ -19,7 +19,8 @@ const entries = catalog.filter(entry => entry.chapter?.slug === chapter.slug && 
 <Layout title={section.name} description={`${section.name} in the ${chapter.name} chapter.`} running={chapter.name}
   breadcrumbs={manualBreadcrumbs(chapter.slug)}>
   <header class="directory-head"><h1>{section.name}</h1></header>
-  {entries.length > 0 ? <CatalogList records={entries} showSubsystem={false} />
-    : <div class="historical-body" set:html={historicalSectionBody(section.slug)} />}
-  <p><a href={section.historicalHref}>Read the original tos.hyp section</a></p>
+  {section.historicalSlug && (entries.length === 0 || section.slug === 'xcontrol') &&
+    <div class="historical-body" set:html={historicalSectionBody(section.historicalSlug)} />}
+  {entries.length > 0 && <CatalogList records={entries} showSubsystem={false} />}
+  {section.historicalSlug && <p><a href={historicalPath('en', section.historicalSlug)}>Read the original tos.hyp section</a></p>}
 </Layout>

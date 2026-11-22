@@ -1,0 +1,57 @@
+---
+import PtosGuide from '../../../components/PtosGuide.astro';
+
+const example = [
+  '; Save as PTOS.INI in the root of the boot drive.',
+  '[binfmt.tos68k]',
+  'enabled = true',
+  'offset = 0',
+  'magic = 601A',
+  'mask = FFFF',
+  'interpreter = \\BIN\\PARATOS.TOS',
+].join('\n');
+---
+<PtosGuide title="PTOS.INI" description="Register executable format handlers on the boot drive." sources={[
+  ['ptos', 'doc/binfmt.txt', 'Executable interpreter syntax, ordering and limits'],
+  ['ptos', 'bdos/binfmt.c', 'Boot-drive lookup and executable loading'],
+  ['ptos', 'bdos/binfmt_rules.c', 'Configuration parser'],
+  ['ptos', 'bios/bios.c', 'Boot order'],
+  ['ptos', 'bdos/Kconfig', 'CONF_WITH_BINFMT'],
+]}>
+  <h2 class="prm-section-heading ruled">Location and boot order</h2>
+  <p>Place <code>PTOS.INI</code> in the root of the drive that pTOS boots from, for example <code>C:\PTOS.INI</code>.
+    On a build with <code>CONF_WITH_BINFMT</code>, pTOS reads it once after setting up the filesystem and default environment
+    and before starting the early console or running <code>AUTO</code> programs. Changes take effect at the next boot.</p>
+  <p>A missing file is allowed. An unreadable file or one larger than 64 KiB leaves the configured handler list empty and is reported on the console.
+    The build option also enables <code>#!</code> scripts, which can run without an INI file.</p>
+
+  <h2 class="prm-section-heading ruled">File format</h2>
+  <p>Use LF or CRLF line endings and one <code>key = value</code> per line. Whole-line comments start with <code>;</code> or <code>#</code>.
+    Section names and keys are ASCII case-insensitive. Values are literal, unquoted text. Paths may contain spaces and can use
+    either slash. The parser accepts up to eight handler definitions and 512 bytes per line, excluding the line ending.</p>
+  <pre class="prm-code"><code>{example}</code></pre>
+  <p>This rule selects a native ParaTOS executable for a file with a 68k PRG header when a native loader has not claimed the file.
+    Install the target’s ParaTOS executable at the path in the example, or substitute the absolute path to your interpreter.</p>
+
+  <table class="prm-rule-table">
+    <caption>Keys in <code>[binfmt.NAME]</code></caption>
+    <thead><tr><th scope="col">Key</th><th scope="col">Value</th></tr></thead>
+    <tbody>
+      <tr><th scope="row"><code>enabled</code></th><td><code>true</code> or <code>false</code>. Defaults to <code>true</code>.</td></tr>
+      <tr><th scope="row"><code>offset</code></th><td>Unsigned byte offset, decimal or prefixed with <code>0x</code>. Defaults to 0.</td></tr>
+      <tr><th scope="row"><code>magic</code></th><td>Required sequence of one to 32 hex bytes. Omit the <code>0x</code> prefix.</td></tr>
+      <tr><th scope="row"><code>mask</code></th><td>Hex bytes of the same length as <code>magic</code>. Defaults to <code>FF</code> for every byte.</td></tr>
+      <tr><th scope="row"><code>interpreter</code></th><td>Required absolute path to the interpreter. <code>\BIN\APP.TOS</code> is relative to the boot drive’s root. <code>D:\BIN\APP.TOS</code> names another drive explicitly.</td></tr>
+    </tbody>
+  </table>
+  <p>Use letters, digits, underscores or hyphens in <code>NAME</code>. Invalid handlers are skipped individually.
+    Unknown sections are ignored. Unknown keys are diagnosed, and a duplicate key invalidates its handler.</p>
+
+  <h2 class="prm-section-heading ruled">Handler selection</h2>
+  <p>Native executable recognition takes precedence, followed by a <code>#!</code> line and then enabled INI rules in file order.
+    A rule matches when every masked byte at the given offset equals the corresponding masked byte in <code>magic</code>.
+    Malformed native executables and errors from a selected interpreter propagate to the caller.
+    The selected interpreter receives the original program path followed by its arguments.
+    For a script, the optional argument on the <code>#!</code> line precedes the script path.</p>
+  <p>For the system font setting, see <a href="/os-variants/ptos/fonts/#system-font">PTOS.INF under Font installation</a>.</p>
+</PtosGuide>

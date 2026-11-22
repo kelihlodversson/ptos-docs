@@ -1,0 +1,44 @@
+---
+import PtosGuide from '../../../components/PtosGuide.astro';
+import { elfEntryPath } from '../../../data/manual-structure';
+---
+<PtosGuide title="External desktop and console" description="Install EmuDesk and EmuCON on the boot drive used by your build." sources={[
+  ['ptos', 'desk/Kconfig', 'External EmuDesk requirements and startup'],
+  ['ptos', 'cli/Kconfig', 'External EmuCON requirements and startup'],
+  ['ptos', 'include/shells.h', 'Shell search contract'],
+  ['ptos', 'util/shells.c', 'Executable names and drive search'],
+  ['ptos', 'aes/gemshlib.c', 'Disk desktop startup with kernel AES'],
+  ['ptos', 'configs/pc-x86_64-desktop_defconfig', 'PC desktop build configuration'],
+  ['ptos', 'lib/ldso/build.mk', 'ELF runtime installation tree'],
+  ['ptos', 'lib/aes/build.mk', 'libaes installation path'],
+]}>
+  <h2 class="prm-section-heading ruled">Boot files</h2>
+  <table class="prm-rule-table">
+    <thead><tr><th scope="col">Boot-drive path</th><th scope="col">Purpose</th></tr></thead>
+    <tbody>
+      <tr><th scope="row"><code>\EMUDESK.PRG</code></th><td>Desktop executable for builds with <code>CONF_EXTERNAL_DESK</code>.</td></tr>
+      <tr><th scope="row"><code>\EMUDESK.INF</code></th><td>EmuDesk settings.</td></tr>
+      <tr><th scope="row"><code>\EMUCON.TOS</code></th><td>Console executable for builds with <code>CONF_EXTERNAL_CLI</code>.</td></tr>
+    </tbody>
+  </table>
+  <p>Copy the desktop and console built for the same target as the kernel. ARM and x32 executables use ELF even though the
+    filenames end in <code>.PRG</code> and <code>.TOS</code>. The 68k build uses the format enabled by the selected toolchain
+    and loader. ROM configurations can include EmuDesk or EmuCON in the image.</p>
+
+  <h2 class="prm-section-heading ruled">Shell lookup</h2>
+  <p>For a disk desktop, pTOS looks for <code>EMUDESK.PRG</code> and then <code>DESKTOP.PRG</code>.
+    The external console lookup tries <code>EMUCON.TOS</code>, <code>EMUCON2.TOS</code>, <code>COMMAND.TOS</code>
+    and <code>SHELL.TOS</code> in order. The boot-drive root is searched first. When the welcome screen
+    selects another boot drive, the shell search can then use the default boot drive’s root.</p>
+  <p>On the x32 libaes desktop build, the BIOS starts the resident EmuDesk directly. If it returns or cannot be started,
+    pTOS can fall back to external or embedded EmuCON, according to the CLI configuration. With a legacy kernel AES,
+    the AES starts the disk desktop. If it has no embedded console, the legacy GUI search continues from the desktop names
+    to <code>EMUCON.TOS</code>, <code>EMUCON2.TOS</code>, <code>COMMAND.TOS</code>, <code>SHELL.PRG</code> and <code>SHELL.TOS</code>.</p>
+
+  <h2 class="prm-section-heading ruled">x32 shared runtime</h2>
+  <p>For the <code>pc-x86_64-desktop</code> configuration, install the staged <code>GEMSYS</code> tree from
+    <code>obj/ldso/runtime/GEMSYS</code> on the EFI boot volume alongside the desktop and console.
+    Keep <code>LD.SO</code>, <code>LIBPTOS.SO</code> and <code>LIBAES.SO</code> under <code>\GEMSYS\LIB\X32</code>.
+    A dynamically linked EmuCON still needs its runtime files when pTOS falls back to it.</p>
+  <p>See <a href={elfEntryPath}>ELF32 process entry</a> for the interpreter startup ABI.</p>
+</PtosGuide>

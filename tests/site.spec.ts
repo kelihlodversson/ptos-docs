@@ -111,7 +111,7 @@ test('mobile x32 diagram scrolls independently and exposes field definitions', a
   expect(await diagram.evaluate(el => el.scrollWidth === el.clientWidth)).toBe(true);
 });
 
-for (const path of ['/reference/fclose/', '/reference/pexec/', '/reference/appl_init/', '/reference/ssystem/', '/abi/cuis/', '/abi/elf-entry/', '/search/', '/gfa-basic/']) {
+for (const path of ['/reference/fclose/', '/reference/pexec/', '/reference/appl_init/', '/reference/ssystem/', '/abi/cuis/', '/os-variants/ptos/elf-entry/', '/os-variants/ptos/desktop-and-console/', '/search/', '/gfa-basic/']) {
   test(`WCAG A/AA smoke audit at ${path}`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(path);
@@ -158,6 +158,62 @@ test('chapter navigation follows tos.hyp and places extensions with related call
   await page.goto('/subsystems/aes/');
   await page.getByRole('link', { name: 'CUIS ABI', exact: true }).click();
   await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'AES', exact: true })).toHaveAttribute('href', '/subsystems/aes/');
+});
+
+test('the main sections contain only the assigned chapters', async ({ page }) => {
+  await page.goto('/');
+  const main = page.getByRole('main');
+  const navigation = page.getByRole('navigation', { name: 'Manual' });
+  await expect(main.getByRole('heading', { name: 'Reference Entries' })).toHaveCount(0);
+  await expect(navigation.getByRole('link', { name: 'tos.hyp', exact: true })).toHaveAttribute('href', 'https://freemint.github.io/tos.hyp/');
+  await expect(navigation.getByRole('link', { name: 'Historical TOS' })).toHaveCount(0);
+  await navigation.getByRole('link', { name: 'Subsystems', exact: true }).click();
+  await expect(main.getByText('Atari introduced TOS in 1985', { exact: false })).toBeVisible();
+  await expect(main.locator('.manual-index a')).toHaveText([
+    'BIOS', 'XBIOS', 'GEMDOS', 'AES', 'VDI', 'Line-A', 'The PMMU functions-handler', 'XHDI',
+  ]);
+  await main.getByRole('link', { name: 'AES', exact: true }).click();
+  await expect(main.getByText('Digital Research developed GEM', { exact: false })).toBeVisible();
+  await main.getByRole('link', { name: 'Virtual Device Interface', exact: true }).click();
+  await expect(main.getByText('standardized graphics system', { exact: false })).toBeVisible();
+  await navigation.getByRole('link', { name: 'OS variants and extensions' }).click();
+  await expect(main.locator('.manual-index a')).toHaveText(['MagiC', 'N.AES', 'XaAES', 'pTOS', 'Emulators', 'TOS list']);
+  await navigation.getByRole('link', { name: 'Conventions and misc.', exact: true }).click();
+  await expect(main.locator('.manual-index a')).toHaveText([
+    'Programming guidelines', 'Protocols', 'ASCII Table', 'Keyboard Scancodes', 'Development systems',
+  ]);
+  await main.getByRole('link', { name: 'Protocols' }).click();
+  await main.getByRole('link', { name: 'XCONTROL', exact: true }).click();
+  await expect(page).toHaveURL('/conventions/protocols/xcontrol/');
+  await expect(main.getByRole('heading', { name: 'XCONTROL', exact: true })).toBeVisible();
+  await expect(main.getByText('modular (extendable) control field', { exact: false })).toBeVisible();
+  expect((await page.request.get('/subsystems/magic/')).status()).toBe(404);
+  expect((await page.request.get('/subsystems/ptos/')).status()).toBe(404);
+});
+
+test('pTOS setup links document the boot files and moved ELF convention', async ({ page }) => {
+  await page.goto('/os-variants/ptos/');
+  const main = page.getByRole('main');
+  await expect(main.locator('.manual-index a')).toHaveText([
+    'PTOS.INI', 'External desktop and console', 'Font installation', 'ELF32 process entry',
+  ]);
+  await main.getByRole('link', { name: 'PTOS.INI', exact: true }).click();
+  await expect(main.getByText('C:\\PTOS.INI', { exact: true })).toBeVisible();
+  await expect(main.locator('pre')).toContainText('interpreter = \\BIN\\PARATOS.TOS');
+  await main.getByRole('link', { name: 'PTOS.INF under Font installation' }).click();
+  await expect(page).toHaveURL('/os-variants/ptos/fonts/#system-font');
+  await expect(main.getByText('\\GEMSYS\\FONTS', { exact: true })).toBeVisible();
+  await expect(main.getByText('\\GEMSYS\\PTOS.INF', { exact: true })).toBeVisible();
+  await page.goto('/os-variants/ptos/desktop-and-console/');
+  await expect(main.getByRole('rowheader', { name: '\\EMUDESK.PRG' })).toBeVisible();
+  await expect(main.getByRole('rowheader', { name: '\\EMUCON.TOS' })).toBeVisible();
+  await expect(main.getByText('\\GEMSYS\\LIB\\X32', { exact: true })).toBeVisible();
+  await main.getByRole('link', { name: 'ELF32 process entry' }).click();
+  await expect(page).toHaveURL('/os-variants/ptos/elf-entry/');
+  await selectTarget(page).selectOption('x32');
+  await expect(page.locator('[data-target-panel="x32"]')).toContainText('RSP');
+  await page.goto('/abi/elf-entry/');
+  await expect(page).toHaveURL('/os-variants/ptos/elf-entry/');
 });
 
 test('historical target notes distinguish traps, library bindings, and unavailable native calls', async ({ page }) => {

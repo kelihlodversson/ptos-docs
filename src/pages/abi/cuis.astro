@@ -7,7 +7,7 @@ import CallingConvention from '../../components/CallingConvention.astro';
 import GfaBinding from '../../components/GfaBinding.astro';
 import BitLayout from '../../components/BitLayout.astro';
 import SourceList from '../../components/SourceList.astro';
-import { manualBreadcrumbs } from '../../data/manual-structure';
+import { elfEntryPath, manualBreadcrumbs } from '../../data/manual-structure';
 import abi from '../../data/abi.json';
 ---
 <Layout title="CUIS ABI" description="Private pTOS x32 CUIS selector and session query" running="AES"
@@ -53,7 +53,7 @@ import abi from '../../data/abi.json';
     </TargetPanels>
     <section aria-labelledby="related-heading">
       <h2 id="related-heading" class="prm-section-heading ruled">See Also</h2>
-      <ul class="related-links"><li><a href="/reference/appl_init/">appl_init</a></li><li><a href="/abi/elf-entry/">ELF32 process entry</a></li></ul>
+      <ul class="related-links"><li><a href="/reference/appl_init/">appl_init</a></li><li><a href={elfEntryPath}>ELF32 process entry</a></li></ul>
     </section>
     <SourceList sources={[
       ['ptos', 'include/cuis.h', 'Service class and opcode constants'],

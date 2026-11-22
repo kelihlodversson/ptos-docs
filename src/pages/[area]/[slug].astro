@@ -1,23 +1,26 @@
 ---
 import Layout from '../../components/Layout.astro';
+import ManualIntroduction from '../../components/ManualIntroduction.astro';
 import { catalog } from '../../data/catalog';
-import { chapters, historicalSectionBody } from '../../data/manual-structure';
+import { chapters, historicalPath, historicalSectionBody } from '../../data/manual-structure';
 
 export function getStaticPaths() {
-  return chapters.map(chapter => ({ params: { slug: chapter.slug }, props: { chapter } }));
+  return chapters.map(chapter => ({ params: { area: chapter.area.slug, slug: chapter.slug }, props: { chapter } }));
 }
 interface Props { chapter: typeof chapters[number] }
 const { chapter } = Astro.props;
 const entries = catalog.filter(entry => entry.chapter?.slug === chapter.slug && !entry.section);
 ---
 <Layout title={chapter.name} description={`Chapters and reference entries for ${chapter.name}.`} running={chapter.name}
-  breadcrumbs={[{ label: 'Subsystems', href: '/subsystems/' }]}>
+  breadcrumbs={[{ label: chapter.area.name, href: chapter.area.href }]}>
   <header class="directory-head"><h1>{chapter.name}</h1></header>
+  <ManualIntroduction subject={chapter.slug} />
+  {chapter.historicalSlug && (['xhdi', 'the-pmmu-functions-handler'].includes(chapter.slug) ||
+    chapter.sections.length === 0 && entries.length === 0) &&
+    <div class="historical-body" set:html={historicalSectionBody(chapter.historicalSlug)} />}
   {(chapter.sections.length > 0 || entries.length > 0) && <ul class="manual-index">
     {chapter.sections.map(section => <li><a class="manual-index-symbol" href={section.href}>{section.name}</a></li>)}
     {entries.map(entry => <li><a class="manual-index-symbol" href={entry.href}>{entry.name}</a><span>{entry.description}</span></li>)}
   </ul>}
-  {chapter.sections.length === 0 && entries.length === 0 &&
-    <div class="historical-body" set:html={historicalSectionBody(chapter.slug)} />}
-  <p><a href={chapter.historicalHref}>Read the original tos.hyp chapter</a></p>
+  {chapter.historicalSlug && <p><a href={historicalPath('en', chapter.historicalSlug)}>Read the original tos.hyp chapter</a></p>}
 </Layout>
