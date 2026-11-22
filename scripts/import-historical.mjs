@@ -247,6 +247,7 @@ function buildLanguage(language) {
   const functions = [];
   const paths = [];
   const controls = [];
+  const parents = {};
   for (const [file, record] of records) {
     let nodes = record.content.filter(node => attr(node, 'id') !== 'udo_titlepage');
     const sectionHead = nodes.find(node => node.tagName === 'h1');
@@ -266,6 +267,7 @@ function buildLanguage(language) {
 
     const parentLink = record.nav.find(node => attr(node, 'name') === 'UDO_nav_up_HEAD');
     const parentFile = attr(parentLink, 'href');
+    if (records.has(parentFile)) parents[record.slug] = records.get(parentFile).slug;
     const group = records.get(parentFile)?.title ?? 'tos.hyp';
     const nav = record.nav.filter(node => attr(node, 'name')?.startsWith('UDO_nav_') && attr(node, 'href')).map(node => {
       const href = attr(node, 'href');
@@ -308,7 +310,7 @@ function buildLanguage(language) {
     paths.push(page);
   }
 
-  return { metadata, controls, functions, paths, diagnostics };
+  return { metadata, controls, functions, paths, diagnostics, parents };
 }
 
 try {
@@ -325,7 +327,8 @@ try {
   const used = new Set();
   let englishFunctions;
   for (const language of ['en', 'de']) {
-    const { metadata, functions, paths, diagnostics, controls } = buildLanguage(language);
+    const { metadata, functions, paths, diagnostics, controls, parents } = buildLanguage(language);
+    save(`src/data/historical/${language}-parents.json`, JSON.stringify(parents, null, 2) + '\n');
     save(`src/data/historical/${language}.ndjson`, paths.map(page => JSON.stringify(page)).join('\n') + '\n');
     if (language === 'en') {
       englishFunctions = new Set(paths.filter(page => page.function).map(page => `${page.path}:${page.title}`));

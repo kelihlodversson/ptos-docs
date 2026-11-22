@@ -4,8 +4,10 @@ import Masthead from '../../../components/Masthead.astro';
 import Fact from '../../../components/Fact.astro';
 import TargetPanels from '../../../components/TargetPanels.astro';
 import GfaBinding from '../../../components/GfaBinding.astro';
+import HistoricalNativeTarget from '../../../components/HistoricalNativeTarget.astro';
 import { sourceLink } from '../../../data/catalog';
 import { pages } from '../../../data/historical';
+import { historicalBreadcrumbs } from '../../../data/manual-structure';
 import type { HistoricalPage } from '../../../data/historical';
 
 export function getStaticPaths() {
@@ -20,15 +22,9 @@ const { page } = Astro.props;
 const english = page.language === 'en';
 const source = sourceLink(['tos', page.path, 'Original UDO source']);
 const description = page.description || page.title;
-const unknown = {
-  arm: 'pTOS ARM support for this entry has not been verified.',
-  x32: 'pTOS x32 support for this entry has not been verified.',
-};
 ---
 <Layout title={page.title} {description} running={`tos.hyp — ${page.subsystem}`}
-  breadcrumbs={[{ label: 'Historical TOS reference', href: '/historical/' }, {
-    label: english ? 'English contents' : 'Deutsche Ausgabe', href: `/historical/${page.language}/contents/`,
-  }]}>
+  breadcrumbs={historicalBreadcrumbs(page.language, page.slug)}>
   <article class="historical-entry" lang={page.language}>
     {page.function ? <div id={page.id}><Masthead name={page.title} title={page.operation} subsystem={page.subsystem} /></div>
       : <header class="directory-head"><h1 id={page.id}>{page.title}</h1></header>}
@@ -44,12 +40,8 @@ const unknown = {
         {page.bindings?.assembly ? <div set:html={page.bindings.assembly} /> : <p>{english ? 'See the historical entry for available bindings.' : 'Siehe den historischen Eintrag für vorhandene Bindungen.'}</p>}
         {page.bindings && <a href={page.bindings.href}>{english ? 'Original binding reference' : 'Originalbindung'}</a>}
       </div>
-      <p slot="arm" class="prm-unsupported">{page.native
-        ? <a href={page.native + '#calling-convention'}>{english ? 'See the pTOS ARM calling convention.' : 'ARM-Aufrufkonvention für pTOS'}</a>
-        : english ? unknown.arm : 'Die Unterstützung in pTOS für ARM wurde nicht verifiziert.'}</p>
-      <p slot="x32" class="prm-unsupported">{page.native
-        ? <a href={page.native + '#calling-convention'}>{english ? 'See the pTOS x32 calling convention.' : 'x32-Aufrufkonvention für pTOS'}</a>
-        : english ? unknown.x32 : 'Die Unterstützung in pTOS für x32 wurde nicht verifiziert.'}</p>
+      <HistoricalNativeTarget slot="arm" {page} cpu="arm" />
+      <HistoricalNativeTarget slot="x32" {page} cpu="x32" />
       <GfaBinding slot="gfa" code={page.bindings?.gfa} raw={page.bindings?.raw} symbol={page.title}
         subsystem={page.subsystem} discardResult={/^void\s/.test(page.prototype)} language={page.language} />
     </TargetPanels>}

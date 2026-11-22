@@ -1,0 +1,1039 @@
+{
+  "revision": "a148ec184ac78fffc7b2365ce370adcb0c3ca109",
+  "gemdos": {
+    "0": {
+      "args": ""
+    },
+    "1": {
+      "args": ""
+    },
+    "2": {
+      "args": "W"
+    },
+    "3": {
+      "args": ""
+    },
+    "4": {
+      "args": "W"
+    },
+    "5": {
+      "args": "W"
+    },
+    "6": {
+      "args": "W"
+    },
+    "7": {
+      "args": ""
+    },
+    "8": {
+      "args": ""
+    },
+    "9": {
+      "args": "P"
+    },
+    "10": {
+      "args": "P"
+    },
+    "11": {
+      "args": ""
+    },
+    "14": {
+      "args": "W"
+    },
+    "16": {
+      "args": ""
+    },
+    "17": {
+      "args": ""
+    },
+    "18": {
+      "args": ""
+    },
+    "19": {
+      "args": ""
+    },
+    "20": {
+      "args": "PL",
+      "config": "CONF_WITH_ALT_RAM"
+    },
+    "21": {
+      "args": "L"
+    },
+    "25": {
+      "args": ""
+    },
+    "26": {
+      "args": "P"
+    },
+    "32": {
+      "args": "L"
+    },
+    "42": {
+      "args": ""
+    },
+    "43": {
+      "args": "W"
+    },
+    "44": {
+      "args": ""
+    },
+    "45": {
+      "args": "W"
+    },
+    "47": {
+      "args": ""
+    },
+    "48": {
+      "args": ""
+    },
+    "49": {
+      "args": "LW"
+    },
+    "54": {
+      "args": "PW"
+    },
+    "57": {
+      "args": "P"
+    },
+    "58": {
+      "args": "P"
+    },
+    "59": {
+      "args": "P"
+    },
+    "60": {
+      "args": "PW"
+    },
+    "61": {
+      "args": "PW"
+    },
+    "62": {
+      "args": "W"
+    },
+    "63": {
+      "args": "WLP"
+    },
+    "64": {
+      "args": "WLP"
+    },
+    "65": {
+      "args": "P"
+    },
+    "66": {
+      "args": "LWW"
+    },
+    "67": {
+      "args": "PWW"
+    },
+    "68": {
+      "args": "LW"
+    },
+    "69": {
+      "args": "W"
+    },
+    "70": {
+      "args": "WW"
+    },
+    "71": {
+      "args": "PW"
+    },
+    "72": {
+      "args": "L"
+    },
+    "73": {
+      "args": "P"
+    },
+    "74": {
+      "args": "WPL"
+    },
+    "75": {
+      "args": "WLLL"
+    },
+    "76": {
+      "args": "W"
+    },
+    "78": {
+      "args": "PW"
+    },
+    "79": {
+      "args": ""
+    },
+    "86": {
+      "args": "WPP"
+    },
+    "87": {
+      "args": "PWW"
+    },
+    "267": {
+      "args": "",
+      "config": "CONF_WITH_KPROC",
+      "source": "bdos/mintproc.c"
+    },
+    "268": {
+      "args": "",
+      "config": "CONF_WITH_KPROC",
+      "source": "bdos/mintproc.c"
+    },
+    "271": {
+      "args": "",
+      "config": "CONF_WITH_KPROC",
+      "source": "bdos/mintproc.c"
+    },
+    "276": {
+      "args": "",
+      "config": "CONF_WITH_KPROC",
+      "source": "bdos/mintproc.c"
+    },
+    "286": {
+      "args": "P",
+      "config": "CONF_WITH_KPROC",
+      "source": "bdos/mintproc.c"
+    },
+    "287": {
+      "args": "WL",
+      "config": "CONF_WITH_USER_ASPACE"
+    },
+    "290": {
+      "args": "W",
+      "config": "CONF_WITH_SSYSTEM"
+    },
+    "312": {
+      "args": "",
+      "config": "CONF_WITH_KPROC",
+      "source": "bdos/mintproc.c"
+    },
+    "313": {
+      "args": "",
+      "config": "CONF_WITH_KPROC",
+      "source": "bdos/mintproc.c"
+    },
+    "315": {
+      "args": "PWW",
+      "config": "CONF_WITH_KPROC",
+      "source": "bdos/mintproc.c"
+    },
+    "321": {
+      "args": "WPLP",
+      "config": "CONF_WITH_USER_ASPACE"
+    },
+    "325": {
+      "args": "",
+      "config": "CONF_WITH_KPROC",
+      "source": "bdos/mintproc.c"
+    },
+    "326": {
+      "args": "W",
+      "config": "CONF_WITH_KPROC",
+      "source": "bdos/mintproc.c"
+    },
+    "337": {
+      "args": "L",
+      "config": "CONF_WITH_GEMDOS_SHUTDOWN"
+    },
+    "344": {
+      "args": "WW",
+      "config": "CONF_WITH_KPROC",
+      "source": "bdos/mintproc.c"
+    },
+    "345": {
+      "args": "WWW",
+      "config": "CONF_WITH_KPROC",
+      "source": "bdos/mintproc.c"
+    },
+    "381": {
+      "args": "PLW",
+      "config": "CONF_WITH_USER_ASPACE"
+    }
+  },
+  "bios": {
+    "0": "getmpb",
+    "1": "bconstat",
+    "2": "bconin",
+    "3": "bconout",
+    "4": "lrwabs",
+    "5": "setexc",
+    "6": "tickcal",
+    "7": "getbpb",
+    "8": "bcostat",
+    "9": "mediach",
+    "10": "drvmap",
+    "11": "kbshift"
+  },
+  "xbios": {
+    "0": "initmous",
+    "2": "physbase",
+    "3": "logbase",
+    "4": "getrez",
+    "5": "setscreen",
+    "6": "setpalette",
+    "7": "setcolor",
+    "8": "floprd",
+    "9": "flopwr",
+    "10": "flopfmt",
+    "12": "midiws",
+    "13": "mfpint",
+    "14": "iorec",
+    "15": "rsconf",
+    "16": "keytbl",
+    "17": "random",
+    "18": "protobt",
+    "19": "flopver",
+    "20": "scrdmp",
+    "21": "cursconf",
+    "22": "settime",
+    "23": "gettime",
+    "24": "bioskeys",
+    "25": "ikbdws",
+    "26": "jdisint",
+    "27": "jenabint",
+    "28": "giaccess",
+    "29": "offgibit",
+    "30": "ongibit",
+    "31": "xbtimer",
+    "32": "dosound",
+    "33": "setprt",
+    "34": "kbdvbase",
+    "35": "kbrate",
+    "37": "vsync",
+    "38": "supexec",
+    "41": "floprate",
+    "42": "dmaread",
+    "43": "dmawrite",
+    "44": "bconmap",
+    "46": "nvmaccess",
+    "64": "blitmode",
+    "80": "esetshift",
+    "81": "egetshift",
+    "82": "esetbank",
+    "83": "esetcolor",
+    "84": "esetpalette",
+    "85": "egetpalette",
+    "86": "esetgray",
+    "87": "esetsmear",
+    "88": "vsetmode",
+    "89": "vmontype",
+    "90": "vsetsync",
+    "91": "vgetsize",
+    "93": "vsetrgb",
+    "94": "vgetrgb",
+    "95": "vfixmode",
+    "96": "dsp_doblock",
+    "97": "dsp_blkhandshake",
+    "98": "dsp_blkunpacked",
+    "99": "dsp_instream",
+    "100": "dsp_outstream",
+    "101": "dsp_iostream",
+    "102": "dsp_removeinterrupts",
+    "103": "dsp_getwordsize",
+    "104": "dsp_lock",
+    "105": "dsp_unlock",
+    "106": "dsp_available",
+    "107": "dsp_reserve",
+    "108": "dsp_loadprog",
+    "109": "dsp_execprog",
+    "110": "dsp_execboot",
+    "111": "dsp_lodtobinary",
+    "112": "dsp_triggerhc",
+    "113": "dsp_requestuniqueability",
+    "114": "dsp_getprogability",
+    "115": "dsp_flushsubroutines",
+    "116": "dsp_loadsubroutine",
+    "117": "dsp_inqsubrability",
+    "118": "dsp_runsubroutine",
+    "119": "dsp_hf0",
+    "120": "dsp_hf1",
+    "121": "dsp_hf2",
+    "122": "dsp_hf3",
+    "123": "dsp_blkwords",
+    "124": "dsp_blkbytes",
+    "125": "dsp_hstat",
+    "126": "dsp_setvectors",
+    "127": "dsp_multblocks",
+    "128": "locksnd",
+    "129": "unlocksnd",
+    "130": "soundcmd",
+    "131": "setbuffer",
+    "132": "setsndmode",
+    "133": "settracks",
+    "134": "setmontracks",
+    "135": "setinterrupt",
+    "136": "buffoper",
+    "137": "dsptristate",
+    "138": "gpio",
+    "139": "devconnect",
+    "140": "sndstatus",
+    "141": "buffptr"
+  },
+  "x32Xbios": [
+    0,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    12,
+    14,
+    15,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    28,
+    29,
+    30,
+    32,
+    34,
+    35,
+    37,
+    41,
+    42,
+    43,
+    44,
+    64
+  ],
+  "aesNative": {
+    "appl_init": {
+      "opcode": 10
+    },
+    "appl_read": {
+      "opcode": 11
+    },
+    "appl_write": {
+      "opcode": 12
+    },
+    "appl_find": {
+      "opcode": 13
+    },
+    "appl_tplay": {
+      "opcode": 14
+    },
+    "appl_trecord": {
+      "opcode": 15
+    },
+    "appl_yield": {
+      "opcode": 17,
+      "config": "CONF_WITH_PCGEM"
+    },
+    "appl_exit": {
+      "opcode": 19
+    },
+    "evnt_keybd": {
+      "opcode": 20
+    },
+    "evnt_button": {
+      "opcode": 21
+    },
+    "evnt_mouse": {
+      "opcode": 22
+    },
+    "evnt_mesag": {
+      "opcode": 23
+    },
+    "evnt_timer": {
+      "opcode": 24
+    },
+    "evnt_multi": {
+      "opcode": 25
+    },
+    "evnt_dclick": {
+      "opcode": 26
+    },
+    "menu_bar": {
+      "opcode": 30
+    },
+    "menu_icheck": {
+      "opcode": 31
+    },
+    "menu_ienable": {
+      "opcode": 32
+    },
+    "menu_tnormal": {
+      "opcode": 33
+    },
+    "menu_text": {
+      "opcode": 34
+    },
+    "menu_register": {
+      "opcode": 35
+    },
+    "menu_popup": {
+      "opcode": 36,
+      "config": "CONF_WITH_MENU_EXTENSION"
+    },
+    "menu_attach": {
+      "opcode": 37,
+      "config": "CONF_WITH_MENU_EXTENSION"
+    },
+    "objc_add": {
+      "opcode": 40
+    },
+    "objc_delete": {
+      "opcode": 41
+    },
+    "objc_draw": {
+      "opcode": 42
+    },
+    "objc_find": {
+      "opcode": 43
+    },
+    "objc_offset": {
+      "opcode": 44
+    },
+    "objc_order": {
+      "opcode": 45
+    },
+    "objc_edit": {
+      "opcode": 46
+    },
+    "objc_change": {
+      "opcode": 47
+    },
+    "form_do": {
+      "opcode": 50
+    },
+    "form_dial": {
+      "opcode": 51
+    },
+    "form_alert": {
+      "opcode": 52
+    },
+    "form_error": {
+      "opcode": 53
+    },
+    "form_center": {
+      "opcode": 54
+    },
+    "form_keybd": {
+      "opcode": 55
+    },
+    "form_button": {
+      "opcode": 56
+    },
+    "graf_rubbox": {
+      "opcode": 70
+    },
+    "graf_dragbox": {
+      "opcode": 71
+    },
+    "graf_mbox": {
+      "opcode": 72
+    },
+    "graf_growbox": {
+      "opcode": 73
+    },
+    "graf_shrinkbox": {
+      "opcode": 74
+    },
+    "graf_watchbox": {
+      "opcode": 75
+    },
+    "graf_slidebox": {
+      "opcode": 76
+    },
+    "graf_handle": {
+      "opcode": 77
+    },
+    "graf_mouse": {
+      "opcode": 78
+    },
+    "graf_mkstate": {
+      "opcode": 79
+    },
+    "scrp_read": {
+      "opcode": 80
+    },
+    "scrp_write": {
+      "opcode": 81
+    },
+    "scrp_clear": {
+      "opcode": 82,
+      "config": "CONF_WITH_PCGEM"
+    },
+    "fsel_input": {
+      "opcode": 90
+    },
+    "fsel_exinput": {
+      "opcode": 91
+    },
+    "wind_create": {
+      "opcode": 100
+    },
+    "wind_open": {
+      "opcode": 101
+    },
+    "wind_close": {
+      "opcode": 102
+    },
+    "wind_delete": {
+      "opcode": 103
+    },
+    "wind_get": {
+      "opcode": 104
+    },
+    "wind_set": {
+      "opcode": 105
+    },
+    "wind_find": {
+      "opcode": 106
+    },
+    "wind_update": {
+      "opcode": 107
+    },
+    "wind_calc": {
+      "opcode": 108
+    },
+    "wind_new": {
+      "opcode": 109
+    },
+    "rsrc_load": {
+      "opcode": 110
+    },
+    "rsrc_free": {
+      "opcode": 111
+    },
+    "rsrc_gaddr": {
+      "opcode": 112
+    },
+    "rsrc_saddr": {
+      "opcode": 113
+    },
+    "rsrc_obfix": {
+      "opcode": 114
+    },
+    "shel_read": {
+      "opcode": 120
+    },
+    "shel_write": {
+      "opcode": 121
+    },
+    "shel_get": {
+      "opcode": 122
+    },
+    "shel_put": {
+      "opcode": 123
+    },
+    "shel_find": {
+      "opcode": 124
+    },
+    "shel_envrn": {
+      "opcode": 125
+    },
+    "shel_rdef": {
+      "opcode": 126,
+      "config": "CONF_WITH_PCGEM"
+    },
+    "shel_wdef": {
+      "opcode": 127,
+      "config": "CONF_WITH_PCGEM"
+    }
+  },
+  "aesLibrary": {
+    "appl_init": "available",
+    "appl_exit": "available",
+    "appl_yield": "available",
+    "appl_find": "available",
+    "appl_read": "available",
+    "appl_write": "available",
+    "appl_getinfo": "partial",
+    "appl_search": "available",
+    "appl_control": "partial",
+    "evnt_keybd": "available",
+    "evnt_button": "available",
+    "evnt_mouse": "available",
+    "evnt_mesag": "available",
+    "evnt_timer": "available",
+    "evnt_dclick": "available",
+    "evnt_multi": "partial",
+    "menu_bar": "available",
+    "menu_icheck": "available",
+    "menu_ienable": "available",
+    "menu_tnormal": "available",
+    "menu_text": "available",
+    "menu_popup": "partial",
+    "menu_register": "available",
+    "objc_add": "available",
+    "objc_delete": "available",
+    "objc_order": "available",
+    "objc_find": "available",
+    "objc_offset": "available",
+    "objc_draw": "partial",
+    "objc_change": "partial",
+    "objc_edit": "available",
+    "objc_sysvar": "partial",
+    "form_do": "available",
+    "form_button": "available",
+    "form_keybd": "available",
+    "form_dial": "available",
+    "form_alert": "available",
+    "form_error": "available",
+    "form_center": "available",
+    "form_center_grect": "available",
+    "graf_handle": "available",
+    "graf_mkstate": "available",
+    "graf_mouse": "available",
+    "graf_watchbox": "available",
+    "graf_rubberbox": "available",
+    "graf_dragbox": "available",
+    "graf_slidebox": "available",
+    "graf_mbox": "available",
+    "graf_growbox": "available",
+    "graf_shrinkbox": "available",
+    "graf_growbox_grect": "available",
+    "graf_shrinkbox_grect": "available",
+    "wind_create": "partial",
+    "wind_open": "partial",
+    "wind_close": "partial",
+    "wind_delete": "partial",
+    "wind_calc": "partial",
+    "wind_find": "partial",
+    "wind_update": "partial",
+    "wind_new": "partial",
+    "wind_get": "partial",
+    "wind_set": "partial",
+    "wind_get_int": "partial",
+    "wind_get_ptr": "partial",
+    "wind_get_grect": "partial",
+    "wind_set_int": "partial",
+    "wind_set_ptr": "partial",
+    "wind_set_ptr_int": "partial",
+    "wind_set_str": "partial",
+    "wind_set_grect": "partial",
+    "wind_create_grect": "available",
+    "wind_open_grect": "available",
+    "wind_calc_grect": "available",
+    "rsrc_load": "partial",
+    "rsrc_free": "partial",
+    "rsrc_gaddr": "partial",
+    "rsrc_saddr": "partial",
+    "rsrc_obfix": "partial",
+    "rsrc_rcfix": "partial",
+    "fsel_input": "available",
+    "fsel_exinput": "available",
+    "shel_read": "available",
+    "shel_find": "available",
+    "shel_envrn": "available",
+    "shel_get": "available",
+    "shel_put": "available",
+    "shel_rdef": "available",
+    "shel_wdef": "available",
+    "shel_write": "partial",
+    "scrp_read": "available",
+    "scrp_write": "available"
+  },
+  "legacyVdi": {
+    "1": [
+      "v_opnwk"
+    ],
+    "2": [
+      "v_clswk"
+    ],
+    "3": [
+      "v_clrwk"
+    ],
+    "6": [
+      "v_pline"
+    ],
+    "7": [
+      "v_pmarker"
+    ],
+    "8": [
+      "v_gtext"
+    ],
+    "9": [
+      "v_fillarea"
+    ],
+    "11": [
+      "v_gdp"
+    ],
+    "12": [
+      "vst_height"
+    ],
+    "13": [
+      "vst_rotation"
+    ],
+    "14": [
+      "vs_color"
+    ],
+    "15": [
+      "vsl_type"
+    ],
+    "16": [
+      "vsl_width"
+    ],
+    "17": [
+      "vsl_color"
+    ],
+    "18": [
+      "vsm_type"
+    ],
+    "19": [
+      "vsm_height"
+    ],
+    "20": [
+      "vsm_color"
+    ],
+    "21": [
+      "vst_font"
+    ],
+    "22": [
+      "vst_color"
+    ],
+    "23": [
+      "vsf_interior"
+    ],
+    "24": [
+      "vsf_style"
+    ],
+    "25": [
+      "vsf_color"
+    ],
+    "26": [
+      "vq_color"
+    ],
+    "28": [
+      "v_locator"
+    ],
+    "30": [
+      "v_choice"
+    ],
+    "31": [
+      "v_string"
+    ],
+    "32": [
+      "vswr_mode"
+    ],
+    "33": [
+      "vsin_mode"
+    ],
+    "35": [
+      "vql_attributes"
+    ],
+    "36": [
+      "vqm_attributes"
+    ],
+    "37": [
+      "vqf_attributes"
+    ],
+    "38": [
+      "vqt_attributes"
+    ],
+    "39": [
+      "vst_alignment"
+    ],
+    "100": [
+      "v_opnvwk"
+    ],
+    "101": [
+      "v_clsvwk"
+    ],
+    "102": [
+      "vq_extnd"
+    ],
+    "103": [
+      "v_contourfill"
+    ],
+    "104": [
+      "vsf_perimeter"
+    ],
+    "105": [
+      "v_get_pixel"
+    ],
+    "106": [
+      "vst_effects"
+    ],
+    "107": [
+      "vst_point"
+    ],
+    "108": [
+      "vsl_ends"
+    ],
+    "109": [
+      "vro_cpyfm"
+    ],
+    "110": [
+      "vr_trnfm"
+    ],
+    "111": [
+      "vsc_form"
+    ],
+    "112": [
+      "vsf_udpat"
+    ],
+    "113": [
+      "vsl_udsty"
+    ],
+    "114": [
+      "vr_recfl"
+    ],
+    "115": [
+      "vqin_mode"
+    ],
+    "116": [
+      "vqt_extent"
+    ],
+    "117": [
+      "vqt_width"
+    ],
+    "118": [
+      "vex_timv"
+    ],
+    "119": [
+      "vst_load_fonts"
+    ],
+    "120": [
+      "vst_unload_fonts"
+    ],
+    "121": [
+      "vrt_cpyfm"
+    ],
+    "122": [
+      "v_show_c"
+    ],
+    "123": [
+      "v_hide_c"
+    ],
+    "124": [
+      "vq_mouse"
+    ],
+    "125": [
+      "vex_butv"
+    ],
+    "126": [
+      "vex_motv"
+    ],
+    "127": [
+      "vex_curv"
+    ],
+    "128": [
+      "vq_key_s"
+    ],
+    "129": [
+      "vs_clip"
+    ],
+    "130": [
+      "vqt_name"
+    ],
+    "131": [
+      "vqt_fontinfo"
+    ],
+    "134": [
+      "vex_wheelv"
+    ],
+    "190": [
+      "vqt_char_index"
+    ],
+    "229": [
+      "vqt_xfntinfo"
+    ],
+    "230": [
+      "vst_name",
+      "vqt_name_and_id"
+    ],
+    "231": [
+      "vst_width"
+    ],
+    "232": [
+      "vqt_fontheader"
+    ],
+    "234": [
+      "vqt_trackkern"
+    ],
+    "235": [
+      "vqt_pairkern"
+    ],
+    "236": [
+      "vst_charmap",
+      "vst_map_mode"
+    ],
+    "237": [
+      "vst_kern",
+      "vst_track_offset"
+    ],
+    "239": [
+      "v_getbitmap_info"
+    ],
+    "240": [
+      "vqt_f_extent",
+      "vqt_real_extent"
+    ],
+    "241": [
+      "v_ftext",
+      "v_ftext_offset"
+    ],
+    "243": [
+      "v_getoutline"
+    ],
+    "245": [
+      "vst_error"
+    ],
+    "246": [
+      "vst_arbpt",
+      "vst_arbpt32"
+    ],
+    "247": [
+      "vqt_advance",
+      "vqt_advance32"
+    ],
+    "249": [
+      "v_savecache"
+    ],
+    "250": [
+      "v_loadcache"
+    ],
+    "251": [
+      "v_flushcache"
+    ],
+    "252": [
+      "vst_setsize",
+      "vst_setsize32"
+    ],
+    "253": [
+      "vst_skew"
+    ],
+    "254": [
+      "vqt_get_table"
+    ],
+    "255": [
+      "vqt_cachesize"
+    ]
+  },
+  "x32Vdi": [
+    6,
+    8,
+    11,
+    12,
+    15,
+    16,
+    17,
+    22,
+    23,
+    24,
+    25,
+    32,
+    38,
+    100,
+    101,
+    102,
+    105,
+    109,
+    110,
+    113,
+    114,
+    118,
+    121,
+    125,
+    126,
+    127,
+    129,
+    134
+  ]
+}

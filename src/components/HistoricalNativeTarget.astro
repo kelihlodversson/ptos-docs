@@ -1,0 +1,27 @@
+---
+import RegisterMap from './RegisterMap.astro';
+import { sourceLink } from '../data/catalog';
+import type { HistoricalPage } from '../data/historical';
+import { historicalBinding } from '../data/historical-bindings';
+
+interface Props { page: HistoricalPage; cpu: 'arm' | 'x32' }
+const { page, cpu } = Astro.props;
+const english = page.language === 'en';
+const cpuName = cpu === 'arm' ? 'ARM' : 'x32';
+const binding = page.native ? null : historicalBinding(page, cpu);
+const sources = binding ? [...new Set([binding.source, binding.extraSource].filter(path => path !== undefined))] : [];
+---
+{binding ? <>
+  <p class:list={['binding-scope', { 'prm-unsupported': binding.status === 'unsupported' }]}>
+    <strong>{english
+      ? { implemented: 'Implemented', experimental: 'Experimental', unsupported: 'Unavailable', planned: 'Planned', unverified: 'Unverified' }[binding.status]
+      : { implemented: 'Implementiert', experimental: 'Experimentell', unsupported: 'Nicht verfügbar', planned: 'Geplant', unverified: 'Ungeprüft' }[binding.status]}</strong>
+    {' · '}{binding.scope}<br />{binding.detail}
+  </p>
+  {binding.registers && <RegisterMap rows={binding.registers} />}
+  <p class="revision-note">{english ? 'pTOS source' : 'pTOS-Quellcode'} · {sources.map((path, index) => <>
+    {index > 0 && ' · '}<a href={sourceLink(['ptos', path, path]).href}><code>{path}</code></a>
+  </>)}</p>
+</> : <p><a href={page.native + '#calling-convention'}>
+  {english ? `See the pTOS ${cpuName} calling convention.` : `${cpuName}-Aufrufkonvention für pTOS`}
+</a></p>}

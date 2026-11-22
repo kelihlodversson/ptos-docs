@@ -131,13 +131,53 @@ test('historical entries retain their availability, source and switchable bindin
   await expect(page.getByRole('link', { name: 'gemdos/file/fopen.ui' })).toHaveAttribute('href', /freemint\/tos.hyp\/blob\/20a9cfb4/);
   const select = selectTarget(page);
   await select.selectOption('arm');
-  await expect(page.getByText('pTOS ARM support for this entry has not been verified.')).toBeVisible();
+  await expect(page.locator('[data-target-panel="arm"]')).toContainText('SVC #1');
+  await expect(page.locator('[data-target-panel="arm"]')).toContainText('0x3D');
+  await select.selectOption('x32');
+  await expect(page.locator('[data-target-panel="x32"]')).toContainText('(1 << 32) | 0x3D');
   await select.selectOption('gfa');
   await expect(page.getByText('Handle%=Gemdos(&H3D,L:fname%,W:mode%)')).toBeVisible();
   await expect(page.locator('.prm-prototype')).toBeVisible();
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(results.violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
+test('chapter navigation follows tos.hyp and places extensions with related calls', async ({ page }) => {
+  await page.goto('/subsystems/');
+  await page.getByRole('link', { name: 'GEMDOS', exact: true }).click();
+  await page.getByRole('link', { name: 'Process functions', exact: true }).click();
+  await expect(page).toHaveURL('/subsystems/gemdos/process-functions/');
+  await expect(page.getByRole('link', { name: 'Pexec', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Pclone', exact: true }).click();
+  const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb' });
+  await expect(breadcrumb.getByRole('listitem')).toHaveText(['Subsystems', 'GEMDOS', 'Process functions', 'Pclone']);
+  await page.goto('/subsystems/gemdos/memory-management/');
+  await expect(page.getByRole('link', { name: 'Mmap', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Pclone', exact: true })).toHaveCount(0);
+  await page.goto('/subsystems/aes/');
+  await page.getByRole('link', { name: 'CUIS ABI', exact: true }).click();
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'AES', exact: true })).toHaveAttribute('href', '/subsystems/aes/');
+});
+
+test('historical target notes distinguish traps, library bindings, and unavailable native calls', async ({ page }) => {
+  const select = selectTarget(page);
+  for (const [path, target, binding] of [
+    ['/historical/en/fpipe/', 'arm', 'This call is not implemented for native ARM programs'],
+    ['/historical/de/fpipe/', 'x32', 'für native x32-Programme in pTOS nicht implementiert'],
+    ['/historical/en/rwabs/', 'x32', 'struct x32_bios_lrwabs_args'],
+    ['/historical/en/supexec/', 'arm', 'This call is not implemented for native ARM programs'],
+    ['/historical/en/graf-mouse/', 'x32', 'mt_graf_mouse()'],
+    ['/historical/en/graf-mouse/', 'arm', 'SVC #2'],
+    ['/historical/en/appl-tplay/', 'x32', 'has no x32 libaes export'],
+    ['/historical/en/v-opnvwk/', 'x32', 'libptos-vdi.a'],
+    ['/historical/en/v-opnwk/', 'x32', 'This call is not implemented for native x32 programs'],
+  ]) {
+    await page.goto(path);
+    await select.selectOption(target);
+    await expect(page.locator(`[data-target-panel="${target}"]`)).toContainText(binding);
+    await expect(page.locator('.prm-prototype')).toBeVisible();
+  }
 });
 
 test('original German content and UDO aliases remain navigable', async ({ page }) => {

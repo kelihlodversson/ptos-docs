@@ -1,0 +1,108 @@
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const [checkout, ...options] = process.argv.slice(2);
+if (!checkout) throw new Error('Usage: node scripts/import-native-bindings.mjs PTOS_CHECKOUT [--check]');
+const { ptos } = JSON.parse(readFileSync(new URL('../src/data/sources.json', import.meta.url)));
+const source = path => execFileSync('git', ['-C', checkout, 'show', `${ptos.revision}:${path}`], { encoding: 'utf8' });
+const defineNumbers = code => Object.fromEntries([...code.matchAll(/^#define\s+(\w+)\s+(0x[\da-f]+|\d+)\b/gim)]
+  .map(([, symbol, number]) => [symbol, Number(number)]));
+
+// Native dispatch uses one slot per argument. Keep the table's arity
+// and cross-check it against the same entry's 68k word/long signature.
+const dispatch = source('bdos/bdosmain.c');
+const gemdos = {};
+for (const [, , count, shape, opcode] of dispatch.matchAll(/F\((\w+)\)[^\n]*W_N\((\d+),(\w+)\)[^\n]*\/\* (0x[\da-f]+)/gi)) {
+  const args = shape.replace(/^[R]?(?=.)/, '').replace(/^V$/, '');
+  assert.equal(Number(count), args.length, opcode);
+  gemdos[Number(opcode)] = { args, config: { '0x14': 'CONF_WITH_ALT_RAM' }[opcode] };
+}
+assert.deepEqual(gemdos[0x3d], { args: 'PW', config: undefined });
+assert.equal(gemdos[0x4b].args, 'WLLL');
+
+const mint = source('bdos/mintproc.c');
+const mintNumbers = defineNumbers(source('bdos/mintproc.h'));
+const mintArgs = {
+  PGETPID: '', PGETPPID: '', PGETUID: '', PGETEUID: '', PGETGID: '', PGETEGID: '',
+  PGETAUID: '', PSETAUID: 'W', PGETPRIORITY: 'WW', PSETPRIORITY: 'WWW', PRUSAGE: 'P', DGETCWD: 'PWW',
+};
+for (const [name, args] of Object.entries(mintArgs)) {
+  const symbol = 'GEMDOS_' + name;
+  assert.ok(symbol in mintNumbers && mint.includes('case ' + symbol + ':'), symbol);
+  gemdos[mintNumbers[symbol]] = { args, config: 'CONF_WITH_KPROC', source: 'bdos/mintproc.c' };
+}
+const extendedNumbers = defineNumbers([dispatch, source('bdos/ssystem.h'), source('include/shutdown.h')].join('\n'));
+for (const [name, args, config] of [
+  ['SUPER', 'L', undefined], ['PSETLIMIT', 'WL', 'CONF_WITH_USER_ASPACE'],
+  ['MVALIDATE', 'WPLP', 'CONF_WITH_USER_ASPACE'], ['MACCESS', 'PLW', 'CONF_WITH_USER_ASPACE'],
+  ['SYSCONF', 'W', 'CONF_WITH_SSYSTEM'], ['SHUTDOWN', 'L', 'CONF_WITH_GEMDOS_SHUTDOWN'],
+]) {
+  const symbol = 'GEMDOS_' + name;
+  assert.ok(symbol in extendedNumbers && new RegExp(`(?:case |fn == )${symbol}\\b`).test(dispatch), symbol);
+  gemdos[extendedNumbers[symbol]] = { args, config };
+}
+
+const nativeVectors = (path, prefix) => {
+  const table = source(path).split(`const PFLONG ${prefix}_vecs[] = {`)[1].split('};')[0];
+  return Object.fromEntries([...table.matchAll(new RegExp(`VEC\\(${prefix}_([\\da-f]+), (\\w+)\\)`, 'g'))]
+    .map(([, op, name]) => [parseInt(op, 16), name.toLowerCase()]));
+};
+const bios = nativeVectors('bios/bios.c', 'bios');
+const xbios = nativeVectors('bios/xbios.c', 'xbios');
+const xbiosDoc = source('doc/x86_64-syscall.txt').split('XBIOS (the calls this configuration has)')[1].split('Not implemented here')[0];
+const x32Xbios = [...xbiosDoc.matchAll(/^\s+(\d+(?:, \d+)*)\s+\w+\(/gm)]
+  .flatMap(([, opcodes]) => opcodes.split(', ').map(Number)).sort((a, b) => a - b);
+assert.match(source('bios/arch/x86_64/trap.c'), /fn >= xbios_ent \|\| xbios_vecs\[fn\] == xbios_unimpl_addr/);
+assert.match(source('bios/arch/arm/vectorsasm.S'), /C_SYM\(biostrap\):[\s\S]*C_SYM\(bios_vecs\)/);
+assert.match(source('bdos/arch/arm/uspace.c'), /pw\[i\] = \(long\)f->r\[i\]/);
+assert.ok(x32Xbios.includes(0x08) && x32Xbios.includes(0x25) && !x32Xbios.includes(0x26));
+// Flopfmt, which is described on a line of its own after the floppy I/O group.
+assert.ok(x32Xbios.includes(0x0a) && x32Xbios.every(opcode => Boolean(xbios[opcode])));
+
+const aesConstants = defineNumbers(source('aes/crysbind.h'));
+const aesNative = {};
+let config;
+for (const line of source('aes/gemsuper.c').split('\n')) {
+  const gate = /^#if (CONF_\w+)$/.exec(line)?.[1];
+  if (gate) config = gate;
+  if (/^#endif\b/.test(line)) config = undefined;
+  const name = /^    case ([A-Z_]+):/.exec(line)?.[1];
+  if (name && Object.hasOwn(aesConstants, name)) aesNative[name.toLowerCase()] = { opcode: aesConstants[name], config };
+}
+const aesLibrary = {};
+const exports = new Set([...source('lib/aes/exports.map').matchAll(/\bmt_(\w+);/g)].map(match => match[1]));
+for (const line of source('doc/libaes-compatibility.md').split('\n')) {
+  const [names, status] = line.split(' | ');
+  if (!['available', 'partial'].includes(status)) continue;
+  for (const [, name] of names.matchAll(/`(\w+)`/g)) {
+    assert.ok(exports.has(name), name);
+    aesLibrary[name] = status;
+  }
+}
+assert.deepEqual(Object.keys(aesLibrary).sort(), [...exports].sort());
+assert.equal(aesNative.appl_init.opcode, 10);
+assert.match(source('aes/arch/arm/gemdosif.S'), /cmp r0, #0xC8/);
+
+const legacyVdi = {};
+const vdi = source('vdi/vdi_main.c');
+for (const [, handler, opcode, aliases = ''] of vdi.matchAll(/\{\s*\d+,\s*\d+,\s*vdi_(\w+)\s*\},?;?\s*\/\*\s*(\d+)\s*\*\/(?:\s*\/\* also ([\w_]+) \*\/)?/g)) {
+  if (handler !== 'v_nop') legacyVdi[Number(opcode)] = [handler, ...aliases ? [aliases] : []];
+}
+assert.equal(legacyVdi[100][0], 'v_opnvwk');
+assert.match(source('vdi/vdi_defs.h'), /^#define HAVE_BEZIER 0/m);
+const vdiClient = source('vdi/x32/vdi_client.c');
+const userSwitch = vdiClient.split('switch (control.code) {')[1].split('default:')[0];
+const x32Vdi = [...new Set([...userSwitch.matchAll(/case (\d+):/g)].map(([, op]) => Number(op)))].sort((a, b) => a - b);
+assert.ok(x32Vdi.includes(100) && !x32Vdi.includes(1) && x32Vdi.every(opcode => legacyVdi[opcode]));
+assert.match(source('vdi/vdi_user_draw.c'), /case 102:[^\n]*vq_extnd\(1\)[\s\S]*r->intin\[0\] != 1/);
+assert.match(source('bios/arch/arm/vectorsasm.S'), /C_SYM\(gemtrap\):\s*cmp\s+r0, #0x73/);
+
+const inventory = {
+  revision: ptos.revision, gemdos, bios, xbios, x32Xbios, aesNative, aesLibrary, legacyVdi, x32Vdi,
+};
+const output = JSON.stringify(inventory, null, 2) + '\n';
+const path = new URL('../src/data/native-inventory.json', import.meta.url);
+if (options.includes('--check')) assert.equal(readFileSync(path, 'utf8'), output, 'Regenerate the native inventory');
+else writeFileSync(path, output);
+console.log(`Verified native dispatch for ${Object.keys(gemdos).length} GEMDOS selectors, ${Object.keys(bios).length} BIOS vectors, ${Object.keys(xbios).length} XBIOS vectors, ${Object.keys(aesNative).length} kernel AES operations, ${exports.size} libaes exports and ${x32Vdi.length} x32 VDI client opcodes`);

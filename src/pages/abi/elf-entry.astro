@@ -5,9 +5,10 @@ import TargetPanels from '../../components/TargetPanels.astro';
 import ElfEntry from '../../components/ElfEntry.astro';
 import GfaBinding from '../../components/GfaBinding.astro';
 import SourceList from '../../components/SourceList.astro';
+import { manualBreadcrumbs } from '../../data/manual-structure';
 ---
-<Layout title="ELF32 process entry" description="Initial stack for dynamically interpreted ELF programs" running="pTOS — Native ABI"
-  breadcrumbs={[{ label: 'Subsystems', href: '/subsystems/' }, { label: 'pTOS', href: '/subsystems/ptos/' }]}>
+<Layout title="ELF32 process entry" description="Initial stack for dynamically interpreted ELF programs" running="GEMDOS — Process functions"
+  breadcrumbs={manualBreadcrumbs('gemdos', 'process-functions')}>
   <article>
     <Masthead name="ELF32 process entry" title="Initial stack and auxiliary vector" subsystem="pTOS native ABI" />
     <p class="abi-intro">This layout applies to the standard <code>PT_INTERP</code> entry path with <code>CONF_WITH_ELF_SHARED</code>.

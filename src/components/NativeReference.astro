@@ -9,6 +9,7 @@ import SourceList from './SourceList.astro';
 import NativeTarget from './NativeTarget.astro';
 import { nativePath } from '../data/native-calls';
 import type { NativeCall } from '../data/native-calls';
+import { manualBreadcrumbs, nativeSection } from '../data/manual-structure';
 import revisions from '../data/sources.json';
 
 interface Props { call: NativeCall }
@@ -18,8 +19,8 @@ const relatedPath = (name: string) => name === 'appl_init' ? '/reference/appl_in
 const pr = (source: typeof revisions.ptos | typeof revisions.paratos) =>
   `https://github.com/${source.repo}/pull/${source.pullRequest}`;
 ---
-<Layout title={call.name} description={call.title} running="pTOS — GEMDOS"
-  breadcrumbs={[{ label: 'Subsystems', href: '/subsystems/' }, { label: 'pTOS', href: '/subsystems/ptos/' }]}>
+<Layout title={call.name} description={call.title} running="GEMDOS"
+  breadcrumbs={manualBreadcrumbs('gemdos', nativeSection(call.name))}>
   <article>
     <Masthead name={call.name} title={call.title} subsystem="GEMDOS" />
     <section aria-labelledby="prm-prototype-heading">

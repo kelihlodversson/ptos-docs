@@ -9,8 +9,9 @@ import CallingConvention from './CallingConvention.astro';
 import GfaBinding from './GfaBinding.astro';
 import MemoryLayout from './MemoryLayout.astro';
 import SourceList from './SourceList.astro';
-import { historicalReference, referencePath } from '../data/catalog';
+import { historicalReference, referenceLocation, referencePath } from '../data/catalog';
 import type { Historical, Source } from '../data/catalog';
+import { manualBreadcrumbs } from '../data/manual-structure';
 import { overlays, pexecModes } from '../data/overlays';
 import abi from '../data/abi.json';
 import translation from '../data/translation-review.json';
@@ -18,8 +19,9 @@ import translation from '../data/translation-review.json';
 interface Props { name: string; record: Historical | null }
 const { name, record } = Astro.props;
 const overlay = overlays[name];
-const subsystem = record?.subsystem ?? 'pTOS';
-const group = record?.group ?? 'GEMDOS extensions';
+const location = referenceLocation(name);
+const subsystem = location?.chapter?.name ?? 'GEMDOS';
+const group = location?.group ?? subsystem;
 const title = record?.title ?? 'Read text console dimensions';
 const operation = record?.operation ?? 'Read the text grid and character-cell size through the S_CONSOLE_DIM mode.';
 const sources: Source[] = [
@@ -28,7 +30,7 @@ const sources: Source[] = [
 ];
 ---
 <Layout title={name} description={operation} running={`${subsystem} — ${group}`}
-  breadcrumbs={[{ href: '/subsystems/', label: 'Subsystems' }, { href: `/subsystems/${subsystem.toLowerCase()}/`, label: subsystem }]}>
+  breadcrumbs={manualBreadcrumbs(location?.chapter?.slug ?? 'gemdos', location?.section?.slug)}>
   <article>
     <Masthead {name} {title} {subsystem} />
     <section aria-labelledby="prm-prototype-heading">

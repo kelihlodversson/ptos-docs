@@ -1,0 +1,25 @@
+---
+import Layout from '../../../components/Layout.astro';
+import CatalogList from '../../../components/CatalogList.astro';
+import { catalog } from '../../../data/catalog';
+import { chapters, historicalSectionBody, manualBreadcrumbs } from '../../../data/manual-structure';
+
+export function getStaticPaths() {
+  return chapters.flatMap(chapter => chapter.sections.filter(section => !section.directEntry).map(section => ({
+    params: { slug: chapter.slug, section: section.slug }, props: { chapter, section },
+  })));
+}
+interface Props {
+  chapter: typeof chapters[number];
+  section: typeof chapters[number]['sections'][number];
+}
+const { chapter, section } = Astro.props;
+const entries = catalog.filter(entry => entry.chapter?.slug === chapter.slug && entry.section?.slug === section.slug);
+---
+<Layout title={section.name} description={`${section.name} in the ${chapter.name} chapter.`} running={chapter.name}
+  breadcrumbs={manualBreadcrumbs(chapter.slug)}>
+  <header class="directory-head"><h1>{section.name}</h1></header>
+  {entries.length > 0 ? <CatalogList records={entries} showSubsystem={false} />
+    : <div class="historical-body" set:html={historicalSectionBody(section.slug)} />}
+  <p><a href={section.historicalHref}>Read the original tos.hyp section</a></p>
+</Layout>

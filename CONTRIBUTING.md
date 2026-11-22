@@ -7,7 +7,8 @@ tree using the pinned UDO 7.12 command-line compiler. The importer removes the
 merge-subsubnodes directive in a temporary copy so each node has its own page.
 It reads the compiler’s node-to-file map for provenance, keeps aliases and
 cross-references, and adapts the generated HTML into the reference layout and
-target selector. Neither upstream HTML nor compiled hypertext is an input.
+target selector. The generated parent indexes supply the chapter hierarchy
+and historical breadcrumbs. The importer takes UDO source as input.
 
 The generated records are committed so the ordinary Astro build only needs
 Node and npm. To regenerate on Linux, install a C compiler and run:
@@ -93,7 +94,16 @@ git clone https://github.com/kelihlodversson/libcmini.git .upstream/libcmini
 git clone https://github.com/SapionAps/ParaTos.git .upstream/ParaTos
 git -C .upstream/ParaTos fetch origin refs/pull/27/head
 node scripts/validate-upstream.mjs .upstream/pTOS .upstream/libcmini .upstream/ParaTos
+node scripts/import-native-bindings.mjs .upstream/pTOS
+node scripts/import-native-bindings.mjs .upstream/pTOS --check
 ```
+
+The native binding inventory reads dispatch tables, libaes exports and the
+x32 VDI client at the pinned pTOS commit. Historical binding rules in
+`src/data/historical-bindings.ts` handle shared opcodes, native argument
+structures, and build or privilege restrictions. Review these rules when
+repinning the source. Assign extensions to the closest historical subsection
+using `src/data/manual-structure.ts`.
 
 Keep ABI layouts in structured data with explicit widths and byte offsets.
 Use Chromium print view or capture the reference review images:
