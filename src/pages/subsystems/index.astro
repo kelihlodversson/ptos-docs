@@ -1,10 +1,10 @@
 ---
 import Layout from '../../components/Layout.astro';
-import { subsystems } from '../../data/catalog';
+import { chapters } from '../../data/manual-structure';
 ---
 <Layout title="Subsystems" description="Browse the programmer’s reference by subsystem.">
   <header class="directory-head"><h1>Subsystems</h1></header>
-  <ul class="manual-index">{subsystems.map(({ name, slug, summary }) => (
-    <li><a class="manual-index-symbol" href={`/subsystems/${slug}/`}>{name}</a><span>{summary}</span></li>
+  <ul class="manual-index">{chapters.map(({ name, href }) => (
+    <li><a class="manual-index-symbol" href={href}>{name}</a></li>
   ))}</ul>
 </Layout>

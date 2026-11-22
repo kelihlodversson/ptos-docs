@@ -7,10 +7,11 @@ import CallingConvention from '../../components/CallingConvention.astro';
 import GfaBinding from '../../components/GfaBinding.astro';
 import BitLayout from '../../components/BitLayout.astro';
 import SourceList from '../../components/SourceList.astro';
+import { manualBreadcrumbs } from '../../data/manual-structure';
 import abi from '../../data/abi.json';
 ---
-<Layout title="CUIS ABI" description="Private pTOS x32 CUIS selector and session query" running="pTOS — Native ABI"
-  breadcrumbs={[{ label: 'Subsystems', href: '/subsystems/' }, { label: 'pTOS', href: '/subsystems/ptos/' }]}>
+<Layout title="CUIS ABI" description="Private pTOS x32 CUIS selector and session query" running="AES"
+  breadcrumbs={manualBreadcrumbs('aes')}>
   <article>
     <Masthead name="CUIS ABI" title="Controlled user interface services" subsystem="Private kernel ABI" />
     <dl class="prm-facts">

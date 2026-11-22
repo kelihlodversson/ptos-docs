@@ -1,13 +1,13 @@
 ---
 import Layout from '../components/Layout.astro';
-import CatalogList from '../components/CatalogList.astro';
-import { catalog } from '../data/catalog';
-const groups = [...new Set(catalog.map(entry => entry.group))].sort();
+import { chapters } from '../data/manual-structure';
 ---
 <Layout title="Topics" description="Browse file operations, process execution, AES and native ABI topics.">
   <header class="directory-head"><h1>Topics</h1></header>
-  {groups.map(group => <section>
-    <h2 class="ruled prm-section-heading">{group}</h2>
-    <CatalogList records={catalog.filter(entry => entry.group === group)} />
+  {chapters.map(chapter => <section>
+    <h2 class="ruled prm-section-heading"><a href={chapter.href}>{chapter.name}</a></h2>
+    <ul class="manual-index">
+      {chapter.sections.map(section => <li><a class="manual-index-symbol" href={section.href}>{section.name}</a></li>)}
+    </ul>
   </section>)}
 </Layout>

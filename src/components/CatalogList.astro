@@ -1,6 +1,10 @@
 ---
 import { catalog } from '../data/catalog';
-interface Props { records?: typeof catalog; showSubsystem?: boolean; searchable?: boolean }
+interface Props {
+  records?: { name: string; description: string; subsystem: string; group: string; href: string }[];
+  showSubsystem?: boolean;
+  searchable?: boolean;
+}
 const { records = catalog, showSubsystem = true, searchable = false } = Astro.props;
 ---
 <ul class="manual-index">
