@@ -1,0 +1,16 @@
+---
+import { targets } from '../data/catalog';
+interface Props { heading?: string }
+const { heading = 'Calling Convention' } = Astro.props;
+---
+<section id="calling-convention" aria-labelledby="prm-abi-heading">
+  <h2 id="prm-abi-heading" class="prm-section-heading ruled">{heading} <span class="target-caption" data-target-caption aria-live="polite">68k</span></h2>
+  {targets.map(([value, label]) => (
+    <div data-target-panel={value} hidden={value !== '68k'} aria-label={label}>
+      {value === '68k' && <slot name="68k" />}
+      {value === 'arm' && <slot name="arm" />}
+      {value === 'x32' && <slot name="x32" />}
+      {value === 'gfa' && <slot name="gfa" />}
+    </div>
+  ))}
+</section>

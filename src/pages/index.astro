@@ -1,0 +1,19 @@
+---
+import Layout from '../components/Layout.astro';
+import CatalogList from '../components/CatalogList.astro';
+import { subsystems } from '../data/catalog';
+---
+<Layout title="Programmer’s Reference Manual" description="The pTOS and ParaTOS programmer’s reference for GEMDOS, AES and native ABI.">
+  <header class="directory-head">
+    <h1>Programmer’s<br />Reference Manual</h1>
+    <p>API and ABI reference for pTOS and ParaTOS, with historical TOS documentation from <em>tos.hyp</em>.</p>
+  </header>
+  <section aria-labelledby="reference-entries">
+    <h2 class="ruled prm-section-heading" id="reference-entries">Reference Entries</h2>
+    <CatalogList />
+  </section>
+  <section aria-labelledby="subsystem-heading">
+    <h2 class="ruled prm-section-heading" id="subsystem-heading">Subsystems</h2>
+    <ul class="manual-index">{subsystems.map(({ name, summary, slug }) => <li><a class="manual-index-symbol" href={`/subsystems/${slug}/`}>{name}</a><span>{summary}</span></li>)}</ul>
+  </section>
+</Layout>

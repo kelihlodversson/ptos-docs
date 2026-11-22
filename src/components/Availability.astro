@@ -1,0 +1,21 @@
+---
+import { statusLabels, targets } from '../data/catalog';
+import type { CPU } from '../data/catalog';
+import { nativeRevisionLabel } from '../data/overlays';
+import type { Binding } from '../data/overlays';
+interface Props { history?: string; support: Record<CPU, Binding>; paraTos: string }
+const { history, support, paraTos } = Astro.props;
+---
+{history && <div class="historical-availability">
+  <p><strong>Historical</strong></p>
+  <div set:html={history} />
+</div>}
+<p><strong>{nativeRevisionLabel}</strong></p>
+<ul class="availability-targets">
+  {targets.slice(0, 3).map(([id, label]) => {
+    const info = support[id as CPU];
+    return <li><strong>{label}</strong> · {statusLabels[info.status]} · {info.scope}</li>;
+  })}
+</ul>
+<slot />
+<p><strong>ParaTOS</strong> · {paraTos}</p>

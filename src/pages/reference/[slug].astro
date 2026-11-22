@@ -1,0 +1,121 @@
+---
+import Layout from '../../components/Layout.astro';
+import Masthead from '../../components/Masthead.astro';
+import Fact from '../../components/Fact.astro';
+import Availability from '../../components/Availability.astro';
+import ParameterList from '../../components/ParameterList.astro';
+import TargetPanels from '../../components/TargetPanels.astro';
+import CallingConvention from '../../components/CallingConvention.astro';
+import GfaBinding from '../../components/GfaBinding.astro';
+import MemoryLayout from '../../components/MemoryLayout.astro';
+import SourceList from '../../components/SourceList.astro';
+import { historical, referencePath } from '../../data/catalog';
+import type { Historical, Source } from '../../data/catalog';
+import { overlays, pexecModes } from '../../data/overlays';
+import abi from '../../data/abi.json';
+import translation from '../../data/translation-review.json';
+
+export function getStaticPaths() {
+  return [
+    ...Object.values(historical).map(record => ({
+      params: { slug: record.name.toLowerCase() }, props: { name: record.name, record },
+    })),
+    { params: { slug: 'ssystem' }, props: { name: 'Ssystem', record: null } },
+  ];
+}
+interface Props { name: string; record: Historical | null }
+const { name, record } = Astro.props;
+const overlay = overlays[name];
+const subsystem = record?.subsystem ?? 'pTOS';
+const group = record?.group ?? 'GEMDOS extensions';
+const title = record?.title ?? 'Read text console dimensions';
+const operation = record?.operation ?? 'Read the text grid and character-cell size through the S_CONSOLE_DIM mode.';
+const sources: Source[] = [
+  ...(record ? [['tos', record.path, 'Historical function and bindings'] satisfies Source] : []),
+  ...overlay.sources,
+];
+---
+<Layout title={name} description={operation} running={`${subsystem} — ${group}`}
+  breadcrumbs={[{ href: '/subsystems/', label: 'Subsystems' }, { href: `/subsystems/${subsystem.toLowerCase()}/`, label: subsystem }]}>
+  <article>
+    <Masthead {name} {title} {subsystem} />
+    <section aria-labelledby="prm-prototype-heading">
+      <h2 id="prm-prototype-heading" class="prm-section-heading">C Prototype</h2>
+      <pre class="prm-prototype"><code>{record?.syntax ?? 'long Ssystem(short mode, long arg1, long arg2);'}</code></pre>
+      {name === 'Ssystem' && <p class="prototype-note">Call signature for the SDK macro in <code>&lt;mint/mintbind.h&gt;</code>. Use <code>Ssystem(-2, (long)&amp;dims, (long)sizeof dims)</code>.</p>}
+    </section>
+
+    <dl class="prm-facts">
+      <Fact label="Operation">{operation}</Fact>
+      <Fact label="Opcode">{subsystem === 'AES' ? 'Historical AES operation' : 'GEMDOS'}{' '}<code>{record?.opcode ?? '340'} ({`0x${Number(record?.opcode ?? 340).toString(16).toUpperCase()}`})</code></Fact>
+      <Fact label="Parameters"><ParameterList entries={overlay.params} /></Fact>
+      <Fact label="Description">
+        {record ? <div set:html={record.description} /> : <p>
+          The caller supplies a writable result buffer containing four unsigned 16-bit fields.
+          The kernel copies the smaller of the supplied length and its structure size.
+          Check the returned byte count before reading fields. A size query with <code>arg2 = -1</code> leaves the buffer untouched.
+        </p>}
+      </Fact>
+      <Fact label="Return Value">
+        {record ? <div set:html={record.returns} /> : <p>
+          Returns the copied byte count or, for a size query, the kernel buffer size. A null destination
+          or nonpositive length for a write returns <code>EINVFN</code>. Isolated builds check user addresses
+          and can reject an invalid buffer before copying.
+        </p>}
+        {name === 'Fclose' && <p class="revision-note">The pTOS libcmini binding returns <code>long</code>. Native GEMDOS uses <code>EIHNDL</code> for an invalid handle. The historical listing uses <code>EBADF</code>.</p>}
+      </Fact>
+      <Fact label="Availability">
+        <Availability history={record?.availability} support={overlay.targets} paraTos={overlay.paraTos}>
+          {name === 'Pexec' && <p>Historical version qualifications for modes 6 and 7, and MagiC restrictions, appear in the mode descriptions above.</p>}
+          {name === 'appl_init' && <p>ARM and 68k builds with per-process address spaces lack kernel AES at this revision. Native libaes ports for those configurations are <strong>planned</strong> follow-ups.</p>}
+        </Availability>
+      </Fact>
+    </dl>
+
+    {name === 'Pexec' && <section aria-labelledby="mode-fields">
+      <h2 id="mode-fields" class="prm-section-heading ruled">Parameter Fields · native pTOS modes</h2>
+      <p>Use the SDK’s four-argument <code>Pexec(mode, prog, tail, env)</code> binding. The historical prototypes above describe other systems as well.</p>
+      <table class="prm-rule-table">
+        <thead><tr><th scope="col">Mode</th><th scope="col">Arguments after mode</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>{pexecModes.map(([mode, args, meaning]) => <tr><th scope="row">{mode}</th><td><code>{args}</code></td><td>{meaning}</td></tr>)}</tbody>
+      </table>
+      <p><strong>Unsupported</strong> · Mode 200 returns <code>EINVFN</code> in this native dispatch. Modes 100 and 106 are unavailable in builds without <code>CONF_WITH_NATIVE_SCHED</code>.</p>
+    </section>}
+
+    <TargetPanels>
+      <CallingConvention slot="68k" binding={overlay.targets['68k']} example={record?.assembly}>
+        {record?.legacyBinding && <div set:html={record.legacyBinding} />}
+        {record?.arrays && <div set:html={record.arrays} />}
+        {name === 'Ssystem' && <MemoryLayout {...abi.console} byteOrder="Big endian" />}
+        {name === 'Pexec' && <p>Native 68k does not enable <code>CONF_WITH_NATIVE_SCHED</code>. Modes 100, 106 and 200 have no calling convention in this build.</p>}
+      </CallingConvention>
+      <CallingConvention slot="arm" binding={overlay.targets.arm}>
+        {name === 'Ssystem' && <MemoryLayout {...abi.console} byteOrder="Little endian" />}
+        {name === 'Pexec' && <p>Native ARM does not enable <code>CONF_WITH_NATIVE_SCHED</code>. Modes 100, 106 and 200 have no calling convention in this build.</p>}
+      </CallingConvention>
+      <CallingConvention slot="x32" binding={overlay.targets.x32}>
+        {name === 'Ssystem' && <MemoryLayout {...abi.console} byteOrder="Little endian" />}
+        {name === 'Pexec' && <p>Modes 100 and 106 require <code>CONF_WITH_NATIVE_SCHED</code> and an eligible caller. Mode 200 has no calling convention in this build.</p>}
+        {name === 'appl_init' && <p><a href="/abi/cuis/">CUIS service ABI</a> describes the private transport used by the library.</p>}
+      </CallingConvention>
+      <GfaBinding slot="gfa" code={record?.gfa} original={record?.originalGfa} />
+    </TargetPanels>
+
+    <section aria-labelledby="related-heading">
+      <h2 id="related-heading" class="prm-section-heading ruled">See Also</h2>
+      <ul class="related-links">
+        {record?.related.map(({ label, href }) => <li><a href={href}>{label}</a></li>)}
+        {name === 'Fclose' && <li><a href={referencePath('Pexec')}>Pexec</a></li>}
+        {name === 'Pexec' && <li><a href="/abi/elf-entry/">ELF32 process entry</a></li>}
+        {name === 'appl_init' && <li><a href="/abi/cuis/">CUIS ABI</a></li>}
+        {name === 'Ssystem' && <li><a href={referencePath('Pexec')}>GEMDOS calling conventions</a></li>}
+      </ul>
+    </section>
+
+    <SourceList {sources} />
+    {record && <p class="revision-note"><a href={`/source/tos.hyp/${record.path}`}>Original English and German UDO</a> ·
+      Translation {record.translation === 'verified' ? 'reviewed' : 'needs review'}.
+      {name === 'Pexec' && ` ${translation.Pexec.note}`}
+    </p>}
+  </article>
+</Layout>

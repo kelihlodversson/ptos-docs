@@ -1,0 +1,114 @@
+{
+  "Fclose": {
+    "name": "Fclose",
+    "subsystem": "GEMDOS",
+    "title": "File close",
+    "operation": "Close a specified file.",
+    "path": "gemdos/file/fclose.ui",
+    "sha256": "b614c3350e8d9f3156b9456debaa9007a806db07284ff477fc5022099dde1f01",
+    "syntax": "int16_t Fclose ( int16_t handle );",
+    "opcode": "62",
+    "group": "File functions",
+    "description": "<p>The GEMDOS routine Fclose closes a file with the file ID <em>handle</em>.</p><p><strong>Note:</strong> In a network the active locking is lifted. During closing of standard channels, from GEMDOS Version 0.15 onwards the original channel will be reinstated.</p>",
+    "returns": "<p>The function returns the following results:</p><dl class=\"udo-list\"><dt>E_OK</dt><dd><p>No error has arisen</p></dd><dt>EBADF</dt><dd><p>Wrong file ID</p></dd></dl>",
+    "availability": "<p>All GEMDOS versions.</p>",
+    "availabilityText": "All GEMDOS versions.",
+    "assembly": "move.w    handle,-(sp)  ; Offset 2\nmove.w    #62,-(sp)     ; Offset 0\ntrap      #1            ; GEMDOS\naddq.l    #4,sp         ; Correct stack",
+    "originalGfa": "Fehler%=Gemdos(&H3E,W:handle%)",
+    "gfa": "ErrCode%=Gemdos(&H3E,W:handle%)",
+    "legacyBinding": null,
+    "arrays": null,
+    "bindingSyntax": "int16_t Fclose ( int16_t handle );",
+    "related": [
+      {
+        "label": "Binding",
+        "href": "#calling-convention"
+      },
+      {
+        "label": "Fopen",
+        "href": "https://github.com/freemint/tos.hyp/blob/20a9cfb4b78cd2c01579664289ddf5cd21721c08/gemdos/file/fopen.ui"
+      }
+    ],
+    "translation": "verified"
+  },
+  "Pexec": {
+    "name": "Pexec",
+    "subsystem": "GEMDOS",
+    "title": "Program execution",
+    "operation": "Load and execute a program.",
+    "path": "gemdos/prozess/pexec.ui",
+    "sha256": "f5e4302112270938317b654658be393dd634ea99f7a97ed2118b3e2e78cb51c2",
+    "syntax": "int32_t Pexec ( uint16_t mode, ... );",
+    "opcode": "75",
+    "group": "Process functions",
+    "description": "<p>The function Pexec loads and launches a program. With  the parameter <em>mode</em> one can select from several variants:</p><dl class=\"udo-list\"><dt>mode</dt><dd><p>Meaning</p></dd><dt>0</dt><dd><p><code>int32_t Pexec (0, int8_t *name, int8_t *cmdline, int8_t *env);</code></p><p><strong>Load and go:</strong> Loads and launches the program specified in <em>name</em> and passes the command line <em>cmdline</em>. Returns a WORD exit code when the child terminates. The following apply for the parameter <em>env</em>:</p><dl class=\"udo-list\"><dt>-1</dt><dd><p>=  Do not create an environment</p></dd><dt>NULL</dt><dd><p>=  Inherit the environment of the parent</p></dd></dl><p>Any other value is a pointer to the environment to be inherited.</p></dd><dt>3</dt><dd><p><code>PD *Pexec (3, int8_t* name, int8_t *cmdline, int8_t *env);</code></p><p><strong>Load, don't go:</strong> This is used most often for launching overlays or for loading programs in a debugger. Corresponds to <em>mode 0</em> with the difference that the program is not launched immediately, but that a pointer to the child processes' basepage is returned as a LONG. The parent owns the memory of the child's environment and basepage and hence must free them when finished with the child. <br> <strong>Note:</strong> flushing of the data cache and invalidation of the instruction cache is caller's responsibility in case the intention is not to use Pexec mode 4 but calling the program's function manually instead (e.g. plugins with a jump table).</p></dd><dt>4</dt><dd><p><code>int32_t Pexec (4, 0L, PD *basepage, 0L);</code></p><p><strong>Just go:</strong> Launches an already loaded program with basepage at the specified address. The basepage should have been created with <em>mode 3</em> or <em>5</em>.</p></dd><dt>5</dt><dd><p><code>PD *Pexec (5, 0L, int8_t *cmdline, int8_t *env);</code></p><p><strong>Create basepage:</strong> First of all GEMDOS creates a new environment. Then the largest block of free memory is allocated and a basepage is created in the first 256 bytes. The following applies for the parameter <em>env</em>:</p><dl class=\"udo-list\"><dt>-1</dt><dd><p>= Do not create an environment</p></dd><dt>NULL</dt><dd><p>= Inherit the environment of the parent</p></dd></dl><p>Any other value is a pointer to the environment to be inherited.</p><p>With MiNT, use of this mode in conjunction with <em>mode 3</em> can be used to emulate the Pvfork call without blocking the parent.</p></dd><dt>6</dt><dd><p><code>int32_t Pexec (6, 0L, PD *basepage, 0L);</code></p><p><strong>Just go, then free:</strong> Corresponds to <em>mode 4</em> but with the difference that the allocated memory belongs to the launched process (child) and not to the launcher (parent); thus the basepage memory blocks are freed automatically when the child is terminated with Pterm. Together with <em>mode 3</em> one can achieve the same effect with it as with <em>mode 0</em>. This mode is available only from GEMDOS Version 0.15.</p></dd><dt>7</dt><dd><p><code>PD *Pexec (7, uint32_t prgflags, int8_t *cmdline, int8_t *env);</code></p><p><strong>Create basepage, respecting prgflags:</strong> Similar to <em>mode 5</em>, but in <em>prgflags</em> one can pass the same information as in the ph_prgflags field of the program header. This mode is used by the BIOS of the TT030 to launch GEM, and is only available as of GEMDOS Version 0.19.</p></dd><dt>100</dt><dd><p><code>int32_t Pexec (100, int8_t *name, int8_t *cmdline, int8_t *env);</code></p><p><strong>Load, go, don't wait:</strong> Similar to <em>mode 0</em>, only the caller does not wait until the launched program is terminated, i.e. the parent process is returned to immediately while the child continues to excecute. The return value is a negative error-code or the positive PID of the child.</p></dd><dt>101</dt><dd><p>As this mode is only used internally by MagiC for inheriting path and file handles, the details of the exact syntax will be forgone here.</p></dd><dt>102</dt><dd><p>Is used internally by MagiC to remove a given process. Therefore the details of the exact syntax will be forgone here.</p></dd><dt>104</dt><dd><p><code>int32_t Pexec (104, int8_t *name, PD *basepage, 0L);</code></p><p><strong>Just go, don't wait:</strong> Similar to <em>mode 4</em>, only the caller does not wait until the launched program is terminated. A process will be launched whose basepage was set earlier with <em>mode 3, 5</em> or <em>7</em>. One should note that the environment and the basepage of the child is also owned by the parent (in fact the child inherits all the memory that is possessed by the parent). The parameter <em>name</em> is a pointer to a string that describes the name of the new process; with a NULL value the name of the parent process will be used. The function returns a negative error-code, or the positive PID of the child.</p></dd><dt>106</dt><dd><p><code>int32_t Pexec (106, int8_t *name, PD *basepage, 0L);</code></p><p><strong>Just go, don't wait, no sharing:</strong> Similar to <em>mode 104</em>, however the environment and basepage of the child are <em>not</em> in the possession of the parent, and the child has no access to memory that was allocated to the parent process. At the termination of the child its memory is released again. In combination with <em>mode 3</em>, therefore, Pexec (106, ...) corresponds to <em>mode 100</em> (while <em>mode 3</em> followed by <em>mode 6</em> corresponds to a call of Pexec (0, ...)). <br> Is no longer supported from MagiC 2.0 onwards.</p></dd><dt>107</dt><dd><p>Corresponds essentially with <em>mode 7</em>, and is used internally by MagiC since version 2.10. Hence the details of the exact syntax will be forgone here.</p></dd><dt>108</dt><dd><p>Is used by MagiC since version 2.10 internally for launching a desk accessory. Since the exact syntax is not officially documented, it is better for own programs to fall back on shel_write.</p></dd><dt>200</dt><dd><p><code>int32_t Pexec (200, int8_t *name, int8_t *cmdline, int8_t *env);</code></p><p><strong>Replace program and go:</strong> Similar to <em>mode 100</em>, however the new process overwrites the old one completely. Though the old process retains its PID and most of its attributes, all the memory it occupied will be released. While Pexec (0, ...) can be taken as a subprogram call (call...return), this mode acts more like a 'goto'.</p></dd><dt>300, 301, 401</dt><dd><p>Is used internally by MagiC. Therefore the details of the exact syntax will be forgone here.</p></dd></dl><p><strong>Note:</strong> Not all the modes are available under all varieties of operating system; therefore careful note should be taken of the return value of the function. Unknown modes results in a function return of EINVFN.</p><p>Command lines are passed as a <em>Pascal format</em> string, i.e. the first byte contains the length of the line (maximum 124 characters).</p>",
+    "returns": "<p>The return value is either a negative 32-bit value (if an error occurred within Pexec) or a 16-bit value (the value returned by the executed program using Pterm, Ptermres, or PtermO). If an overlay was loaded, the result contains the basepage of the overlay.</p>",
+    "availability": "<p>All GEMDOS versions.</p>",
+    "availabilityText": "All GEMDOS versions.",
+    "assembly": "pea       env          ; Offset 12\npea       cmdline      ; Offset  8 \npea       name         ; Offset  4 \nmove.w    mode,-(sp)   ; Offset  2\nmove.w    #75,-(sp)    ; Offset  0\ntrap      #1           ; GEMDOS\nlea       $10(sp),sp   ; Correct stack",
+    "originalGfa": "Adresse%=Gemdos(&H4B,W:mode%,L:name%,L:cmdline%,L:env)",
+    "gfa": "Address%=Gemdos(&H4B,W:mode%,L:name%,L:cmdline%,L:env)",
+    "legacyBinding": null,
+    "arrays": null,
+    "bindingSyntax": "int32_t Pexec ( uint16_t mode, ... );",
+    "related": [
+      {
+        "label": "Binding",
+        "href": "#calling-convention"
+      },
+      {
+        "label": "shel_write",
+        "href": "https://github.com/freemint/tos.hyp/blob/20a9cfb4b78cd2c01579664289ddf5cd21721c08/gem/aes/shel_/shel_write.ui"
+      },
+      {
+        "label": "Program flags",
+        "href": "https://github.com/freemint/tos.hyp/blob/20a9cfb4b78cd2c01579664289ddf5cd21721c08/gemdos/gemdos.u"
+      },
+      {
+        "label": "ARGV procedure",
+        "href": "https://github.com/freemint/tos.hyp/blob/20a9cfb4b78cd2c01579664289ddf5cd21721c08/gemdos/argv.u"
+      }
+    ],
+    "translation": "needs-review"
+  },
+  "appl_init": {
+    "name": "appl_init",
+    "subsystem": "AES",
+    "title": "Application initialization",
+    "operation": "Registers the application under AES.",
+    "path": "gem/aes/appl_/appl_init.ui",
+    "sha256": "d67aa12b05da7e47ef0fa3635e9bfeb6c33d5861f49185871445315d02f54647",
+    "syntax": "int16_t appl_init ( void );\nint16_t appl_init ( X_BUF_V2 *xbuf );",
+    "opcode": "10",
+    "group": "Application library",
+    "description": "<p>The call appl_init registers the program with the AES, and initializes the internal parameter passing fields. It should be the first function called by any application that wants to use GEM calls. As first prototyped, the function accepted no parameters; however all 'C' compilers use this call to set up internal information as well as to update the application's global array.</p><p>The extra parameter to an X_BUF_V2 is an extension in the FreeGEM AES. If addr_in[0] is set to 1 and an initialized X_BUF_V2 structure is passed in, then on return its <em>arch</em> member will be 0 for DRI GEM or ViewMAX, and 16 or 32 for FreeGEM.</p><p><strong>Note:</strong> The version number of the AES can be inquired after this call via the global field (global[0]).</p><span id=\"auto-folder-start-from-the\"></span><p>To test whether a program has been started from the AUTO folder, the following procedure is suggested:</p><ul class=\"udo-list\"><li><p>Write the value 0 in global[0]</p></li><li><p>Call function appl_init</p></li><li><p>Inspect global field (global[0]): If there is still a zero there, then the AES is not yet ready for operation and the program was started from the AUTO folder.</p></li></ul><p>Although this procedure is not documented officially, it is used by the mouse accelerator MACCEL by Atari in this way.</p><p>KAOS-GEM 1.4.2 returns 'KA' in int_in[0] and 'OS' in int_in[1].</p>",
+    "returns": "<p>The function returns the ID of the application. In case of an error the value -1 is returned.</p>",
+    "availability": "<p>All AES versions.</p>",
+    "availabilityText": "All AES versions.",
+    "assembly": null,
+    "originalGfa": null,
+    "gfa": null,
+    "legacyBinding": "<pre class=\"prm-code\"><code>EXTERN AESPB c;\n\nint16_t appl_init (void)\n{\n   c.cb_pcontrol = control;\n   c.cb_pglobal  = global;\n   c.cb_pintin   = int_in;\n   c.cb_pintout  = int_out;\n   c.cb_padrin   = addr_in;\n   c.cb_padrout  = addr_out;\n\n   control[4] = 0;\n   crys_if (10);\n\n   return (int_out[0]);\n}\n</code></pre>",
+    "arrays": "<div class=\"table-scroll\"><table class=\"prm-rule-table\"><thead><tr><th scope=\"col\">Address</th><th scope=\"col\">Element</th><th scope=\"col\">Contents</th></tr></thead><tbody><tr><td>control</td><td>control[0]</td><td>10    # Function opcode</td></tr><tr><td>control+2</td><td>control[1]</td><td>0     # Entry in int_in</td></tr><tr><td>control+4</td><td>control[2]</td><td>1     # Entry in int_out</td></tr><tr><td>control+6</td><td>control[3]</td><td>0     # Entry in addr_in</td></tr><tr><td>control+8</td><td>control[4]</td><td>0     # Entry in addr_out</td></tr><tr><td>int_out</td><td>int_out[0]</td><td>Return value</td></tr></tbody></table></div>",
+    "bindingSyntax": "int16_t appl_init ( void );",
+    "related": [
+      {
+        "label": "Binding",
+        "href": "#calling-convention"
+      },
+      {
+        "label": "appl_find",
+        "href": "https://github.com/freemint/tos.hyp/blob/20a9cfb4b78cd2c01579664289ddf5cd21721c08/gem/aes/appl_/appl_find.ui"
+      },
+      {
+        "label": "appl_search",
+        "href": "https://github.com/freemint/tos.hyp/blob/20a9cfb4b78cd2c01579664289ddf5cd21721c08/gem/aes/appl_/appl_search.ui"
+      },
+      {
+        "label": "appl_exit",
+        "href": "https://github.com/freemint/tos.hyp/blob/20a9cfb4b78cd2c01579664289ddf5cd21721c08/gem/aes/appl_/appl_exit.ui"
+      }
+    ],
+    "translation": "verified"
+  }
+}

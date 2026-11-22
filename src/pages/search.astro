@@ -1,0 +1,36 @@
+---
+import Layout from '../components/Layout.astro';
+import CatalogList from '../components/CatalogList.astro';
+---
+<Layout title="Search" description="Search the pTOS programmer’s reference by symbol, operation or subsystem.">
+  <header class="directory-head"><h1>Search</h1></header>
+  <noscript><p>Use your browser’s Find command to search the entries below.</p></noscript>
+  <div class="site-search" hidden>
+    <label for="search">Function, operation or subsystem</label>
+    <input id="search" type="search" autocomplete="off" />
+    <p id="search-status" role="status"></p>
+  </div>
+  <CatalogList searchable />
+</Layout>
+<script>
+  const input = document.querySelector<HTMLInputElement>('#search');
+  const status = document.querySelector<HTMLElement>('#search-status');
+  const records = [...document.querySelectorAll<HTMLElement>('[data-search-record]')];
+
+  function filter(query: string) {
+    const tokens = query.toLowerCase().trim().split(/\s+/);
+    let matches = 0;
+    for (const record of records) {
+      const text = record.dataset.searchRecord?.toLowerCase() ?? '';
+      record.hidden = !tokens.every(token => text.includes(token));
+      if (!record.hidden) matches++;
+    }
+    if (status) status.textContent = `${matches} ${matches === 1 ? 'entry' : 'entries'}`;
+  }
+
+  if (input) {
+    document.querySelector<HTMLElement>('.site-search')?.removeAttribute('hidden');
+    input.addEventListener('input', () => filter(input.value));
+    filter(input.value);
+  }
+</script>

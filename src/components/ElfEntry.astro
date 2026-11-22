@@ -1,0 +1,12 @@
+---
+import CallingConvention from './CallingConvention.astro';
+import MemoryLayout from './MemoryLayout.astro';
+import abi from '../data/abi.json';
+interface Props { scope: string; sp: string; finalizer: string; byteOrder: string }
+const { scope, sp, finalizer, byteOrder } = Astro.props;
+---
+<CallingConvention binding={{ status: 'implemented', scope,
+  detail: `${sp} points to the 16-byte aligned initial stack. The kernel clears ${finalizer} at interpreter entry. The interpreter supplies its finalizer in ${finalizer} when it transfers control to the application.` }}>
+  <MemoryLayout {...abi.elf} caption="Initial user stack for ELF32 PT_INTERP" {byteOrder} />
+  <p>Each pointer occupies four bytes. <code>envc</code> is the number of non-null environment entries. Argument and environment strings are stored in the child’s stack allocation.</p>
+</CallingConvention>

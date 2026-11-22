@@ -1,0 +1,8 @@
+---
+interface Props { code?: string | null; original?: string | null }
+const { code, original } = Astro.props;
+---
+{code ? <>
+  <pre class="prm-code"><code>{code}</code></pre>
+  {original && code !== original && <p class="revision-note">The English example renames the local result variable. The original is in the UDO source below.</p>}
+</> : <p class="prm-unsupported">No documented GFA BASIC binding.</p>}

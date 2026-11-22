@@ -1,0 +1,22 @@
+{
+  "Fclose": {
+    "status": "verified",
+    "example": {
+      "original": "Fehler%=Gemdos(&H3E,W:handle%)",
+      "english": "ErrCode%=Gemdos(&H3E,W:handle%)",
+      "reason": "Rename the example-local error result. The function and argument are unchanged."
+    }
+  },
+  "Pexec": {
+    "status": "needs-review",
+    "note": "The English GFA example leaves its last argument untyped. The English return section spells Pterm0 with a letter O. The source example's argument spelling and types are preserved pending review.",
+    "example": {
+      "original": "Adresse%=Gemdos(&H4B,W:mode%,L:name%,L:cmdline%,L:env)",
+      "english": "Address%=Gemdos(&H4B,W:mode%,L:name%,L:cmdline%,L:env)",
+      "reason": "Rename the example-local result. The call and its argument spellings are unchanged."
+    }
+  },
+  "appl_init": {
+    "status": "verified"
+  }
+}

@@ -1,0 +1,15 @@
+---
+import { sourceLink } from '../data/catalog';
+import type { Source } from '../data/catalog';
+interface Props { sources: Source[] }
+const { sources } = Astro.props;
+---
+<section class="references" aria-labelledby="source-heading">
+  <h2 id="source-heading" class="prm-section-heading ruled">Source references</h2>
+  <ul>
+    {sources.map(sourceLink).map(({ href, label, path, revision }) => <li>
+      <a href={href}>{label}</a><br /><code>{path}</code> <small><code>{revision.slice(0, 12)}</code></small>
+    </li>)}
+  </ul>
+  <p class="revision-note"><a href="/sources/">Content and source revisions</a></p>
+</section>

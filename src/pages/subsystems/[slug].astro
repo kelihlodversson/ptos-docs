@@ -1,0 +1,19 @@
+---
+import Layout from '../../components/Layout.astro';
+import CatalogList from '../../components/CatalogList.astro';
+import { catalog, subsystems, sourceLink, upstreamSubsystems } from '../../data/catalog';
+
+export function getStaticPaths() {
+  return subsystems.map(subsystem => ({ params: { slug: subsystem.slug }, props: { subsystem } }));
+}
+interface Props { subsystem: typeof subsystems[number] }
+const { subsystem } = Astro.props;
+const entries = catalog.filter(entry => entry.subsystem === subsystem.name);
+const upstream = upstreamSubsystems[subsystem.name];
+---
+<Layout title={subsystem.name} description={subsystem.summary} running={subsystem.name}
+  breadcrumbs={[{ label: 'Subsystems', href: '/subsystems/' }]}>
+  <header class="directory-head"><h1>{subsystem.name}</h1><p>{subsystem.summary}</p></header>
+  {entries.length > 0 ? <CatalogList records={entries} showSubsystem={false} /> : <p>Reference entries for this subsystem are pending conversion.</p>}
+  {upstream && <p><a href={sourceLink(['tos', upstream, 'Historical UDO subsystem index']).href}>Historical UDO subsystem index</a></p>}
+</Layout>

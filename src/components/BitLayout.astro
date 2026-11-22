@@ -1,0 +1,26 @@
+---
+interface Props {
+  bits: number;
+  caption: string;
+  fields: { name: string; hi: number; lo: number; width: number; detail: string }[];
+}
+const { bits, caption, fields } = Astro.props;
+---
+<figure class="prm-abi-figure">
+  <div class="bit-scroll" role="region" aria-label={caption} tabindex="0">
+    <div class="prm-bit-endpoints" style={`--bits:${bits}`} aria-hidden="true">
+      {fields.map(field => <span style={`--span:${field.width}`}><span>{field.hi}</span>{field.hi !== field.lo && <span>{field.lo}</span>}</span>)}
+    </div>
+    <div class="prm-bit-fields" style={`--bits:${bits}`} aria-hidden="true">
+      {fields.map(field => <span class="prm-bit-field" style={`--span:${field.width}`}>{field.name}<small>{field.width} {field.width === 1 ? 'bit' : 'bits'}</small></span>)}
+    </div>
+  </div>
+  <figcaption>{caption} · {bits} bits</figcaption>
+</figure>
+<h3 class="prm-section-heading">Instruction Fields</h3>
+<table class="prm-rule-table">
+  <thead><tr><th scope="col">Bits</th><th scope="col">Field</th><th scope="col">Definition</th></tr></thead>
+  <tbody>
+    {fields.map(field => <tr><td><code>{field.hi}{field.hi !== field.lo && `–${field.lo}`}</code></td><th scope="row">{field.name}</th><td>{field.detail}</td></tr>)}
+  </tbody>
+</table>

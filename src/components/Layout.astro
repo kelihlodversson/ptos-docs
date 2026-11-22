@@ -1,0 +1,92 @@
+---
+import '../styles/manual.css';
+import { targets } from '../data/targets';
+
+interface Props {
+  title: string;
+  description: string;
+  running?: string;
+  breadcrumbs?: { label: string; href: string }[];
+}
+const { title, description, running, breadcrumbs = [] } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="light" />
+    <link rel="canonical" href={canonical} />
+    <title>{title} · pTOS Programmer’s Reference Manual</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="prm-page">
+      <header class="prm-running-head">
+        <a class="prm-brand" href="/" aria-label="pTOS manual home"><span class="wordmark">pTOS<span>.</span></span><span>Programmer’s Reference Manual</span></a>
+        {running && <span class="prm-running-topic">{running}</span>}
+        <label class="prm-target-label" for="target">
+          <span>Target / Language</span>
+          <select id="target" class="prm-target-select" disabled>
+            {targets.map(([value, label]) => <option value={value}>{label}</option>)}
+          </select>
+        </label>
+      </header>
+      <nav class="site-nav" aria-label="Manual">
+        <a href="/functions/">Function index</a>
+        <a href="/subsystems/">Subsystems</a>
+        <a href="/topics/">Topics</a>
+        <a href="/search/">Search</a>
+      </nav>
+      {breadcrumbs.length > 0 && <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          {breadcrumbs.map(crumb => <li><a href={crumb.href}>{crumb.label}</a></li>)}
+          <li aria-current="page">{title}</li>
+        </ol>
+      </nav>}
+      <main id="main" tabindex="-1"><slot /></main>
+      <footer class="prm-running-footer">
+        <span>pTOS Programmer’s Reference Manual</span>
+        <span>{running ? `${running} / ${title}` : title}</span>
+        <a href="/sources/">Sources and licensing</a>
+      </footer>
+    </div>
+    <script>
+      import { targets } from '../data/targets';
+      import type { Target } from '../data/targets';
+
+      const select = document.querySelector<HTMLSelectElement>('#target');
+      const panels = document.querySelectorAll<HTMLElement>('[data-target-panel]');
+      const caption = document.querySelector<HTMLElement>('[data-target-caption]');
+      const storageKey = 'ptos.docs.target';
+
+      function show(value: string | null) {
+        const [target, label] = targets.find(([id]) => id === value) ?? targets[0];
+        if (select) select.value = target;
+        for (const panel of panels) panel.hidden = panel.dataset.targetPanel !== target;
+        if (caption) caption.textContent = label;
+        return target;
+      }
+
+      function restore(): Target {
+        try {
+          return show(localStorage.getItem(storageKey));
+        } catch {
+          return show(select?.value ?? null);
+        }
+      }
+
+      if (select) {
+        restore();
+        select.disabled = false;
+        select.addEventListener('change', () => {
+          const target = show(select.value);
+          try { localStorage.setItem(storageKey, target); } catch { /* Keep the current selection. */ }
+        });
+        window.addEventListener('pageshow', event => { if (event.persisted) restore(); });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "entries": {
+    "Fclose": { "path": "gemdos/file/fclose.ui", "subsystem": "GEMDOS" },
+    "Pexec": { "path": "gemdos/prozess/pexec.ui", "subsystem": "GEMDOS" },
+    "appl_init": { "path": "gem/aes/appl_/appl_init.ui", "subsystem": "AES" }
+  },
+  "references": {
+    "Fopen": "gemdos/file/fopen.ui",
+    "shel_write": "gem/aes/shel_/shel_write.ui",
+    "The program flags": "gemdos/gemdos.u",
+    "ARGV procedure": "gemdos/argv.u",
+    "appl_find": "gem/aes/appl_/appl_find.ui",
+    "appl_search": "gem/aes/appl_/appl_search.ui",
+    "appl_exit": "gem/aes/appl_/appl_exit.ui"
+  }
+}
