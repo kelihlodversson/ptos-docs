@@ -91,7 +91,15 @@ const sources: Source[] = [
         {name === 'Pexec' && <p>On x32, modes 3, 4, 5, 6, 7, 104 and 106 are unsupported. Mode 100 needs the native scheduler. Mode 200 needs <code>CONF_WITH_PEXEC200</code>.</p>}
         {name === 'appl_init' && <p><a href="/abi/cuis/">CUIS service ABI</a> describes the private transport used by the library.</p>}
       </CallingConvention>
-      <GfaBinding slot="gfa" code={record?.gfa} original={record?.originalGfa} />
+      <GfaBinding slot="gfa" code={record?.gfa} original={record?.originalGfa} symbol={name} {subsystem}
+        raw={name === 'Pexec' ? {
+          routine: 'GEMDOS', opcode: 75,
+          args: [{ width: 'W', operand: 'mode' }, { width: 'L', operand: 'prog' },
+            { width: 'L', operand: 'tail' }, { width: 'L', operand: 'env' }],
+        } : name === 'Ssystem' ? {
+          routine: 'GEMDOS', opcode: 0x154,
+          args: [{ width: 'W', operand: '#-2' }, { width: 'L', operand: 'arg1' }, { width: 'L', operand: 'arg2' }],
+        } : undefined} />
     </TargetPanels>
 
     <section aria-labelledby="related-heading">

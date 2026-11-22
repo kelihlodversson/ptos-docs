@@ -1,8 +1,50 @@
 ---
-interface Props { code?: string | null; original?: string | null }
-const { code, original } = Astro.props;
+import { gfaBuiltins, gfaCustomExamples, gfaPath, trapExample } from '../data/gfa-reference';
+import type { GfaTrap } from '../data/gfa-reference';
+
+interface Props {
+  code?: string | null;
+  original?: string | null;
+  symbol?: string;
+  subsystem?: string;
+  raw?: GfaTrap;
+  discardResult?: boolean;
+  language?: 'en' | 'de';
+}
+const { code, original, symbol, subsystem, raw, discardResult, language = 'en' } = Astro.props;
+const name = symbol?.toUpperCase() ?? '';
+const builtin = gfaBuiltins[name];
+const custom = gfaCustomExamples[name];
+const german = language === 'de';
+const example = raw && (!code || symbol === 'Pexec') ? trapExample(raw, discardResult) : null;
+const namedOperands = raw?.args.flatMap(({ operand }, index) => operand.startsWith('#') ? [] : [[`Arg${index + 1}%`, operand]]);
+const method = subsystem === 'AES' ? 'GEMSYS' : subsystem === 'VDI' ? 'VDISYS' : null;
 ---
-{code ? <>
+{code && <>
   <pre class="prm-code"><code>{code}</code></pre>
   {original && code !== original && <p class="revision-note">The English example renames the local result variable. The original is in the UDO source below.</p>}
-</> : <p class="prm-unsupported">No documented GFA BASIC binding.</p>}
+</>}
+{example && <div>
+  <p>{german ? 'Aufrufform aus der dokumentierten 68k-Trap-Belegung.' : 'Raw call form using the documented 68k trap layout.'}</p>
+  <pre class="prm-code"><code>{example}</code></pre>
+  {namedOperands && namedOperands.length > 0 && <p class="revision-note">
+    {namedOperands.map(([variable, operand], index) => <>{index > 0 && ' · '}<code>{variable}</code> ({operand})</>)}
+  </p>}
+  <p class="revision-note"><a href={gfaPath + '#system-traps'}>{german ? 'Wortbreiten und Adressen' : 'GFA BASIC word widths and addresses'}</a></p>
+</div>}
+{builtin && <div>
+  <p>{german ? 'Eingebaute GFA-BASIC-Funktion' : 'Built-in GFA BASIC function'}</p>
+  <pre class="prm-code"><code>{builtin.signature}</code></pre>
+  {builtin.note && <p lang="en">{builtin.note}</p>}
+  <p class="revision-note"><a href={gfaPath + '#compendium'}>{`GFA-Basic Compendium · ${german ? 'PDF-Seite' : 'PDF page'} ${builtin.page}`}</a></p>
+</div>}
+{symbol === 'Fclose' && <p lang="en"><code>CLOSE #channel</code> takes a GFA BASIC channel opened with <code>OPEN</code>.
+  The raw GEMDOS call takes an operating-system handle. <a href={gfaPath + '#file-channels'}>File channels</a></p>}
+{symbol === 'Pexec' && <p lang="en"><code>EXEC(mode,name$,command$,environment$)</code> is the GFA BASIC convenience form for modes 0 and 3.
+  Supply the mode-specific pointers and widths when calling GEMDOS directly. <a href={gfaPath + '#exec'}>EXEC and Pexec</a></p>}
+{custom && <p lang="en">The Compendium documents a custom GFA BASIC helper for this operation.
+  <a href={gfaPath + '#custom-aes'}>{`GFA-Basic Compendium · PDF page ${custom}`}</a></p>}
+{!code && !example && !builtin && !custom && <p class="prm-unsupported">
+  {german ? 'Keine GFA-BASIC-Bindung dokumentiert.' : 'No documented GFA BASIC binding.'}
+  {method && <> <a href={gfaPath + '#' + method.toLowerCase()}>{method}</a> {german ? 'ruft die entsprechende GEM-Schnittstelle über ihre Parameterblöcke auf.' : 'can call the historical GEM interface when its parameter blocks are documented.'}</>}
+</p>}

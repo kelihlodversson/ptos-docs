@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { GfaTrap } from './gfa-reference';
 
 export type Edition = 'en' | 'de';
 export interface HistoricalPage {
@@ -20,7 +21,7 @@ export interface HistoricalPage {
   function: boolean;
   native?: string;
   findings: number;
-  bindings?: { href: string; assembly?: string; gfa?: string };
+  bindings?: { href: string; assembly?: string; gfa?: string; raw?: GfaTrap };
 }
 
 export interface HistoricalFunction {

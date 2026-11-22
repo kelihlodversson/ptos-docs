@@ -1,6 +1,7 @@
 ---
 import Layout from '../components/Layout.astro';
 import revisions from '../data/sources.json';
+import { gfaSource } from '../data/gfa-reference';
 ---
 <Layout title="Sources and licensing" description="Revision, attribution and license details for the pTOS Programmer’s Reference Manual.">
   <header class="directory-head"><h1>Sources and Licensing</h1></header>
@@ -18,6 +19,10 @@ import revisions from '../data/sources.json';
     Each page links to its original source file. The report identifies images linked upstream for license review and pages with automated English translation findings.
     The two reviewed GFA BASIC variable renames are applied to the English output.</p>
   <p><a href={`https://github.com/${revisions.tos.repo}/archive/${revisions.tos.revision}.tar.gz`}>Download the complete pinned UDO source</a></p>
+  <h2 class="prm-section-heading ruled">GFA BASIC</h2>
+  <p>The <a href="/gfa-basic/">GFA BASIC reference</a> cites <cite>{gfaSource.title}</cite>,
+    credited to {gfaSource.originalAuthor} with the hypertext port by {gfaSource.portCredits}.
+    Consult BAFO for the source. <a href={gfaSource.url}>{gfaSource.url}</a></p>
   <h2 class="prm-section-heading ruled">Pinned sources</h2>
   <ul class="source-revisions">
     {Object.values(revisions).map(({ repo, revision }) => <li><a href={`https://github.com/${repo}/tree/${revision}`}>{repo}</a> <code>{revision}</code></li>)}

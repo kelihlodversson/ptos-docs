@@ -45,8 +45,11 @@ test('unsupported, planned and unverified scopes remain distinct from absent lan
   await expect(page.getByText('Planned follow-ups', { exact: false })).toBeVisible();
   await expect(page.getByText('ParaTOS appl_init coverage is unverified', { exact: false })).toBeVisible();
   await select.selectOption('gfa');
-  await expect(page.getByText('No documented GFA BASIC binding.')).toBeVisible();
+  await expect(page.locator('[data-target-panel="gfa"] code').filter({ hasText: /^APPL_INIT\(\)$/ })).toBeVisible();
   await expect(page.getByText('All AES versions.')).toBeVisible();
+  await page.goto('/abi/cuis/');
+  await expect(page.getByText('No documented GFA BASIC binding.')).toBeVisible();
+  await page.goto('/reference/appl_init/');
   await expect(page.locator('.prm-prototype')).toBeVisible();
 });
 
@@ -108,7 +111,7 @@ test('mobile x32 diagram scrolls independently and exposes field definitions', a
   expect(await diagram.evaluate(el => el.scrollWidth === el.clientWidth)).toBe(true);
 });
 
-for (const path of ['/reference/fclose/', '/reference/pexec/', '/reference/appl_init/', '/reference/ssystem/', '/abi/cuis/', '/abi/elf-entry/', '/search/']) {
+for (const path of ['/reference/fclose/', '/reference/pexec/', '/reference/appl_init/', '/reference/ssystem/', '/abi/cuis/', '/abi/elf-entry/', '/search/', '/gfa-basic/']) {
   test(`WCAG A/AA smoke audit at ${path}`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(path);
@@ -167,4 +170,22 @@ test('search covers historical sections outside the function index', async ({ pa
   await page.goto('/search/');
   await page.getByRole('searchbox').fill('argv procedure');
   await expect(page.getByRole('link', { name: 'ARGV procedure', exact: true })).toBeVisible();
+});
+
+test('GFA BASIC shows compendium provenance, direct traps and runtime wrappers', async ({ page }) => {
+  await page.goto('/gfa-basic/');
+  await expect(page.getByRole('link', { name: 'http://bafo.free.fr/' })).toHaveAttribute('href', 'http://bafo.free.fr/');
+  await expect(page.getByText('VDISYS [opcode[,c_int,c_pts[,subopc]]]')).toBeVisible();
+  await page.goto('/reference/pexec/');
+  await selectTarget(page).selectOption('gfa');
+  await expect(page.getByText('EXEC(mode,name$,command$,environment$)')).toBeVisible();
+  await expect(page.getByText('Result%=GEMDOS(&H4B,W:Arg1%,L:Arg2%,L:Arg3%,L:Arg4%)')).toBeVisible();
+  await expect(page.locator('.prm-prototype')).toBeVisible();
+  await page.goto('/historical/en/wind-get/');
+  await expect(page.getByText('WIND_GET(handle,code[,w1,w2,w3,w4])')).toBeVisible();
+  await expect(page.getByText('GFA-Basic Compendium · PDF page 34')).toBeVisible();
+  await page.goto('/historical/en/bconin/');
+  await expect(page.getByText('Result%=BIOS(&H2,W:Arg1%)')).toBeVisible();
+  await page.goto('/historical/en/appl-getinfo/');
+  await expect(page.getByText('The Compendium documents a custom GFA BASIC helper', { exact: false })).toBeVisible();
 });

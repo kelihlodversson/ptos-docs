@@ -9,7 +9,7 @@
   },
   "Pexec": {
     "status": "needs-review",
-    "note": "The English GFA example leaves its last argument untyped. The English return section spells Pterm0 with a letter O. The source example's argument spelling and types are preserved pending review.",
+    "note": "The last example variable has no integer suffix, but L: supplies a longword argument. The source spelling is preserved and the GFA panel also shows an explicitly typed form. The English return section spells Pterm0 with a letter O.",
     "example": {
       "original": "Adresse%=Gemdos(&H4B,W:mode%,L:name%,L:cmdline%,L:env)",
       "english": "Address%=Gemdos(&H4B,W:mode%,L:name%,L:cmdline%,L:env)",

@@ -45,7 +45,15 @@ const pr = (source: typeof revisions.ptos | typeof revisions.paratos) =>
       <NativeTarget slot="68k" {call} cpu="68k" />
       <NativeTarget slot="arm" {call} cpu="arm" />
       <NativeTarget slot="x32" {call} cpu="x32" />
-      <GfaBinding slot="gfa" />
+      <GfaBinding slot="gfa" symbol={call.name} subsystem="GEMDOS"
+        raw={call.status !== 'experimental' && !call.targets?.['68k'] ? {
+          routine: 'GEMDOS', opcode: call.opcode,
+          args: call.args.map(([operand, bytes], index) => ({
+            width: bytes === 2 ? 'W' : 'L',
+            operand: index === 0 && call.mode !== undefined ? `#${call.mode}` : operand,
+          })),
+        } : undefined}
+        discardResult={/^void\s/.test(call.prototype)} />
     </TargetPanels>
     <section aria-labelledby="related-heading">
       <h2 id="related-heading" class="prm-section-heading ruled">See Also</h2>

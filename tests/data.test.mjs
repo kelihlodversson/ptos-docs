@@ -137,3 +137,28 @@ test('native callable layouts are contiguous and separate ABI widths from names'
     assert.equal(offset, call.layout.bytes, call.name);
   }
 });
+
+test('GFA trap derivation requires the exact historical stack shape', async () => {
+  const { gfaTrap } = await import('../scripts/gfa-trap.mjs');
+  const source = ['pea name', 'move.w mode,-(sp)', 'move.w #$4b,-(sp)', 'trap #1', 'lea $8(sp),sp'].join('\n');
+  assert.deepEqual(gfaTrap(source), {
+    routine: 'GEMDOS', opcode: 75, args: [{ width: 'W', operand: 'mode' }, { width: 'L', operand: 'name' }],
+  });
+  assert.equal(gfaTrap(source.replace('$8(sp)', '$6(sp)')), undefined);
+  assert.equal(gfaTrap(source.replace('trap #1', 'trap #2')), undefined);
+  assert.equal(gfaTrap(source.replace('pea name', 'pea (a0)')), undefined);
+  assert.equal(gfaTrap(source.replace('move.w mode', 'move.w d0')), undefined);
+  const report = json('public/source/historical-report.json');
+  assert.ok(report.languages.en.additionalGfaTrapForms > 0);
+});
+
+test('the compendium bindings have page citations and preserve GFA argument order', () => {
+  const bindings = json('src/data/gfa-builtins.json');
+  assert.ok(Object.keys(bindings).length > 70);
+  for (const [symbol, binding] of Object.entries(bindings)) {
+    assert.ok(binding.signature.startsWith(symbol + '('));
+    assert.ok(Number.isInteger(binding.page) && binding.page >= 29 && binding.page <= 35);
+  }
+  assert.equal(bindings.APPL_INIT.signature, 'APPL_INIT()');
+  assert.equal(bindings.SHEL_WRITE.signature, 'SHEL_WRITE(mode,gr,cr,tail$,cmd$)');
+});

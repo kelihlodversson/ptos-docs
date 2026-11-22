@@ -61,6 +61,23 @@ permissions are linked to the pinned originals. Check each asset before
 adding it to the included set. The palette and system typeface choices come
 from the pinned ptos.dev CSS.
 
+## GFA BASIC reference
+
+The site cites *The GFA-Basic Compendium* at [BAFO](http://bafo.free.fr/).
+The source metadata records the supplied PDF fingerprint and the credited
+authors. The PDF identifies the hypertext port as rights reserved, so the
+site includes factual call forms, page citations and original explanations.
+It links to the source from the GFA BASIC guide and attribution page.
+
+Update `src/data/gfa-builtins.json` after checking each built-in name and
+argument order against the cited PDF page. Keep runtime notes where the
+compendium describes a dummy binding or reports a compiler limitation.
+For legacy BIOS, XBIOS and GEMDOS calls, the importer emits a raw GFA BASIC
+call form only when the UDO assembler listing identifies the trap and opcode
+and accounts for every byte pushed and removed from the 68k stack. A raw
+call form describes argument marshalling. Compatibility remains scoped to
+the architecture and OS recorded on the reference page.
+
 ## Native overlays and ABI figures
 
 Add OS-specific material to `src/data/overlays.ts` or `src/data/native-calls.ts`.

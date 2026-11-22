@@ -6,6 +6,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defaultTreeAdapter as tree, parse, serialize } from 'parse5';
 import { translationFindings } from './translation.mjs';
+import { gfaTrap } from './gfa-trap.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const { tos, udo } = JSON.parse(readFileSync(join(root, 'src/data/sources.json')));
@@ -239,6 +240,7 @@ function buildLanguage(language) {
       href: route(language, record.slug),
       assembly: asm && html(children(asm.value), file).trim(),
       gfa: review?.example?.english ?? gfaCode,
+      raw: asm && gfaTrap(content(asm.value)),
     });
   }
 
@@ -332,6 +334,8 @@ try {
     for (const path of metadata.sourceFiles) used.add(path);
     report.languages[language] = {
       nodes: metadata.nodes, pages: paths.length, functions: functions.length,
+      gfaTrapForms: paths.filter(page => page.function && page.bindings?.raw).length,
+      additionalGfaTrapForms: paths.filter(page => page.function && page.bindings?.raw && !page.bindings?.gfa).length,
       ...diagnostics, controls,
       declarationsWithoutExactEnglishMatch: language === 'de' ? paths.filter(page =>
         page.function && !englishFunctions.has(`${page.path}:${page.title}`))

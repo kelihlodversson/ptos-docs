@@ -6,6 +6,8 @@
       "nodes": 3997,
       "pages": 3997,
       "functions": 1163,
+      "gfaTrapForms": 472,
+      "additionalGfaTrapForms": 436,
       "missingLinks": [],
       "linkedFigures": [
         {
@@ -1413,6 +1415,8 @@
       "nodes": 3970,
       "pages": 3970,
       "functions": 1296,
+      "gfaTrapForms": 473,
+      "additionalGfaTrapForms": 436,
       "missingLinks": [],
       "linkedFigures": [
         {

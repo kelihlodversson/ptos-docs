@@ -101,7 +101,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for path in / /reference/fclose/ /reference/pexec/ /reference/appl_init/ /reference/ssystem/ /abi/cuis/ /abi/elf-entry/ /historical/en/fopen/ /historical/de/contents/ /reference/pclone/; do
+          for path in / /reference/fclose/ /reference/pexec/ /reference/appl_init/ /reference/ssystem/ /abi/cuis/ /abi/elf-entry/ /historical/en/fopen/ /historical/de/contents/ /reference/pclone/ /gfa-basic/; do
             url="https://docs.ptos.dev${path}"
             file="$(mktemp)"
             for attempt in {1..12}; do
