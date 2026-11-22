@@ -1,0 +1,8 @@
+{
+  "tos": { "repo": "freemint/tos.hyp", "revision": "20a9cfb4b78cd2c01579664289ddf5cd21721c08" },
+  "ptos": { "repo": "kelihlodversson/pTOS", "revision": "9c9f0df9dbbbeacf7a8d06baf91df58717b9cd1f" },
+  "paratos": { "repo": "SapionAps/ParaTos", "revision": "32d74b483a82c4068dd6e25c2a51be108a051b26" },
+  "gemlib": { "repo": "kelihlodversson/gemlib", "revision": "b76a9166911b3757044912827df6f4d0ab9cbcd7" },
+  "libcmini": { "repo": "kelihlodversson/libcmini", "revision": "c85f67a52679b68782c49fd967732d14bfe87841" },
+  "design": { "repo": "kelihlodversson/ptos.dev", "revision": "cc2a74f7cc76b7a75805a3b549c978437d861717" }
+}

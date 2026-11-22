@@ -1,0 +1,24 @@
+---
+type Field = { name: string; offset: number | string; bytes: number | string; detail: string };
+interface Props {
+  caption: string;
+  fields: Field[];
+  byteOrder: string;
+  alignment: number;
+  bytes?: number;
+}
+const { caption, fields, byteOrder, alignment, bytes } = Astro.props;
+---
+<figure class:list={['memory-layout', { 'fixed-layout': bytes !== undefined }]}>
+  <table class="prm-rule-table">
+    <caption>{caption}</caption>
+    <thead><tr><th scope="col">Byte offset</th><th scope="col">Field</th><th scope="col">Bytes</th><th scope="col">Definition</th></tr></thead>
+    <tbody>
+      {fields.map(field => <tr>
+        <td><code>+{field.offset}</code></td><th scope="row"><code>{field.name}</code></th>
+        <td><code>{field.bytes}</code></td><td>{field.detail}</td>
+      </tr>)}
+    </tbody>
+  </table>
+  <figcaption>{byteOrder} · {alignment}-byte alignment{bytes && ` · ${bytes} bytes total`}</figcaption>
+</figure>

@@ -1,0 +1,106 @@
+name: Reference manual
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ASTRO_TELEMETRY_DISABLED: '1'
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Read pinned revisions
+        id: sources
+        shell: bash
+        run: |
+          node --input-type=module <<'JS' >> "$GITHUB_OUTPUT"
+          import { readFileSync } from 'node:fs';
+          const sources = JSON.parse(readFileSync('src/data/sources.json', 'utf8'));
+          for (const key of ['tos', 'ptos', 'libcmini']) {
+            const { repo, revision } = sources[key];
+            if (!/^[\w.-]+\/[\w.-]+$/.test(repo) || !/^[a-f0-9]{40}$/.test(revision)) throw new Error(key);
+            console.log(`${key}_repo=${repo}\n${key}_revision=${revision}`);
+          }
+          JS
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: ${{ steps.sources.outputs.tos_repo }}
+          ref: ${{ steps.sources.outputs.tos_revision }}
+          path: .upstream/tos.hyp
+          persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: ${{ steps.sources.outputs.ptos_repo }}
+          ref: ${{ steps.sources.outputs.ptos_revision }}
+          path: .upstream/pTOS
+          persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: ${{ steps.sources.outputs.libcmini_repo }}
+          ref: ${{ steps.sources.outputs.libcmini_revision }}
+          path: .upstream/libcmini
+          persist-credentials: false
+      - run: npm ci
+      - run: npm run import -- .upstream/tos.hyp --check
+      - run: node scripts/validate-upstream.mjs .upstream/pTOS .upstream/libcmini
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: dist
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
+      - name: Verify HTTPS and deep links
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in / /reference/fclose/ /reference/pexec/ /reference/appl_init/ /reference/ssystem/ /abi/cuis/ /abi/elf-entry/; do
+            url="https://docs.ptos.dev${path}"
+            file="$(mktemp)"
+            for attempt in {1..12}; do
+              if curl --fail --silent --show-error --max-time 10 --output "$file" "$url" &&
+                grep -Fq "rel=\"canonical\" href=\"$url\"" "$file"; then
+                break
+              fi
+              if [[ "$attempt" -eq 12 ]]; then
+                echo "Could not verify $url"
+                exit 1
+              fi
+              sleep 5
+            done
+            rm "$file"
+            echo "Verified $url"
+          done

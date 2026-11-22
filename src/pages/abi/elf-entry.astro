@@ -1,0 +1,29 @@
+---
+import Layout from '../../components/Layout.astro';
+import Masthead from '../../components/Masthead.astro';
+import TargetPanels from '../../components/TargetPanels.astro';
+import ElfEntry from '../../components/ElfEntry.astro';
+import GfaBinding from '../../components/GfaBinding.astro';
+import SourceList from '../../components/SourceList.astro';
+---
+<Layout title="ELF32 process entry" description="Initial stack for dynamically interpreted ELF programs" running="pTOS — Native ABI"
+  breadcrumbs={[{ label: 'Subsystems', href: '/subsystems/' }, { label: 'pTOS', href: '/subsystems/ptos/' }]}>
+  <article>
+    <Masthead name="ELF32 process entry" title="Initial stack and auxiliary vector" subsystem="pTOS native ABI" />
+    <p class="abi-intro">This layout applies to the standard <code>PT_INTERP</code> entry path with <code>CONF_WITH_ELF_SHARED</code>.
+      It begins at <code>argc</code>, with no synthetic return address. Classic PRG and static ELF processes follow their own startup conventions.</p>
+    <TargetPanels heading="Process Entry Format">
+      <ElfEntry slot="68k" scope="68k address-space ELF build" sp="SP" finalizer="D1" byteOrder="Big endian" />
+      <ElfEntry slot="arm" scope="ARM shared ELF build" sp="SP" finalizer="R0" byteOrder="Little endian" />
+      <ElfEntry slot="x32" scope="x32 shared ELF build" sp="RSP" finalizer="RDX" byteOrder="Little endian" />
+      <GfaBinding slot="gfa" />
+    </TargetPanels>
+    <p>See also <a href="/reference/pexec/">Pexec</a>.</p>
+    <SourceList sources={[
+      ['ptos', 'doc/elf-shared.txt', 'Interpreter entry ABI by architecture'],
+      ['ptos', 'doc/process-entry.txt', 'Static and classic entry contracts'],
+      ['ptos', 'lib/ldso/startup.c', 'Stack packing and alignment'],
+      ['ptos', 'tests/interp_probe/check.c', 'Interpreter entry probe'],
+    ]} />
+  </article>
+</Layout>

@@ -1,0 +1,12 @@
+---
+import { catalog } from '../data/catalog';
+interface Props { records?: typeof catalog; showSubsystem?: boolean; searchable?: boolean }
+const { records = catalog, showSubsystem = true, searchable = false } = Astro.props;
+---
+<ul class="manual-index">
+  {records.map(({ name, description, subsystem, group, href }) => <li data-search-record={searchable ? `${name} ${description} ${subsystem} ${group}` : undefined}>
+    <a class="manual-index-symbol" href={href}>{name}</a>
+    <span>{description}</span>
+    {showSubsystem && <small>{subsystem}</small>}
+  </li>)}
+</ul>

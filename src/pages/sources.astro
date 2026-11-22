@@ -1,0 +1,23 @@
+---
+import Layout from '../components/Layout.astro';
+import revisions from '../data/sources.json';
+---
+<Layout title="Sources and licensing" description="Revision, attribution and license details for the pTOS Programmer’s Reference Manual.">
+  <header class="directory-head"><h1>Sources and Licensing</h1></header>
+  <h2 class="prm-section-heading ruled">Historical material</h2>
+  <p>Historical descriptions and bindings are adapted from <em>tos.hyp</em> by the original TOS Hypertext authors,
+    maintainers, translators and contributors. See the original foreword by Rolf Kotzian and the notices maintained
+    by Michael Bernstein and Gerhard Stoll. The historical text uses the GNU General Public License published with the upstream source.</p>
+  <ul>
+    <li><a href="/source/tos.hyp/anhang/hilfe.u">Upstream foreword and licensing notice</a></li>
+    <li><a href="/source/tos.hyp/COPYING.GPL">GNU General Public License, version 2</a></li>
+    <li><a href="/source/import-report.json">Import coverage and translation review report</a></li>
+  </ul>
+  <p>This edition converts three UDO function leaves into reference pages. Editorial changes include source formatting
+    and the two GFA BASIC result-variable renames listed in the report. Original UDO bytes are available on each imported page.</p>
+  <h2 class="prm-section-heading ruled">Pinned sources</h2>
+  <ul class="source-revisions">
+    {Object.values(revisions).map(({ repo, revision }) => <li><a href={`https://github.com/${repo}/tree/${revision}`}>{repo}</a> <code>{revision}</code></li>)}
+  </ul>
+  <p>Content revision 0.1.0 · <a href="https://github.com/kelihlodversson/ptos-docs">Manual source and revision history</a></p>
+</Layout>

@@ -1,0 +1,26 @@
+{
+  "name": "ptos-docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "24.x" },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "import": "node scripts/import-toshyp.mjs",
+    "test:data": "node --test tests/data.test.mjs",
+    "test:links": "node scripts/check-links.mjs",
+    "test:browser": "playwright test",
+    "test": "npm run check && npm run test:data && npm run build && npm run test:links && npm run test:browser"
+  },
+  "dependencies": { "astro": "5.18.2" },
+  "devDependencies": {
+    "@astrojs/check": "0.9.12",
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.65.1",
+    "@types/node": "24.10.13",
+    "typescript": "5.9.3"
+  }
+}

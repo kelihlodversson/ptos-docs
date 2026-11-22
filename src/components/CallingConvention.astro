@@ -1,0 +1,22 @@
+---
+import { statusLabels } from '../data/catalog';
+import type { Binding } from '../data/overlays';
+import RegisterMap from './RegisterMap.astro';
+import MemoryLayout from './MemoryLayout.astro';
+interface Props { binding: Binding; example?: string | null }
+const { binding, example } = Astro.props;
+const hasConvention = binding.status === 'implemented' || binding.status === 'experimental';
+---
+<p class:list={['binding-scope', { 'prm-unsupported': !hasConvention }]}>
+  <strong>{statusLabels[binding.status]}</strong> · {binding.scope}<br />
+  {binding.detail}
+</p>
+{hasConvention && <>
+  {(example || binding.code) && <pre class="prm-code"><code>{example || binding.code}</code></pre>}
+  {binding.registers && <RegisterMap rows={binding.registers} />}
+  {binding.stack && <section aria-label="Instruction and data format">
+    <h3 class="prm-section-heading">Instruction / Data Format</h3>
+    <MemoryLayout {...binding.stack} />
+  </section>}
+  <slot />
+</>}

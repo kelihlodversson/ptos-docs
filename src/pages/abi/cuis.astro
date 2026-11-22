@@ -1,0 +1,49 @@
+---
+import Layout from '../../components/Layout.astro';
+import Masthead from '../../components/Masthead.astro';
+import Fact from '../../components/Fact.astro';
+import TargetPanels from '../../components/TargetPanels.astro';
+import CallingConvention from '../../components/CallingConvention.astro';
+import GfaBinding from '../../components/GfaBinding.astro';
+import BitLayout from '../../components/BitLayout.astro';
+import SourceList from '../../components/SourceList.astro';
+import abi from '../../data/abi.json';
+---
+<Layout title="CUIS ABI" description="Private pTOS x32 CUIS selector and session query" running="pTOS — Native ABI"
+  breadcrumbs={[{ label: 'Subsystems', href: '/subsystems/' }, { label: 'pTOS', href: '/subsystems/ptos/' }]}>
+  <article>
+    <Masthead name="CUIS ABI" title="Controlled user interface services" subsystem="Private kernel ABI" />
+    <dl class="prm-facts">
+      <Fact label="Operation">Query whether the calling process owns a live CUIS session.</Fact>
+      <Fact label="Selector"><code>CUIS_SERVICE_CLASS</code> <code>0x103</code> · <code>CUIS_SESSION_QUERY</code> <code>1</code></Fact>
+      <Fact label="Availability">pTOS 1.4 development tree · x32 ring 3 with <code>CONF_WITH_CUIS</code>.
+        The private ABI backs experimental userspace libaes on x32. Public GEM programs use <a href="/reference/appl_init/">GEMlib and libaes</a>.</Fact>
+    </dl>
+    <TargetPanels>
+      <CallingConvention slot="68k" binding={{ status: 'unsupported', scope: '68k at this pTOS revision',
+        detail: 'The CUIS class is compiled only for x86-64 user address spaces. There is no 68k CUIS trap.' }} />
+      <CallingConvention slot="arm" binding={{ status: 'unsupported', scope: 'ARM at this pTOS revision',
+        detail: 'The CUIS class is compiled only for x86-64 user address spaces. There is no ARM CUIS SVC.' }} />
+      <CallingConvention slot="x32" binding={{ status: 'experimental', scope: 'x32 · CONF_WITH_CUIS',
+        detail: 'Enter the kernel with SYSCALL from ring 3. RCX and R11 are clobbered. With CUIS disabled the dispatcher returns EINVFN.',
+        registers: [['RAX', '64-bit selector on entry, sign-extended status on return'], ['RDI', 'Session handle, a scalar in the range 0 through 0x7FFFFFFF']] }}>
+        <h3 class="prm-section-heading">Instruction / Data Format</h3>
+        <BitLayout {...abi.cuis.selector} />
+        <pre class="prm-code"><code>RAX = (trap_class &lt;&lt; 32) | function_number<br />RAX = {abi.cuis.example}</code></pre>
+        <p><code>E_OK</code> (0) indicates a live session owned by the caller. <code>EACCDN</code> indicates no matching owned session. <code>EINVAL</code> indicates an out-of-range handle.</p>
+      </CallingConvention>
+      <GfaBinding slot="gfa" />
+    </TargetPanels>
+    <section aria-labelledby="related-heading">
+      <h2 id="related-heading" class="prm-section-heading ruled">See Also</h2>
+      <ul class="related-links"><li><a href="/reference/appl_init/">appl_init</a></li><li><a href="/abi/elf-entry/">ELF32 process entry</a></li></ul>
+    </section>
+    <SourceList sources={[
+      ['ptos', 'include/cuis.h', 'Service class and opcode constants'],
+      ['ptos', 'aes/Kconfig', 'CUIS build constraints'],
+      ['ptos', 'bios/arch/x86_64/trap.c', 'x32 dispatch and privilege checks'],
+      ['ptos', 'aes/cuis_session.c', 'Session ownership and return codes'],
+      ['ptos', 'tests/cuis/program.c', 'Native syscall and invalid-handle probes'],
+    ]} />
+  </article>
+</Layout>

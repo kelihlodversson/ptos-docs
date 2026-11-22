@@ -1,0 +1,7 @@
+---
+interface Props { entries: [name: string, detail: string][] }
+const { entries } = Astro.props;
+---
+<dl class="prm-parameters">
+  {entries.map(([name, detail]) => <div><dt><code>{name}</code></dt><dd>{detail}</dd></div>)}
+</dl>
