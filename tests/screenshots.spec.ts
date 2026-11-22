@@ -8,6 +8,8 @@ for (const { slug, route, target } of [
   { slug: 'fclose', route: '/reference/fclose/', target: '68k' },
   { slug: 'pexec', route: '/reference/pexec/', target: '68k' },
   { slug: 'cuis', route: '/abi/cuis/', target: 'x32' },
+  { slug: 'fopen', route: '/historical/en/fopen/', target: '68k' },
+  { slug: 'pclone', route: '/reference/pclone/', target: 'x32' },
 ]) {
   for (const [size, width, height] of [['desktop', 1440, 1100], ['mobile', 390, 844]] as const) {
     test(`capture ${slug} ${size}`, async ({ page }) => {

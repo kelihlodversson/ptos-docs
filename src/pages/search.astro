@@ -1,16 +1,23 @@
 ---
 import Layout from '../components/Layout.astro';
 import CatalogList from '../components/CatalogList.astro';
+import { catalog } from '../data/catalog';
+import { pages } from '../data/historical';
+
+const sections = pages('en').filter(page => !page.function).map(page => ({
+  name: page.title, description: '', subsystem: page.subsystem, group: page.group, href: page.href,
+}));
+const index = [...catalog, ...sections];
 ---
-<Layout title="Search" description="Search the pTOS programmer’s reference by symbol, operation or subsystem.">
+<Layout title="Search" description="Search pTOS functions or the original tos.hyp manual by symbol, operation or section title.">
   <header class="directory-head"><h1>Search</h1></header>
   <noscript><p>Use your browser’s Find command to search the entries below.</p></noscript>
   <div class="site-search" hidden>
-    <label for="search">Function, operation or subsystem</label>
+    <label for="search">Function, operation or section</label>
     <input id="search" type="search" autocomplete="off" />
     <p id="search-status" role="status"></p>
   </div>
-  <CatalogList searchable />
+  <CatalogList records={index} searchable />
 </Layout>
 <script>
   const input = document.querySelector<HTMLInputElement>('#search');
@@ -20,12 +27,16 @@ import CatalogList from '../components/CatalogList.astro';
   function filter(query: string) {
     const tokens = query.toLowerCase().trim().split(/\s+/);
     let matches = 0;
+    const displayLimit = 60;
     for (const record of records) {
       const text = record.dataset.searchRecord?.toLowerCase() ?? '';
-      record.hidden = !tokens.every(token => text.includes(token));
-      if (!record.hidden) matches++;
+      const found = tokens.every(token => text.includes(token));
+      if (found) matches++;
+      record.hidden = !found || matches > displayLimit;
     }
-    if (status) status.textContent = `${matches} ${matches === 1 ? 'entry' : 'entries'}`;
+    if (status) status.textContent = matches > displayLimit
+      ? `Showing ${displayLimit} of ${matches} entries. Narrow your search to see more.`
+      : `${matches} ${matches === 1 ? 'entry' : 'entries'}`;
   }
 
   if (input) {

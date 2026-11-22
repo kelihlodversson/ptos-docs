@@ -5,9 +5,9 @@ import { readFileSync } from 'node:fs';
 const root = new URL('../', import.meta.url);
 const json = path => JSON.parse(readFileSync(new URL(path, root), 'utf8'));
 const abi = json('src/data/abi.json');
-const { ptos, libcmini } = json('src/data/sources.json');
-const [kernel, sdk] = process.argv.slice(2);
-if (!kernel || !sdk) throw new Error('Usage: node scripts/validate-upstream.mjs /path/to/pTOS /path/to/libcmini');
+const { ptos, libcmini, paratos } = json('src/data/sources.json');
+const [kernel, sdk, guest] = process.argv.slice(2);
+if (!kernel || !sdk || !guest) throw new Error('Usage: node scripts/validate-upstream.mjs PTOS_CHECKOUT LIBCMINI_CHECKOUT PARATOS_CHECKOUT');
 const show = (repo, { revision }, path) => execFileSync('git', ['-C', repo, 'show', `${revision}:${path}`], { encoding: 'utf8' });
 const fromKernel = path => show(kernel, ptos, path);
 const fromSdk = path => show(sdk, libcmini, path);
@@ -43,3 +43,36 @@ assert.match(probe, /v \+= argc \+ 1/);
 assert.match(probe, /v \+= 3/);
 assert.match(probe, /v \+= 2/);
 console.log('Verified CUIS constants and configuration, GEMDOS dispatch and SDK slots, console_dim fields, and ELF32 stack evidence');
+
+const { nativeCalls } = await import('../src/data/native-calls.ts');
+const get = name => nativeCalls.find(call => call.name === name);
+const kernelHeaders = {
+  'include/pclone.h': 'Pclone',
+  'include/threadcalls.h': ['Pthjoin', 'Ptermgrp'],
+  'bdos/mintproc.h': ['Pfork', 'Pvfork', 'Pwait', 'Pwait3', 'Pwaitpid', 'Syield'],
+  'include/mman.h': ['Mmap', 'Mprot', 'Munmap'],
+};
+for (const [path, names] of Object.entries(kernelHeaders)) {
+  const header = fromKernel(path);
+  for (const name of [names].flat()) assert.equal(define(header, 'GEMDOS_' + name.toUpperCase()), get(name).opcode);
+}
+for (const name of ['S_MEMINFO', 'S_DESKINFO', 'S_DESKSET', 'S_MMUPROBE', 'S_PROCNAME', 'S_PROCIDENT', 'S_PROCEXEC']) {
+  const hex = new RegExp(`^#define ${name}\\s+\\(\\(WORD\\)(0x[0-9a-f]+)\\)`, 'm').exec(consoleHeader)?.[1];
+  assert.equal(Number(hex), get(name).mode & 0xffff, name);
+}
+for (const [name, fn] of Object.entries({ LAUNCH_ATTACH: 93, STREAM_RECEIPT: 94, ENDPOINT_BARRIER: 95, STREAM_BATCH: 96 })) {
+  assert.equal(define(cuis, `CUIS_${name}`), fn);
+}
+assert.match(fromKernel('bdos/ssystem.c'), /#if CONF_WITH_PROCESS_EXEC\s+case S_PROCEXEC/);
+assert.match(fromKernel('bdos/ssystem.c'), /#if CONF_WITH_PROCESS_EXEC_DISPATCH\s+case S_PROCEXEC/);
+assert.match(fromKernel('include/bdosdefs.h'), /PE_EXEC_REPLACE\s+200/);
+assert.match(fromKernel('bdos/Kconfig'), /CONF_WITH_STAGED_PEXEC\s+def_bool CONF_WITH_LEGACY_PEXEC \|\| !CONF_WITH_USER_ASPACE/);
+assert.match(fromKernel('lib/aes/application.c'), /global->ap_id = \(short\)identity.client_id/);
+assert.match(fromSdk('include/mint/mintbind.h'), /#define Ptermgrp\(status\).*0x192/);
+assert.match(show(guest, paratos, 'host/posix/README.md'), /The first staged launch copies the accessible RAM/);
+assert.match(show(guest, paratos, 'host/ptos/runtime.c'), /ptos_call\(GEMDOS_OP_PCLONE,/);
+assert.match(show(guest, paratos, 'host/posix/proc.c'), /NOT_IMPLEMENTED\(GEMDOS, Ptermres, 49\)/);
+assert.match(show(guest, paratos, 'host/posix/proc.c'), /int16_t Pvfork \( void \).*?return Pfork\(\);/s);
+assert.match(show(guest, paratos, 'host/ptos/dispatch.c'), /case GEMDOS_OP_SYIELD: ptos_task_yield/);
+assert.doesNotMatch(show(guest, paratos, 'host/ptos/dispatch.c'), /case GEMDOS_OP_P(?:CLONE|THJOIN|TERMGRP):/);
+console.log('Verified PR #903 native opcodes, discovery and configuration and PR #27 guest paths');

@@ -1,0 +1,403 @@
+{
+  "APPL_EXIT": {
+    "signature": "APPL_EXIT()",
+    "page": 31,
+    "subsystem": "AES",
+    "note": "The runtime handles application teardown on QUIT or SYSTEM. APPL_EXIT() itself is a dummy binding."
+  },
+  "APPL_FIND": {
+    "signature": "APPL_FIND(fname$)",
+    "page": 31,
+    "subsystem": "AES"
+  },
+  "APPL_INIT": {
+    "signature": "APPL_INIT()",
+    "page": 31,
+    "subsystem": "AES",
+    "note": "Reads the application ID already initialized by the GFA BASIC runtime. Calling APPL_INIT() does not issue another AES registration trap."
+  },
+  "APPL_READ": {
+    "signature": "APPL_READ(id,len,adr_buffer)",
+    "page": 31,
+    "subsystem": "AES"
+  },
+  "APPL_TPLAY": {
+    "signature": "APPL_TPLAY(num,speed,mem)",
+    "page": 31,
+    "subsystem": "AES",
+    "note": "The documented GFA argument order differs from the C AES binding. The compendium reports a compiler library bug."
+  },
+  "APPL_TRECORD": {
+    "signature": "APPL_TRECORD(mem,num)",
+    "page": 31,
+    "subsystem": "AES"
+  },
+  "APPL_WRITE": {
+    "signature": "APPL_WRITE(id,len,adr_buffer)",
+    "page": 31,
+    "subsystem": "AES"
+  },
+  "EVNT_BUTTON": {
+    "signature": "EVNT_BUTTON(clicks,mask,state[,mx,my,button,k_state])",
+    "page": 31,
+    "subsystem": "AES"
+  },
+  "EVNT_DCLICK": {
+    "signature": "EVNT_DCLICK(new,get_set)",
+    "page": 31,
+    "subsystem": "AES"
+  },
+  "EVNT_KEYBD": {
+    "signature": "EVNT_KEYBD()",
+    "page": 31,
+    "subsystem": "AES"
+  },
+  "EVNT_MESAG": {
+    "signature": "EVNT_MESAG(adr_buffer)",
+    "page": 31,
+    "subsystem": "AES"
+  },
+  "EVNT_MOUSE": {
+    "signature": "EVNT_MOUSE(flag,mx,my,mw,mh[,mcur_x,mcur_y,button,k_state])",
+    "page": 31,
+    "subsystem": "AES"
+  },
+  "EVNT_MULTI": {
+    "signature": "EVNT_MULTI(flag,clicks,mask,state,m1_flags,m1_x,m1_y,m1_w,m1_h,m2_flags,m2_x,m2_y,m2_w,m2_h,adr_buffer,count[,mcur_x,mcur_y,button,k_state,key,num_clicks])",
+    "page": 31,
+    "subsystem": "AES"
+  },
+  "EVNT_TIMER": {
+    "signature": "EVNT_TIMER(count)",
+    "page": 31,
+    "subsystem": "AES"
+  },
+  "FORM_ALERT": {
+    "signature": "FORM_ALERT(button,string$)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "FORM_BUTTON": {
+    "signature": "FORM_BUTTON(tree,obj,clicks,new_obj)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "FORM_CENTER": {
+    "signature": "FORM_CENTER(tree[,fx,fy,fw,fh])",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "FORM_DIAL": {
+    "signature": "FORM_DIAL(flag,mi_x,mi_y,mi_w,mi_h,ma_x,ma_y,ma_w,ma_h)",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "FORM_DO": {
+    "signature": "FORM_DO(tree,start_obj)",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "FORM_ERROR": {
+    "signature": "FORM_ERROR(err)",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "FORM_KEYBD": {
+    "signature": "FORM_KEYBD(tree,obj,char,next_obj[,new_obj,next_char])",
+    "page": 33,
+    "subsystem": "AES",
+    "note": "Use the GFA argument order shown here. The compendium corrects the order printed in the original manual."
+  },
+  "FSEL_INPUT": {
+    "signature": "FSEL_INPUT(path$,name$[,button])",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "GRAF_DRAGBOX": {
+    "signature": "GRAF_DRAGBOX(iw,ih,ix,iy,rx,ry,rw,rh[,last_ix,last_iy])",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "GRAF_GROWBOX": {
+    "signature": "GRAF_GROWBOX(sx,sy,sw,sh,dx,dy,dw,dh)",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "GRAF_HANDLE": {
+    "signature": "GRAF_HANDLE([char_w,char_h,box_w,box_h])",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "GRAF_MKSTATE": {
+    "signature": "GRAF_MKSTATE([mx,my,m_state,k_state])",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "GRAF_MOUSE": {
+    "signature": "GRAF_MOUSE(m_form,pattern_adr)",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "GRAF_MOVEBOX": {
+    "signature": "GRAF_MOVEBOX(w,h,sx,sy,dx,dy)",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "GRAF_RUBBERBOX": {
+    "signature": "GRAF_RUBBERBOX(lx,ty,min_w,min_h[,last_w,last_h])",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "GRAF_SHRINKBOX": {
+    "signature": "GRAF_SHRINKBOX(sx,sy,sw,sh,dx,dy,dw,dh)",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "GRAF_SLIDEBOX": {
+    "signature": "GRAF_SLIDEBOX(tree,parent_obj,slider_obj,flag)",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "GRAF_WATCHBOX": {
+    "signature": "GRAF_WATCHBOX(tree,obj,in_state,out_state)",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "MENU_BAR": {
+    "signature": "MENU_BAR(tree,flag)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "MENU_ICHECK": {
+    "signature": "MENU_ICHECK(tree,item,flag)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "MENU_IENABLE": {
+    "signature": "MENU_IENABLE(tree,item,flag)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "MENU_REGISTER": {
+    "signature": "MENU_REGISTER(ap_id,m_text$)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "MENU_TEXT": {
+    "signature": "MENU_TEXT(tree,item,new_text$)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "MENU_TNORMAL": {
+    "signature": "MENU_TNORMAL(tree,item,flag)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "OBJC_ADD": {
+    "signature": "OBJC_ADD(tree,parent,child)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "OBJC_CHANGE": {
+    "signature": "OBJC_CHANGE(tree,obj,res,cx,cy,cw,ch,new_status,re_draw)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "OBJC_DELETE": {
+    "signature": "OBJC_DELETE(tree,del_obj)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "OBJC_DRAW": {
+    "signature": "OBJC_DRAW(tree,start_obj,depth,cx,cy,cw,ch)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "OBJC_EDIT": {
+    "signature": "OBJC_EDIT(tree,obj,char,old_pos,flag,new_pos)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "OBJC_FIND": {
+    "signature": "OBJC_FIND(tree,start_obj,depth,fx,fy)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "OBJC_OFFSET": {
+    "signature": "OBJC_OFFSET(tree,obj[,x_abs,y_abs])",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "OBJC_ORDER": {
+    "signature": "OBJC_ORDER(tree,obj,new_pos)",
+    "page": 32,
+    "subsystem": "AES"
+  },
+  "RSRC_FREE": {
+    "signature": "RSRC_FREE()",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "RSRC_GADDR": {
+    "signature": "RSRC_GADDR(type,index,addr)",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "RSRC_LOAD": {
+    "signature": "RSRC_LOAD(name$)",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "RSRC_OBFIX": {
+    "signature": "RSRC_OBFIX(tree,obj)",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "RSRC_SADDR": {
+    "signature": "RSRC_SADDR(type,index,addr)",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "SCRP_READ": {
+    "signature": "SCRP_READ(path$)",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "SCRP_WRITE": {
+    "signature": "SCRP_WRITE(path$)",
+    "page": 33,
+    "subsystem": "AES"
+  },
+  "SHEL_ENVRN": {
+    "signature": "SHEL_ENVRN(addr,search$)",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "SHEL_FIND": {
+    "signature": "SHEL_FIND(path$)",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "SHEL_GET": {
+    "signature": "SHEL_GET(len,x$)",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "SHEL_PUT": {
+    "signature": "SHEL_PUT(len,x$)",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "SHEL_READ": {
+    "signature": "SHEL_READ(cmd$,tail$)",
+    "page": 35,
+    "subsystem": "AES"
+  },
+  "SHEL_WRITE": {
+    "signature": "SHEL_WRITE(mode,gr,cr,tail$,cmd$)",
+    "page": 35,
+    "subsystem": "AES",
+    "note": "The GFA binding takes the command tail before the program name."
+  },
+  "VQT_EXTENT": {
+    "signature": "VQT_EXTENT(text$[,x1,y1,x2,y2,x3,y3,x4,y4])",
+    "page": 29,
+    "subsystem": "VDI"
+  },
+  "VQT_NAME": {
+    "signature": "VQT_NAME(i,font_name$)",
+    "page": 29,
+    "subsystem": "VDI"
+  },
+  "VST_LOAD_FONTS": {
+    "signature": "VST_LOAD_FONTS(x)",
+    "page": 29,
+    "subsystem": "VDI"
+  },
+  "VST_UNLOAD_FONTS": {
+    "signature": "VST_UNLOAD_FONTS(x)",
+    "page": 29,
+    "subsystem": "VDI"
+  },
+  "V_CLRWK": {
+    "signature": "V_CLRWK()",
+    "page": 29,
+    "subsystem": "VDI",
+    "note": "Uses the current GFA BASIC VDI workstation handle."
+  },
+  "V_CLSVWK": {
+    "signature": "V_CLSVWK()",
+    "page": 29,
+    "subsystem": "VDI",
+    "note": "Uses and resets the current GFA BASIC VDI workstation handle."
+  },
+  "V_CLSWK": {
+    "signature": "V_CLSWK()",
+    "page": 29,
+    "subsystem": "VDI",
+    "note": "Uses and resets the current GFA BASIC VDI workstation handle."
+  },
+  "V_OPNVWK": {
+    "signature": "V_OPNVWK(id[,1,1,1,1,1,1,1,1,1,2])",
+    "page": 29,
+    "subsystem": "VDI",
+    "note": "The compendium reports that the optional workstation settings are unreliable in both editor and compiled code."
+  },
+  "V_OPNWK": {
+    "signature": "V_OPNWK(id[,1,1,1,1,1,1,1,1,1,2])",
+    "page": 29,
+    "subsystem": "VDI",
+    "note": "The compendium reports that the optional workstation settings are unreliable in both editor and compiled code."
+  },
+  "V_UPDWK": {
+    "signature": "V_UPDWK()",
+    "page": 29,
+    "subsystem": "VDI",
+    "note": "Uses the current GFA BASIC VDI workstation handle."
+  },
+  "WIND_CALC": {
+    "signature": "WIND_CALC(w_type,attr,ix,iy,iw,ih[,ox,oy,ow,oh])",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "WIND_CLOSE": {
+    "signature": "WIND_CLOSE(handle)",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "WIND_CREATE": {
+    "signature": "WIND_CREATE(attr,wx,wy,ww,wh)",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "WIND_DELETE": {
+    "signature": "WIND_DELETE(handle)",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "WIND_FIND": {
+    "signature": "WIND_FIND(fx,fy)",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "WIND_GET": {
+    "signature": "WIND_GET(handle,code[,w1,w2,w3,w4])",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "WIND_OPEN": {
+    "signature": "WIND_OPEN(handle,wx,wy,ww,wh)",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "WIND_SET": {
+    "signature": "WIND_SET(handle,code,w1,w2,w3,w4)",
+    "page": 34,
+    "subsystem": "AES"
+  },
+  "WIND_UPDATE": {
+    "signature": "WIND_UPDATE(flag)",
+    "page": 34,
+    "subsystem": "AES"
+  }
+}

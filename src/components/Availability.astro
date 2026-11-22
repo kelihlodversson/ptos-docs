@@ -1,7 +1,7 @@
 ---
 import { statusLabels, targets } from '../data/catalog';
 import type { CPU } from '../data/catalog';
-import { nativeRevisionLabel } from '../data/overlays';
+import revisions from '../data/sources.json';
 import type { Binding } from '../data/overlays';
 interface Props { history?: string; support: Record<CPU, Binding>; paraTos: string }
 const { history, support, paraTos } = Astro.props;
@@ -10,7 +10,7 @@ const { history, support, paraTos } = Astro.props;
   <p><strong>Historical</strong></p>
   <div set:html={history} />
 </div>}
-<p><strong>{nativeRevisionLabel}</strong></p>
+<p><strong>pTOS</strong> · <a href={`https://github.com/${revisions.ptos.repo}/pull/${revisions.ptos.pullRequest}`}>PR #903</a></p>
 <ul class="availability-targets">
   {targets.slice(0, 3).map(([id, label]) => {
     const info = support[id as CPU];
@@ -18,4 +18,4 @@ const { history, support, paraTos } = Astro.props;
   })}
 </ul>
 <slot />
-<p><strong>ParaTOS</strong> · {paraTos}</p>
+<p><strong>ParaTOS</strong> · {paraTos} <a href={`https://github.com/${revisions.paratos.repo}/pull/${revisions.paratos.pullRequest}`}>PR #27</a></p>

@@ -87,3 +87,78 @@ test('stack and structure slots match word and pointer sizes', () => {
   assert.equal(abi.elf.wordBytes * abi.elf.auxWords, 8);
   assert.equal(abi.elf.alignment, 16);
 });
+
+test('the historical import preserves every UDO node and names its input file', () => {
+  const coverage = json('public/source/historical-report.json');
+  const { tos, udo } = json('src/data/sources.json');
+  assert.equal(coverage.revision, tos.revision);
+  assert.equal(coverage.compiler, udo.revision);
+  for (const language of ['en', 'de']) {
+    const records = read(`src/data/historical/${language}.ndjson`).toString().trimEnd().split('\n').map(JSON.parse);
+    assert.equal(records.length, coverage.languages[language].nodes);
+    assert.equal(records.filter(row => row.function).length, coverage.languages[language].functions);
+    assert.equal(new Set(records.map(row => row.href)).size, records.length);
+    for (const row of records) {
+      assert.match(row.path, /\.ui?$/);
+      assert.ok(row.href.startsWith(`/historical/${language}/`));
+    }
+    assert.deepEqual(coverage.languages[language].missingLinks, []);
+    assert.ok(records.some(row => row.slug === 'contents'));
+  }
+  assert.ok(coverage.languages.en.findings.length > 0);
+  assert.ok(coverage.languages.de.declarationsWithoutExactEnglishMatch.length > 0);
+});
+
+test('historical compiler preserves declarations, availability and original binding references', () => {
+  const records = read('src/data/historical/en.ndjson').toString().trimEnd().split('\n').map(JSON.parse);
+  const fclose = records.find(row => row.slug === 'fclose');
+  assert.match(fclose.prototype, /int16_t Fclose/);
+  assert.match(fclose.facts.find(row => row.label === 'Availability:').value, /All GEMDOS versions/);
+  assert.match(fclose.bindings.assembly, /trap\s+#1/);
+  assert.equal(fclose.bindings.gfa, 'ErrCode%=Gemdos(&H3E,W:handle%)');
+  assert.match(records.find(row => row.slug === 'bindings-for-fclose').body, /ErrCode%=Gemdos/);
+  assert.equal(fclose.native, '/reference/fclose/');
+  const names = new Set(records.map(row => row.title));
+  for (const name of ['Fopen', 'Pwaitpid', 'Bconin', 'v_opnvwk', 'appl_find', 'ARGV procedure']) assert.ok(names.has(name));
+});
+
+test('native callable layouts are contiguous and separate ABI widths from names', async () => {
+  const { nativeCalls, nativePath } = await import('../src/data/native-calls.ts');
+  assert.equal(new Set(nativeCalls.map(call => nativePath(call.name))).size, nativeCalls.length);
+  for (const call of nativeCalls) {
+    assert.ok(call.args.length <= 6);
+    assert.ok(call.sources.length > 0);
+    if (!call.layout) continue;
+    let offset = 0;
+    for (const field of call.layout.fields) {
+      assert.equal(field.offset, offset, call.name);
+      offset += field.bytes;
+    }
+    assert.equal(offset, call.layout.bytes, call.name);
+  }
+});
+
+test('GFA trap derivation requires the exact historical stack shape', async () => {
+  const { gfaTrap } = await import('../scripts/gfa-trap.mjs');
+  const source = ['pea name', 'move.w mode,-(sp)', 'move.w #$4b,-(sp)', 'trap #1', 'lea $8(sp),sp'].join('\n');
+  assert.deepEqual(gfaTrap(source), {
+    routine: 'GEMDOS', opcode: 75, args: [{ width: 'W', operand: 'mode' }, { width: 'L', operand: 'name' }],
+  });
+  assert.equal(gfaTrap(source.replace('$8(sp)', '$6(sp)')), undefined);
+  assert.equal(gfaTrap(source.replace('trap #1', 'trap #2')), undefined);
+  assert.equal(gfaTrap(source.replace('pea name', 'pea (a0)')), undefined);
+  assert.equal(gfaTrap(source.replace('move.w mode', 'move.w d0')), undefined);
+  const report = json('public/source/historical-report.json');
+  assert.ok(report.languages.en.additionalGfaTrapForms > 0);
+});
+
+test('the compendium bindings have page citations and preserve GFA argument order', () => {
+  const bindings = json('src/data/gfa-builtins.json');
+  assert.ok(Object.keys(bindings).length > 70);
+  for (const [symbol, binding] of Object.entries(bindings)) {
+    assert.ok(binding.signature.startsWith(symbol + '('));
+    assert.ok(Number.isInteger(binding.page) && binding.page >= 29 && binding.page <= 35);
+  }
+  assert.equal(bindings.APPL_INIT.signature, 'APPL_INIT()');
+  assert.equal(bindings.SHEL_WRITE.signature, 'SHEL_WRITE(mode,gr,cr,tail$,cmd$)');
+});

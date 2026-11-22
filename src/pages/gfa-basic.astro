@@ -1,0 +1,122 @@
+---
+import Layout from '../components/Layout.astro';
+import { historicalReference } from '../data/catalog';
+import { gfaBuiltins, gfaCustomExamples, gfaSource } from '../data/gfa-reference';
+
+const groups = ['AES', 'VDI'].map(name => ({
+  name,
+  rows: Object.entries(gfaBuiltins).filter(([, binding]) => binding.subsystem === name),
+}));
+const historicalHref = (name: string) => name === 'APPL_INIT'
+  ? '/reference/appl_init/'
+  : historicalReference(name.toLowerCase(), '');
+---
+<Layout title="GFA BASIC" description="GFA BASIC 3 system traps, AES and VDI bindings, with citations to the GFA-Basic Compendium." running="GFA BASIC">
+  <header class="directory-head"><h1>GFA BASIC Reference</h1>
+    <p>Calling TOS, GEM and pTOS from classic GFA BASIC 3 on 68k. Select GFA BASIC on a function page for its documented binding or a call form derived from the 68k stack layout. The operating system and runtime determine which operations are available.</p>
+  </header>
+
+  <section aria-labelledby="system-traps">
+    <h2 id="system-traps" class="prm-section-heading ruled">BIOS, XBIOS and GEMDOS</h2>
+    <p>Pass the function number first. The arguments follow in call order. Use <code>W:</code> for 16 bits and <code>L:</code> for 32 bits.
+      GFA BASIC defaults to a word when the width is omitted. A 68k pointer takes <code>L:</code>.
+      The function’s TOS reference gives the widths, legal values and result.</p>
+    <pre class="prm-code"><code>KeyShift%=BIOS(11,W:-1)<br />ScreenAddress%=XBIOS(2)<br />ErrCode%=GEMDOS(&amp;H3E,W:Handle%)</code></pre>
+    <p><code>V:</code> and <code>VARPTR()</code> obtain the address of a variable, string data or array element.
+      For strings and arrays, <code>ARRPTR()</code> returns the descriptor address. Supply a NUL-terminated buffer where an OS call expects a C string.
+      Keep buffers valid for as long as the function uses them.</p>
+    <p class="revision-note">Compendium PDF pages 12 and 28 · <a href="/subsystems/bios/">BIOS</a> · <a href="/subsystems/xbios/">XBIOS</a> · <a href="/subsystems/gemdos/">GEMDOS</a></p>
+  </section>
+
+  <section aria-labelledby="file-channels">
+    <h2 id="file-channels" class="prm-section-heading ruled">File Channels</h2>
+    <p><code>OPEN</code> associates a GFA BASIC channel with a file or device.
+      <code>CLOSE #channel</code> closes that channel, and bare <code>CLOSE</code> acts on all open channels.
+      The <a href="/reference/fclose/">Fclose</a> trap takes the GEMDOS handle returned by an OS open or create call.</p>
+    <p class="revision-note">Compendium PDF page 18</p>
+  </section>
+
+  <section aria-labelledby="exec">
+    <h2 id="exec" class="prm-section-heading ruled">EXEC and Pexec</h2>
+    <p><code>EXEC(mode,name$,command$,environment$)</code> accepts string operands. The documented GFA BASIC modes are 0 to load and start a program and 3 to load it and return its basepage.
+      The command tail is counted and the environment uses NUL separators. Check available memory before starting a child in the editor.</p>
+    <p>The <a href="/reference/pexec/">raw Pexec trap</a> uses a mode word and three longword slots, whose meaning varies by mode.
+      For mode 0, pass pointers to the path and counted tail. A zero environment pointer requests inheritance in the historical ABI.</p>
+    <pre class="prm-code"><code>ExitStatus%=GEMDOS(&amp;H4B,W:0,L:PathAddress%,L:TailAddress%,L:0)</code></pre>
+    <p class="revision-note">Compendium PDF page 30 · <a href="/historical/en/argv-procedure/">Historical ARGV procedure</a></p>
+  </section>
+
+  <section aria-labelledby="gemsys">
+    <h2 id="gemsys" class="prm-section-heading ruled">AES Parameter Blocks and GEMSYS</h2>
+    <p><code>GEMSYS [opcode]</code> calls the classic AES. Set the control block and input arrays as specified for the operation.
+      When the opcode is omitted, use <code>GCONTRL(0)</code>. Integer control and data arrays use words. Address arrays use longwords.</p>
+    <table class="prm-rule-table">
+      <thead><tr><th scope="col">Array</th><th scope="col">Element width</th><th scope="col">Use</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><code>GCONTRL</code></th><td>16 bits</td><td>Opcode and array counts</td></tr>
+        <tr><th scope="row"><code>GINTIN / GINTOUT</code></th><td>16 bits</td><td>Integer arguments and results</td></tr>
+        <tr><th scope="row"><code>ADDRIN / ADDROUT</code></th><td>32 bits</td><td>Addresses</td></tr>
+      </tbody>
+    </table>
+    <p><code>APPL_INIT()</code> reads the application ID maintained by the runtime. The editor initializes AES automatically.
+      A compiled program can omit AES initialization when it links no AES code.</p>
+    <p class="revision-note">Compendium PDF pages 30–31 · <a href="/subsystems/aes/">AES function index</a></p>
+  </section>
+
+  <section aria-labelledby="vdisys">
+    <h2 id="vdisys" class="prm-section-heading ruled">VDI Parameter Blocks and VDISYS</h2>
+    <p><code>VDISYS [opcode[,c_int,c_pts[,subopc]]]</code> uses word arrays. Fill <code>INTIN</code> and <code>PTSIN</code> with the operation’s integer and coordinate inputs.
+      Read results from <code>INTOUT</code> and <code>PTSOUT</code>. Check the editor or compiler’s array bounds for your GFA BASIC version.</p>
+    <table class="prm-rule-table">
+      <thead><tr><th scope="col">Control word</th><th scope="col">Meaning</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><code>CONTRL(0)</code></th><td>Opcode</td></tr>
+        <tr><th scope="row"><code>CONTRL(1)</code></th><td>Input point count</td></tr>
+        <tr><th scope="row"><code>CONTRL(2)</code></th><td>Output point count</td></tr>
+        <tr><th scope="row"><code>CONTRL(3)</code></th><td>Input integer count</td></tr>
+        <tr><th scope="row"><code>CONTRL(4)</code></th><td>Output integer count</td></tr>
+        <tr><th scope="row"><code>CONTRL(5)</code></th><td>Sub-opcode</td></tr>
+        <tr><th scope="row"><code>CONTRL(6)</code></th><td>Workstation handle</td></tr>
+      </tbody>
+    </table>
+    <p class="revision-note">Compendium PDF page 29 · <a href="/subsystems/vdi/">VDI function index</a></p>
+  </section>
+
+  {groups.map(({ name, rows }) => <section aria-labelledby={name.toLowerCase() + '-builtins'}>
+    <h2 id={name.toLowerCase() + '-builtins'} class="prm-section-heading ruled">Built-in {name} Bindings</h2>
+    <table class="prm-rule-table">
+      <thead><tr><th scope="col">GFA BASIC syntax</th><th scope="col">Compendium page</th></tr></thead>
+      <tbody>
+        {rows.map(([symbol, binding]) => {
+          const href = historicalHref(symbol);
+          return <tr>
+            <th scope="row">{href ? <a href={href}><code>{binding.signature}</code></a> : <code>{binding.signature}</code>}
+              {binding.note && <p class="revision-note">{binding.note}</p>}</th>
+            <td>{binding.page}</td>
+          </tr>;
+        })}
+      </tbody>
+    </table>
+  </section>)}
+
+  <section aria-labelledby="custom-aes">
+    <h2 id="custom-aes" class="prm-section-heading ruled">AES Helper Examples</h2>
+    <p>The Compendium includes sample user-written helpers for these AES operations. Their names are shown here to locate the examples in the source.</p>
+    <table class="prm-rule-table">
+      <thead><tr><th scope="col">Operation</th><th scope="col">Compendium page</th></tr></thead>
+      <tbody>{Object.entries(gfaCustomExamples).map(([name, page]) => <tr>
+        <th scope="row">{historicalHref(name)
+          ? <a href={historicalHref(name)}><code>{name.toLowerCase()}</code></a>
+          : <code>{name.toLowerCase()}</code>}</th><td>{page}</td>
+      </tr>)}</tbody>
+    </table>
+  </section>
+
+  <section aria-labelledby="compendium">
+    <h2 id="compendium" class="prm-section-heading ruled">GFA BASIC Source</h2>
+    <p><cite>{gfaSource.title}</cite> credits the original documentation to {gfaSource.originalAuthor}
+      and the hypertext port (v{gfaSource.hypertextVersion}) to {gfaSource.portCredits}.
+      Page citations refer to the supplied PDF. <a href={gfaSource.url}>{gfaSource.url}</a></p>
+    <p class="revision-note">PDF SHA-256 <code>{gfaSource.sha256}</code></p>
+  </section>
+</Layout>

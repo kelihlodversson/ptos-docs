@@ -2,72 +2,101 @@
 
 ## Historical import and translation
 
-`src/data/sources.json` records the upstream revisions. The historical source
-is the English and German UDO branches within the same upstream checkout.
-Generated HTML and compiled hypertext are never import inputs.
+The English and German editions are generated from the same pinned tos.hyp UDO
+tree using the pinned UDO 7.12 command-line compiler. The importer removes the
+merge-subsubnodes directive in a temporary copy so each node has its own page.
+It reads the compiler’s node-to-file map for provenance, keeps aliases and
+cross-references, and adapts the generated HTML into the reference layout and
+target selector. Neither upstream HTML nor compiled hypertext is an input.
+
+The generated records are committed so the ordinary Astro build only needs
+Node and npm. To regenerate on Linux, install a C compiler and run:
 
 ```sh
 git clone https://github.com/freemint/tos.hyp.git .upstream/tos.hyp
-npm run import -- .upstream/tos.hyp
+git clone https://github.com/th-otto/udo.git .upstream/udo
+git -C .upstream/udo checkout 2c997eb4e163a4e6673c7ba99664d0eaa9ef6c0f
+scripts/build-udo.sh .upstream/udo .upstream/bin/udo
+npm run import:historical -- .upstream/tos.hyp .upstream/bin/udo
+npm run import:historical -- .upstream/tos.hyp .upstream/bin/udo --check
 npm run import -- .upstream/tos.hyp --check
 ```
 
-The importer reads Git objects at the pinned revision even if the checkout
-is on a different branch. Review the diff to the generated records, verbatim
-sources and coverage report together. CI regenerates and checks all outputs
-byte for byte. Extend the UDO converter and its tests before expanding
-`src/data/import-scope.json`.
+Pin changes belong in `src/data/sources.json`. The import reads tos.hyp Git
+objects at the pinned revision even when the source checkout is on another
+branch. CI runs both import checks and verifies that the final site resolves
+internal pages, assets, and fragments. Review changes to the one-record-per-line
+data and the coverage report together. Sources outside the main document tree
+are listed in the report. This includes alternate driver documents with
+duplicate chapter includes, the download-page wrapper, and conversion fixtures.
 
-The inventory scans BIOS, XBIOS, GEMDOS, VDI and AES for function-like files.
-Its counts are file counts. A skipped file can contain multiple entries, and
-a file without a recognized declaration or opcode marker may still document
-an API. Incomplete inventory files lack a branch pattern or an English API
-marker the importer recognizes. The published report lists these files for
-follow-up. This converter handles the UDO constructs and Atari ST title
-delimiters in the initial leaves. A broader import needs a complete encoding
-decoder and additional UDO directives.
+The report distinguishes UDO nodes from recognized function records. Some
+nodes document commands or interfaces without a standard function table.
+They are still rendered and searchable as sections. The English lint records
+possible German text and encoding issues by page. The German comparison
+records function tables without an exact English source-path and title match.
+These are editorial review queues. They include localized headings and
+formatting differences as well as possible incomplete translations.
 
-The import compares numeric mode labels between the two branches of the
-published leaves, checks English source for German tokens and damaged encoding,
-and records manual review status. Add verified code-local edits in
-`translation-review.json`. Keep authentic API symbols, trap constants and
-code behavior intact. Review suspect phrases or additions against both
-branches, including code comments, examples and mode restrictions. An entry’s
-optional `allowlist` accepts exact `term`, `context` and `reason` records for
-authentic names and intentional historical quotations. Resolve untriaged findings before publishing. The saved English source reflects
-upstream spelling, while the report records editorial changes and known
-uncertainties.
+The original Fclose, Pexec, and appl_init pages have a separate editorial check.
+Keep reviewed example-local edits in `src/data/translation-review.json`. Preserve
+public identifiers, constants, register assignments and code behavior. The
+two existing GFA edits rename result variables and leave the calls unchanged.
+Add scoped allowlist records with the matched term, context and reason after
+reviewing source text.
 
 ## Source and license
 
 The [tos.hyp foreword](public/source/tos.hyp/anhang/hilfe.u) records the
 historical licensing change and credits Rolf Kotzian and other contributors.
-The project distributes the text under the GNU General Public License.
-The [upstream license copy](public/source/tos.hyp/COPYING.GPL) is GPL v2.
-The original per-function source files, report and notices ship with the site.
-The manual converts UDO formatting and changes two illustrative GFA result
-variable names. The report describes those modifications and their provenance.
-The imported scope is text and code examples. Upstream pictures, fonts and
-Motorola graphics are outside that scope. The palette and system typeface
-choices were taken from the pinned ptos.dev CSS. Layout markup is original.
+The project distributes the text under the GNU General Public License. The
+[upstream license copy](public/source/tos.hyp/COPYING.GPL) is GPL v2. The
+site links each converted page to its pinned UDO file and offers the full
+upstream source archive.
+
+The import includes the referenced technical diagrams and contact illustrations
+selected in the converter. Their upstream paths and checksums are in the report.
+Screenshots, application imagery and artwork with unclear individual
+permissions are linked to the pinned originals. Check each asset before
+adding it to the included set. The palette and system typeface choices come
+from the pinned ptos.dev CSS.
+
+## GFA BASIC reference
+
+The site cites *The GFA-Basic Compendium* at [BAFO](http://bafo.free.fr/).
+The source metadata records the supplied PDF fingerprint and the credited
+authors. The PDF identifies the hypertext port as rights reserved, so the
+site includes factual call forms, page citations and original explanations.
+It links to the source from the GFA BASIC guide and attribution page.
+
+Update `src/data/gfa-builtins.json` after checking each built-in name and
+argument order against the cited PDF page. Keep runtime notes where the
+compendium describes a dummy binding or reports a compiler limitation.
+For legacy BIOS, XBIOS and GEMDOS calls, the importer emits a raw GFA BASIC
+call form only when the UDO assembler listing identifies the trap and opcode
+and accounts for every byte pushed and removed from the 68k stack. A raw
+call form describes argument marshalling. Compatibility remains scoped to
+the architecture and OS recorded on the reference page.
 
 ## Native overlays and ABI figures
 
-Add OS-specific findings to `src/data/overlays.ts` and link to the public
-binding, kernel dispatch, configuration and corresponding test where available.
-Record the exact implementation revision. Label experimental and planned
-interfaces explicitly, and scope unsupported claims to the affected build,
-mode or runtime. Record unverified behavior as such.
+Add OS-specific material to `src/data/overlays.ts` or `src/data/native-calls.ts`.
+The evidence baseline is pTOS PR #903 and ParaTOS PR #27 at the exact pinned
+commits. Cite the implementation, public header, configuration and
+corresponding test where available. Scope compatibility notes to the native
+kernel, host backend or guest interface the source verifies.
 
 ```sh
 git clone https://github.com/kelihlodversson/pTOS.git .upstream/pTOS
+git -C .upstream/pTOS fetch origin refs/pull/903/head
 git clone https://github.com/kelihlodversson/libcmini.git .upstream/libcmini
-node scripts/validate-upstream.mjs .upstream/pTOS .upstream/libcmini
+git clone https://github.com/SapionAps/ParaTos.git .upstream/ParaTos
+git -C .upstream/ParaTos fetch origin refs/pull/27/head
+node scripts/validate-upstream.mjs .upstream/pTOS .upstream/libcmini .upstream/ParaTos
 ```
 
-Define figures in `src/data/abi.json` with explicit field widths and offsets.
-Compare claims against the pinned source as well as the figure assertions.
-Use Chromium’s print view or capture the review images and sample PDF:
+Keep ABI layouts in structured data with explicit widths and byte offsets.
+Use Chromium print view or capture the reference review images:
 
 ```sh
 npm run build
@@ -76,14 +105,8 @@ MANUAL_SCREENSHOTS=review npm run test:browser -- tests/screenshots.spec.ts
 
 ## Publishing
 
-The Reference manual workflow validates and uploads the static Pages artifact
-on pull requests. On pushes to `main` and manual runs from `main`, it also
-deploys through the existing `github-pages` environment, and verifies the
-custom HTTPS origin and representative deep links. The current environment
-only allows deployments from `main`. An open pull request can validate the
-build and links before publication.
-
-The existing Pages source must be GitHub Actions and the domain must be
-`docs.ptos.dev`. If deployment succeeds but HTTPS checks fail, inspect the
-workflow log for the failing URL and check the existing custom-domain
-certificate and Pages settings.
+The Reference manual workflow validates and uploads a static Pages artifact
+for open pull requests. On pushes to `main` and manual runs from `main`,
+it deploys through the existing `github-pages` environment and verifies
+HTTPS deep links. The existing Pages source is GitHub Actions and the
+custom domain is `docs.ptos.dev`.
