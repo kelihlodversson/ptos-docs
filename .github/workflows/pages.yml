@@ -61,7 +61,6 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm test
       - name: Upload GitHub Pages artifact
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: dist

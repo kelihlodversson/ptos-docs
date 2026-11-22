@@ -76,8 +76,8 @@ MANUAL_SCREENSHOTS=review npm run test:browser -- tests/screenshots.spec.ts
 
 ## Publishing
 
-The Reference manual workflow runs validation on pull requests. On pushes to
-`main` and manual runs from `main`, it uploads the static `dist` artifact,
+The Reference manual workflow validates and uploads the static Pages artifact
+on pull requests. On pushes to `main` and manual runs from `main`, it also
 deploys through the existing `github-pages` environment, and verifies the
 custom HTTPS origin and representative deep links. The current environment
 only allows deployments from `main`. An open pull request can validate the
