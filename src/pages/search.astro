@@ -3,11 +3,19 @@ import Layout from '../components/Layout.astro';
 import CatalogList from '../components/CatalogList.astro';
 import { catalog } from '../data/catalog';
 import { pages } from '../data/historical';
+import { chapters } from '../data/manual-structure';
 
-const sections = pages('en').filter(page => !page.function).map(page => ({
+const catalogHrefs = new Set(catalog.map(entry => entry.href));
+const topics = chapters.flatMap(chapter => [chapter, ...chapter.sections].map(topic => ({
+  ...topic, subsystem: chapter.name, group: chapter.area.name,
+})));
+const listedSources = new Set(topics.map(topic => topic.historicalSlug));
+const sections = pages('en').filter(page => !page.function && !listedSources.has(page.slug) && page.slug !== 'xcontrol').map(page => ({
   name: page.title, description: '', subsystem: page.subsystem, group: page.group, href: page.href,
 }));
-const index = [...catalog, ...sections];
+const index = [...catalog, ...topics.filter(topic => !catalogHrefs.has(topic.href)).map(topic => ({
+  ...topic, description: '',
+})), ...sections];
 ---
 <Layout title="Search" description="Search pTOS functions or the original tos.hyp manual by symbol, operation or section title.">
   <header class="directory-head"><h1>Search</h1></header>

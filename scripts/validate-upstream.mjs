@@ -76,3 +76,18 @@ assert.match(show(guest, paratos, 'host/posix/proc.c'), /int16_t Pvfork \( void 
 assert.match(show(guest, paratos, 'host/ptos/dispatch.c'), /case GEMDOS_OP_SYIELD: ptos_task_yield/);
 assert.doesNotMatch(show(guest, paratos, 'host/ptos/dispatch.c'), /case GEMDOS_OP_P(?:CLONE|THJOIN|TERMGRP):/);
 console.log('Verified PR #903 native opcodes, discovery and configuration and PR #27 guest paths');
+
+const bootConfig = fromKernel('bdos/binfmt.c');
+assert.ok(bootConfig.includes(String.raw`"A:\\PTOS.INI"`));
+assert.match(bootConfig, /total > 65536UL/);
+assert.match(fromKernel('bdos/binfmt.h'), /^#define BINFMT_RULES\s+8\b/m);
+assert.match(fromKernel('bios/bios.c'), /init_default_environment\(\);[\s\S]*binfmt_boot_init\(\);[\s\S]*autoexec\(\);/);
+const shells = fromKernel('util/shells.c');
+assert.match(shells, /shell_names_desk\[\]\s*=\s*\{\s*"EMUDESK.PRG", "DESKTOP.PRG", NULL/);
+assert.match(shells, /shell_names_cli\[\]\s*=\s*\{\s*"EMUCON.TOS", "EMUCON2.TOS", "COMMAND.TOS", "SHELL.TOS", NULL/);
+assert.match(fromKernel('lib/ldso/build.mk'), /LDSO_RUNTIME_FILES = \$\(LDSO_RUNTIME_DIR\)\/LIB\/X32\/LD.SO \$\(LDSO_RUNTIME_DIR\)\/LIB\/X32\/LIBPTOS.SO/);
+assert.match(fromKernel('lib/aes/build.mk'), /\/LIB\/X32\/LIBAES.SO:/);
+assert.ok(fromKernel('vdi/Kconfig').includes(String.raw`"\\GEMSYS\\FONTS"`));
+assert.ok(fromKernel('vdi/vdi_gdos.c').includes(String.raw`"\\GEMSYS\\PTOS.INF"`));
+assert.match(fromKernel('vdi/vdi_gdos.c'), /^#define SYSTEM_FONT_KEY\s+"SYSTEMFONT"/m);
+console.log('Verified pTOS boot configuration, external shell names, runtime files and font paths');

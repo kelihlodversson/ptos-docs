@@ -2,7 +2,7 @@
 import Layout from '../components/Layout.astro';
 import CatalogList from '../components/CatalogList.astro';
 import { catalog } from '../data/catalog';
-const functions = catalog.filter(entry => !entry.href.startsWith('/abi/'));
+const functions = catalog.filter(entry => !('kind' in entry));
 ---
 <Layout title="Function index" description="Alphabetical index of pTOS and historical TOS functions.">
   <header class="directory-head"><h1>Function Index</h1></header>

@@ -1,13 +1,16 @@
 ---
 import Layout from '../components/Layout.astro';
-import { chapters } from '../data/manual-structure';
+import { manualAreas } from '../data/manual-structure';
 ---
 <Layout title="Topics" description="Browse file operations, process execution, AES and native ABI topics.">
   <header class="directory-head"><h1>Topics</h1></header>
-  {chapters.map(chapter => <section>
-    <h2 class="ruled prm-section-heading"><a href={chapter.href}>{chapter.name}</a></h2>
-    <ul class="manual-index">
-      {chapter.sections.map(section => <li><a class="manual-index-symbol" href={section.href}>{section.name}</a></li>)}
-    </ul>
+  {manualAreas.map(area => <section>
+    <h2 class="ruled prm-section-heading"><a href={area.href}>{area.name}</a></h2>
+    {area.chapters.map(chapter => <section>
+      <h3 class="prm-section-heading"><a href={chapter.href}>{chapter.name}</a></h3>
+      {chapter.sections.length > 0 && <ul class="manual-index">
+        {chapter.sections.map(section => <li><a class="manual-index-symbol" href={section.href}>{section.name}</a></li>)}
+      </ul>}
+    </section>)}
   </section>)}
 </Layout>

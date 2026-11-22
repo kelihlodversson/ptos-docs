@@ -10,7 +10,10 @@ for (const path of readdirSync(dist, { recursive: true }).filter(path => path.en
   const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
   assert.equal(new Set(ids).size, ids.length, `Duplicate ID in ${path}`);
   const route = '/' + path.replace(/index\.html$/, '');
-  assert.ok(html.includes(`rel="canonical" href="${host}${route}"`), `Wrong canonical URL for ${path}`);
+  const redirect = /<meta http-equiv="refresh" content="0;url=([^"]+)">/.exec(html)?.[1];
+  const canonical = new URL(redirect ?? route, host).href;
+  if (redirect) assert.ok(html.includes(`<a href="${redirect}">`), `Missing redirect link for ${path}`);
+  assert.ok(html.includes(`rel="canonical" href="${canonical}"`), `Wrong canonical URL for ${path}`);
   pages.set(path, { html, ids, route });
 }
 assert.ok(pages.size > 0, 'Build the site first');

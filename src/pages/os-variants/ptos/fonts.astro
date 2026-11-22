@@ -1,0 +1,31 @@
+---
+import PtosGuide from '../../../components/PtosGuide.astro';
+---
+<PtosGuide title="Font installation" description="Install scalable fonts and select the pTOS system font." sources={[
+  ['ptos', 'vdi/Kconfig', 'Font directory, rescan and system-font settings'],
+  ['ptos', 'vdi/vdi_gdos.c', 'Scanning and reading PTOS.INF'],
+  ['ptos', 'doc/install.txt', 'Font installation and DejaVu filenames'],
+  ['ptos', 'vdi/x32/vdi_client.c', 'Native x32 VDI client limits'],
+]}>
+  <h2 class="prm-section-heading ruled">Install scalable fonts</h2>
+  <ol>
+    <li>Use a build with <code>CONF_WITH_VDI_SCALABLE_FONTS</code> enabled.</li>
+    <li>Copy TrueType (<code>.TTF</code>), OpenType (<code>.OTF</code>) or TrueType collection (<code>.TTC</code>) files
+      to <code>\GEMSYS\FONTS</code> on the boot drive. Use 8.3 filenames, for example <code>DJVUMONO.TTF</code>.</li>
+    <li>Restart pTOS. Built-in GDOS scans the directory after the <code>AUTO</code> programs run.
+      A missing or empty directory leaves the built-in bitmap fonts available.</li>
+  </ol>
+  <p>A custom build can set <code>CONF_VDI_FONT_DIR</code> to use a different directory. Include a drive letter when
+    the directory is on another drive. On a target that uses an external GDOS, such as NVDI, follow that GDOS’s font
+    installation rules. Built-in GDOS handles scalable font files. GEM bitmap <code>.FNT</code> files belong to an external GDOS.</p>
+  <p>On builds with these VDI bindings, <code>vst_load_fonts()</code> adds the scanned fonts to a workstation.
+    With <code>CONF_VDI_FONT_RESCAN</code>, an unload followed by a load can discover new files without rebooting.
+    The native x32 VDI client does not expose these font-loading calls.</p>
+
+  <h2 id="system-font" class="prm-section-heading ruled">Select the system font</h2>
+  <p>To set the console and desktop system font, put a line like this in <code>\GEMSYS\PTOS.INF</code> on the boot drive.</p>
+  <pre class="prm-code"><code>SYSTEMFONT=DJVUMONO.TTF</code></pre>
+  <p>Use an installed monospaced font on a build where built-in GDOS is active and the Atari ST character set is selected.
+    The setting overrides <code>CONF_VDI_SYSTEM_FONT</code>. It fills the 8×8 and 8×16 system-font cells.
+    The 6×6 font and glyphs missing from the new font come from the built-in bitmap fonts.</p>
+</PtosGuide>

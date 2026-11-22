@@ -1,0 +1,18 @@
+---
+import Layout from '../../components/Layout.astro';
+import ManualIntroduction from '../../components/ManualIntroduction.astro';
+import { manualAreas } from '../../data/manual-structure';
+
+export function getStaticPaths() {
+  return manualAreas.map(area => ({ params: { area: area.slug }, props: { area } }));
+}
+interface Props { area: typeof manualAreas[number] }
+const { area } = Astro.props;
+---
+<Layout title={area.name} description={area.description}>
+  <header class="directory-head"><h1>{area.name}</h1></header>
+  <ManualIntroduction subject={area.slug} />
+  <ul class="manual-index">{area.chapters.map(({ name, href }) => (
+    <li><a class="manual-index-symbol" href={href}>{name}</a></li>
+  ))}</ul>
+</Layout>
