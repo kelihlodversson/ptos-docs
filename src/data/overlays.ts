@@ -78,19 +78,25 @@ export const overlays: Record<string, Overlay> = {
       ['env', 'Environment argument for modes 0, 3, 5 and 7. Pass zero in modes 4 and 6.'],
     ],
     targets: {
-      '68k': { status: 'implemented', scope: 'Native pTOS GEMDOS, modes 0, 3, 4, 5, 6 and 7',
+      '68k': { status: 'implemented', scope: 'Native pTOS GEMDOS, with staged PRG modes on applicable builds',
         detail: 'TRAP #1 uses the caller’s stack. D0 holds the result. Layout is shown for the four-argument binding. Interpret the long slots by mode.',
         stack: abi.pexec },
       ...gemdos('0x4B', ['mode', '16-bit mode'], ['Path pointer, flags or zero', 'Tail or basepage pointer', 'Environment pointer or zero']),
     },
     sources: [
       ...gemdosSources, ['ptos', 'bdos/proc.c', 'Native Pexec mode dispatch and ownership'],
+      ['ptos', 'doc/pexec-legacy-modes.txt', 'Staged PRG rules and native restrictions'],
+      ['ptos', 'doc/freemint-compatibility.txt', 'Managed mode 0 and fork interaction'],
+      ['ptos', 'bdos/Kconfig', 'Mode 200 configuration and replacement guarantees'],
+      ['ptos', 'tests/pclone/exec200_native.c', 'Mode 200 native acceptance probe'],
       ['ptos', 'bdos/uaccess.c', 'Address-space argument checks'],
       ['ptos', 'include/bdosdefs.h', 'Mode constants'],
       ['ptos', 'tests/x32_probe/x32_probe.c', 'x32 launch and argument probes'],
-      ['paratos', 'tests/ptos/semantics.c', 'ParaTOS launch and overlay regression'],
+      ['paratos', 'tests/ptos/semantics.c', 'ParaTOS pTOS-hosted launch and overlay regression'],
+      ['paratos', 'host/posix/README.md', 'ParaTOS POSIX staged launch and replacement rules'],
+      ['paratos', 'tests/posix/pexec.py', 'ParaTOS PR #27 staged launch and fork regression'],
     ],
-    paraTos: 'The pTOS-hosted ParaTOS regression exercises native and guest launches and retained/consumed overlays. It also checks that mode 200 returns EINVFN in that runtime.',
+    paraTos: 'The POSIX backend in ParaTOS PR #27 uses fork/exec for modes 0 and 100. Staged modes 4, 6, 104 and 106 share guest RAM across a host fork. Mode 200 calls execve and is refused while staged guests still depend on the caller. The separate pTOS-hosted backend has native and emulated launch and overlay fixtures.',
   },
   appl_init: {
     params: [['void', 'The standard GEMlib call takes no arguments. The historical X_BUF_V2 form is a FreeGEM extension.']],
@@ -100,7 +106,7 @@ export const overlays: Record<string, Overlay> = {
       arm: { ...legacyAES, detail: legacyAES.detail + ' The traditional ARM binding uses SVC #2.',
         registers: [['R0', 'AES selector 0xC8'], ['R1', 'AESPB pointer'], ['int_out[0]', 'Application ID or failure']] },
       x32: { status: 'experimental', scope: 'Native x32 GEMlib and CONF_WITH_LIBAES',
-        detail: 'GEMlib appl_init() calls the userspace libaes mt_appl_init(AESGLOBAL *). libaes manages caller-owned initialization state and uses private CUIS calls internally. The returned application ID uses the PID namespace and differs from the private session handle. Ring-3 generic GEM class 2 is unsupported.' },
+        detail: 'GEMlib appl_init() calls the userspace libaes mt_appl_init(AESGLOBAL *). libaes manages caller-owned initialization state and uses private CUIS calls internally. The returned application ID identifies the GUI client. It is distinct from the PROCESS identity, MiNT PID and private CUIS session handle. Ring-3 generic GEM class 2 is unsupported.' },
     },
     sources: [
       ['ptos', 'aes/Kconfig', 'Kernel AES and experimental libaes configuration'],
@@ -131,25 +137,27 @@ export const overlays: Record<string, Overlay> = {
       ['ptos', 'tests/ssystem_info/ssystem_info.c', 'Ssystem mode discovery regression'],
       ['ptos', 'tests/x32_probe/x32_probe.c', 'x32 console pointer and size checks'],
       ['libcmini', 'include/mint/mintbind.h', 'Public Ssystem macro'],
+      ['paratos', 'host/posix/sys.c', 'ParaTOS POSIX guest Ssystem modes'],
+      ['paratos', 'host/ptos/dispatch.c', 'ParaTOS pTOS-hosted guest Ssystem modes'],
     ],
-    paraTos: 'This pTOS extension has unverified coverage under ParaTOS.',
+    paraTos: 'The POSIX and pTOS-hosted guest dispatchers in ParaTOS PR #27 do not expose S_CONSOLE_DIM.',
   },
 };
 
 for (const cpu of ['arm', 'x32'] as const) {
-  overlays.Pexec.targets[cpu].scope += ', modes 0, 3, 4, 5, 6 and 7';
+  overlays.Pexec.targets[cpu].scope += ', modes 0, 100 and 200 on supported MMU builds';
   overlays.Ssystem.targets[cpu].scope += ' with CONF_WITH_SSYSTEM';
 }
 
 export const pexecModes: [mode: string, args: string, meaning: string][] = [
-  ['0', 'path, cmdline, env', 'Load and run synchronously.'],
-  ['3', 'path, cmdline, env', 'Load and return a basepage. Caller owns the retained image.'],
-  ['4', '0L, basepage, 0L', 'Run a retained image without transferring ownership.'],
-  ['5', '0L, cmdline, env', 'Create and return a basepage.'],
-  ['6', '0L, basepage, 0L', 'Transfer ownership and run the image.'],
-  ['7', 'prgflags, cmdline, env', 'Create a basepage with program flags.'],
-  ['100', 'path, cmdline, env', 'Load and schedule a child with CONF_WITH_NATIVE_SCHED.'],
-  ['106', '0L, basepage, 0L', 'Transfer the image and schedule it with CONF_WITH_NATIVE_SCHED. Native pTOS uses the basepage argument.'],
+  ['0', 'path, cmdline, env', 'Load and run. A managed caller waits for its exact child and receives the full 16-bit status.'],
+  ['3', 'path, cmdline, env', 'Stage a PRG and return a basepage on 68k. On 68k a target that would stage an ELF image returns EPLFMT.'],
+  ['4', '0L, basepage, 0L', 'Run a retained PRG in place on ROM/non-MMU 68k. On supported 68k MMU builds, launch a new PROCESS sharing the caller’s address space and wait.'],
+  ['5', '0L, cmdline, env', 'Create and return a classic 68k basepage.'],
+  ['6', '0L, basepage, 0L', 'Run a staged 68k image and transfer ownership.'],
+  ['7', 'prgflags, cmdline, env', 'Create a classic 68k basepage with program flags.'],
+  ['100', 'path, cmdline, env', 'Load and schedule a child with CONF_WITH_NATIVE_SCHED. Returns the child PID.'],
+  ['104', '0L, basepage, 0L', 'Start a staged PRG in a new PROCESS sharing the caller’s ASPACE. Requires CONF_WITH_SHARED_VM_PEXEC and returns its PID.'],
+  ['106', '0L, basepage, 0L', 'Start a staged 68k PRG asynchronously, transferring the image. Requires the scheduler and legacy path.'],
+  ['200', 'path, cmdline, env', 'Replace the executable in the same PROCESS with CONF_WITH_PEXEC200. Success preserves PID and does not return. A failed load leaves the caller intact.'],
 ];
-
-export const nativeRevisionLabel = 'pTOS 1.4 development tree';

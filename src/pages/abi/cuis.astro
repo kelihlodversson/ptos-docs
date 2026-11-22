@@ -16,7 +16,7 @@ import abi from '../../data/abi.json';
     <dl class="prm-facts">
       <Fact label="Operation">Query whether the calling process owns a live CUIS session.</Fact>
       <Fact label="Selector"><code>CUIS_SERVICE_CLASS</code> <code>0x103</code> · <code>CUIS_SESSION_QUERY</code> <code>1</code></Fact>
-      <Fact label="Availability">pTOS 1.4 development tree · x32 ring 3 with <code>CONF_WITH_CUIS</code>.
+      <Fact label="Availability">pTOS · x32 ring 3 with <code>CONF_WITH_CUIS</code>.
         The private ABI backs experimental userspace libaes on x32. Public GEM programs use <a href="/reference/appl_init/">GEMlib and libaes</a>.</Fact>
     </dl>
     <TargetPanels>
@@ -30,7 +30,23 @@ import abi from '../../data/abi.json';
         <h3 class="prm-section-heading">Instruction / Data Format</h3>
         <BitLayout {...abi.cuis.selector} />
         <pre class="prm-code"><code>RAX = (trap_class &lt;&lt; 32) | function_number<br />RAX = {abi.cuis.example}</code></pre>
-        <p><code>E_OK</code> (0) indicates a live session owned by the caller. <code>EACCDN</code> indicates no matching owned session. <code>EINVAL</code> indicates an out-of-range handle.</p>
+        <p><code>E_OK</code> (0) indicates a live endpoint owned by the calling PROCESS. <code>EACCDN</code> indicates no matching owned endpoint. <code>EINVAL</code> indicates an out-of-range handle.</p>
+        <h3 class="prm-section-heading">Private Transport Calls in PR #903</h3>
+        <p>These selectors are used inside pTOS and libaes. Arguments occupy <code>RDI, RSI, RDX, R10, R8, R9</code> in order.
+          Each call selects the same class in RAX with its own function number. Application programs use documented GEM functions.</p>
+        <table class="prm-rule-table">
+          <thead><tr><th scope="col">Function</th><th scope="col">Selector</th><th scope="col">Arguments in register order</th><th scope="col">Purpose</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><code>CUIS_LAUNCH_ATTACH</code></th><td>93</td><td><code>session, authorization, path, tail, environment, directory</code></td><td>Attach an optional console lease or observation receipt to a native PROCESS launch, then commit it.</td></tr>
+            <tr><th scope="row"><code>CUIS_STREAM_RECEIPT</code></th><td>94</td><td><code>session, action, address, size</code></td><td>Manage publication receipts using the 64-byte, 4-aligned record in <code>cuis_receipt.h</code>. QUERY is non-consuming.</td></tr>
+            <tr><th scope="row"><code>CUIS_ENDPOINT_BARRIER</code></th><td>95</td><td><code>session, action, token</code></td><td>Freeze endpoint registration with ACQUIRE (0), then release the matching owner and generation with RELEASE (1).</td></tr>
+            <tr><th scope="row"><code>CUIS_STREAM_BATCH</code></th><td>96</td><td><code>session, command, a, b, c, d</code></td><td>Stage, seal, query, read, publish or settle bounded request and reply packets. The high command word selects the operation.</td></tr>
+          </tbody>
+        </table>
+        <p>SESSION_START (0) accepts <code>CUIS_SESSION_NEW</code> to allocate an additional endpoint owned by the same PROCESS.
+          PEER_QUERY (76) can return the fixed-width client/PROCESS identity or resolve a client ID to a handle with
+          <code>CUIS_PEER_IDENTITY</code> and <code>CUIS_PEER_HANDLE</code>. SESSION_WAIT (32) can wait on an array of up to 16 owned PROCESS rights.</p>
+        <p>PROCESS launch and observation are handled by <a href="/reference/s-procexec/">S_PROCEXEC</a>. PR #903 removes the older CHILD and COHORT selectors. An endpoint handle and a GUI client ID are distinct from the owning PROCESS number and MiNT PID.</p>
       </CallingConvention>
       <GfaBinding slot="gfa" />
     </TargetPanels>
@@ -43,6 +59,8 @@ import abi from '../../data/abi.json';
       ['ptos', 'aes/Kconfig', 'CUIS build constraints'],
       ['ptos', 'bios/arch/x86_64/trap.c', 'x32 dispatch and privilege checks'],
       ['ptos', 'aes/cuis_session.c', 'Session ownership and return codes'],
+      ['ptos', 'include/cuis_receipt.h', 'Receipt record and operation fields'],
+      ['ptos', 'doc/cuis.txt', 'Private launch, receipt, barrier and stream batch contracts'],
       ['ptos', 'tests/cuis/program.c', 'Native syscall and invalid-handle probes'],
     ]} />
   </article>

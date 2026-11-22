@@ -1,0 +1,56 @@
+---
+import Layout from './Layout.astro';
+import Masthead from './Masthead.astro';
+import Fact from './Fact.astro';
+import ParameterList from './ParameterList.astro';
+import TargetPanels from './TargetPanels.astro';
+import GfaBinding from './GfaBinding.astro';
+import SourceList from './SourceList.astro';
+import NativeTarget from './NativeTarget.astro';
+import { nativePath } from '../data/native-calls';
+import type { NativeCall } from '../data/native-calls';
+import revisions from '../data/sources.json';
+
+interface Props { call: NativeCall }
+const { call } = Astro.props;
+const params: [string, string][] = call.args.map(([name, , info]) => [name, info]);
+const relatedPath = (name: string) => name === 'appl_init' ? '/reference/appl_init/' : nativePath(name);
+const pr = (source: typeof revisions.ptos | typeof revisions.paratos) =>
+  `https://github.com/${source.repo}/pull/${source.pullRequest}`;
+---
+<Layout title={call.name} description={call.title} running="pTOS — GEMDOS"
+  breadcrumbs={[{ label: 'Subsystems', href: '/subsystems/' }, { label: 'pTOS', href: '/subsystems/ptos/' }]}>
+  <article>
+    <Masthead name={call.name} title={call.title} subsystem="GEMDOS" />
+    <section aria-labelledby="prm-prototype-heading">
+      <h2 id="prm-prototype-heading" class="prm-section-heading">C Prototype</h2>
+      <pre class="prm-prototype"><code>{call.prototype}</code></pre>
+      {(call.mode !== undefined || ['Pclone', 'Pthjoin'].includes(call.name)) &&
+        <p class="revision-note">C call form for the documented GEMDOS ABI.</p>}
+    </section>
+    <dl class="prm-facts">
+      <Fact label="Operation">{call.title}.</Fact>
+      <Fact label="Opcode"><code>{`0x${call.opcode.toString(16).toUpperCase()}`}</code>
+        {call.mode !== undefined && <> · mode <code>{call.mode}</code></>}</Fact>
+      {params.length > 0 && <Fact label="Parameters"><ParameterList entries={params} /></Fact>}
+      <Fact label="Description">{call.description.map(text => <p>{text}</p>)}</Fact>
+      <Fact label="Return Value">{call.result}</Fact>
+      <Fact label="Availability">
+        <p><strong>pTOS</strong> · {call.config} <a href={pr(revisions.ptos)}>pTOS PR #903</a></p>
+        <p><strong>ParaTOS</strong> · {call.paraTos} <a href={pr(revisions.paratos)}>ParaTOS PR #27</a></p>
+        {call.historical && <p><strong>Historical</strong> · <a href={call.historical}>Original tos.hyp availability and bindings</a></p>}
+      </Fact>
+    </dl>
+    <TargetPanels>
+      <NativeTarget slot="68k" {call} cpu="68k" />
+      <NativeTarget slot="arm" {call} cpu="arm" />
+      <NativeTarget slot="x32" {call} cpu="x32" />
+      <GfaBinding slot="gfa" />
+    </TargetPanels>
+    <section aria-labelledby="related-heading">
+      <h2 id="related-heading" class="prm-section-heading ruled">See Also</h2>
+      <ul class="related-links">{call.related.map(name => <li><a href={relatedPath(name)}>{name}</a></li>)}</ul>
+    </section>
+    <SourceList sources={call.sources} />
+  </article>
+</Layout>

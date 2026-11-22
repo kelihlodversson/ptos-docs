@@ -87,3 +87,53 @@ test('stack and structure slots match word and pointer sizes', () => {
   assert.equal(abi.elf.wordBytes * abi.elf.auxWords, 8);
   assert.equal(abi.elf.alignment, 16);
 });
+
+test('the historical import preserves every UDO node and names its input file', () => {
+  const coverage = json('public/source/historical-report.json');
+  const { tos, udo } = json('src/data/sources.json');
+  assert.equal(coverage.revision, tos.revision);
+  assert.equal(coverage.compiler, udo.revision);
+  for (const language of ['en', 'de']) {
+    const records = read(`src/data/historical/${language}.ndjson`).toString().trimEnd().split('\n').map(JSON.parse);
+    assert.equal(records.length, coverage.languages[language].nodes);
+    assert.equal(records.filter(row => row.function).length, coverage.languages[language].functions);
+    assert.equal(new Set(records.map(row => row.href)).size, records.length);
+    for (const row of records) {
+      assert.match(row.path, /\.ui?$/);
+      assert.ok(row.href.startsWith(`/historical/${language}/`));
+    }
+    assert.deepEqual(coverage.languages[language].missingLinks, []);
+    assert.ok(records.some(row => row.slug === 'contents'));
+  }
+  assert.ok(coverage.languages.en.findings.length > 0);
+  assert.ok(coverage.languages.de.declarationsWithoutExactEnglishMatch.length > 0);
+});
+
+test('historical compiler preserves declarations, availability and original binding references', () => {
+  const records = read('src/data/historical/en.ndjson').toString().trimEnd().split('\n').map(JSON.parse);
+  const fclose = records.find(row => row.slug === 'fclose');
+  assert.match(fclose.prototype, /int16_t Fclose/);
+  assert.match(fclose.facts.find(row => row.label === 'Availability:').value, /All GEMDOS versions/);
+  assert.match(fclose.bindings.assembly, /trap\s+#1/);
+  assert.equal(fclose.bindings.gfa, 'ErrCode%=Gemdos(&H3E,W:handle%)');
+  assert.match(records.find(row => row.slug === 'bindings-for-fclose').body, /ErrCode%=Gemdos/);
+  assert.equal(fclose.native, '/reference/fclose/');
+  const names = new Set(records.map(row => row.title));
+  for (const name of ['Fopen', 'Pwaitpid', 'Bconin', 'v_opnvwk', 'appl_find', 'ARGV procedure']) assert.ok(names.has(name));
+});
+
+test('native callable layouts are contiguous and separate ABI widths from names', async () => {
+  const { nativeCalls, nativePath } = await import('../src/data/native-calls.ts');
+  assert.equal(new Set(nativeCalls.map(call => nativePath(call.name))).size, nativeCalls.length);
+  for (const call of nativeCalls) {
+    assert.ok(call.args.length <= 6);
+    assert.ok(call.sources.length > 0);
+    if (!call.layout) continue;
+    let offset = 0;
+    for (const field of call.layout.fields) {
+      assert.equal(field.offset, offset, call.name);
+      offset += field.bytes;
+    }
+    assert.equal(offset, call.layout.bytes, call.name);
+  }
+});

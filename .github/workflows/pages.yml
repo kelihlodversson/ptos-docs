@@ -31,7 +31,7 @@ jobs:
           node --input-type=module <<'JS' >> "$GITHUB_OUTPUT"
           import { readFileSync } from 'node:fs';
           const sources = JSON.parse(readFileSync('src/data/sources.json', 'utf8'));
-          for (const key of ['tos', 'ptos', 'libcmini']) {
+          for (const key of ['tos', 'ptos', 'paratos', 'libcmini', 'udo']) {
             const { repo, revision } = sources[key];
             if (!/^[\w.-]+\/[\w.-]+$/.test(repo) || !/^[a-f0-9]{40}$/.test(revision)) throw new Error(key);
             console.log(`${key}_repo=${repo}\n${key}_revision=${revision}`);
@@ -55,9 +55,23 @@ jobs:
           ref: ${{ steps.sources.outputs.libcmini_revision }}
           path: .upstream/libcmini
           persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: ${{ steps.sources.outputs.paratos_repo }}
+          ref: ${{ steps.sources.outputs.paratos_revision }}
+          path: .upstream/ParaTos
+          persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: ${{ steps.sources.outputs.udo_repo }}
+          ref: ${{ steps.sources.outputs.udo_revision }}
+          path: .upstream/udo
+          persist-credentials: false
       - run: npm ci
       - run: npm run import -- .upstream/tos.hyp --check
-      - run: node scripts/validate-upstream.mjs .upstream/pTOS .upstream/libcmini
+      - run: scripts/build-udo.sh .upstream/udo .upstream/bin/udo
+      - run: npm run import:historical -- .upstream/tos.hyp .upstream/bin/udo --check
+      - run: node scripts/validate-upstream.mjs .upstream/pTOS .upstream/libcmini .upstream/ParaTos
       - run: npx playwright install --with-deps chromium
       - run: npm test
       - name: Upload GitHub Pages artifact
@@ -87,7 +101,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for path in / /reference/fclose/ /reference/pexec/ /reference/appl_init/ /reference/ssystem/ /abi/cuis/ /abi/elf-entry/; do
+          for path in / /reference/fclose/ /reference/pexec/ /reference/appl_init/ /reference/ssystem/ /abi/cuis/ /abi/elf-entry/ /historical/en/fopen/ /historical/de/contents/ /reference/pclone/; do
             url="https://docs.ptos.dev${path}"
             file="$(mktemp)"
             for attempt in {1..12}; do

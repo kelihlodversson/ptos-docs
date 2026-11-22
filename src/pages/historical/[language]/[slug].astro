@@ -1,0 +1,64 @@
+---
+import Layout from '../../../components/Layout.astro';
+import Masthead from '../../../components/Masthead.astro';
+import Fact from '../../../components/Fact.astro';
+import TargetPanels from '../../../components/TargetPanels.astro';
+import GfaBinding from '../../../components/GfaBinding.astro';
+import { sourceLink } from '../../../data/catalog';
+import { pages } from '../../../data/historical';
+import type { HistoricalPage } from '../../../data/historical';
+
+export function getStaticPaths() {
+  return (['en', 'de'] as const).flatMap(language => pages(language).map(page => ({
+    params: { language, slug: page.slug },
+    props: { page },
+  })));
+}
+
+interface Props { page: HistoricalPage }
+const { page } = Astro.props;
+const english = page.language === 'en';
+const source = sourceLink(['tos', page.path, 'Original UDO source']);
+const description = page.description || page.title;
+const unknown = {
+  arm: 'pTOS ARM support for this entry has not been verified.',
+  x32: 'pTOS x32 support for this entry has not been verified.',
+};
+---
+<Layout title={page.title} {description} running={`tos.hyp — ${page.subsystem}`}
+  breadcrumbs={[{ label: 'Historical TOS reference', href: '/historical/' }, {
+    label: english ? 'English contents' : 'Deutsche Ausgabe', href: `/historical/${page.language}/contents/`,
+  }]}>
+  <article class="historical-entry" lang={page.language}>
+    {page.function ? <div id={page.id}><Masthead name={page.title} title={page.operation} subsystem={page.subsystem} /></div>
+      : <header class="directory-head"><h1 id={page.id}>{page.title}</h1></header>}
+    {page.prototype && <section aria-labelledby="prm-prototype-heading">
+      <h2 id="prm-prototype-heading" class="prm-section-heading">{english ? 'C Prototype' : 'C-Deklaration'}</h2>
+      <pre class="prm-prototype"><code>{page.prototype}</code></pre>
+    </section>}
+    {page.native && <p class="revision-note"><a href={page.native}>{english ? 'pTOS and ParaTOS implementation notes' : 'Hinweise zur pTOS- und ParaTOS-Implementierung'}</a></p>}
+    {page.facts.length > 0 && <dl class="prm-facts">{page.facts.map(({ label, value }) => <Fact label={label.replace(/:$/, '')}><div set:html={value} /></Fact>)}</dl>}
+    {page.body && <div class="historical-body" set:html={page.body} />}
+    {page.function && <TargetPanels heading={english ? 'Calling Convention' : 'Aufrufkonvention'}>
+      <div slot="68k">
+        {page.bindings?.assembly ? <div set:html={page.bindings.assembly} /> : <p>{english ? 'See the historical entry for available bindings.' : 'Siehe den historischen Eintrag für vorhandene Bindungen.'}</p>}
+        {page.bindings && <a href={page.bindings.href}>{english ? 'Original binding reference' : 'Originalbindung'}</a>}
+      </div>
+      <p slot="arm" class="prm-unsupported">{page.native
+        ? <a href={page.native + '#calling-convention'}>{english ? 'See the pTOS ARM calling convention.' : 'ARM-Aufrufkonvention für pTOS'}</a>
+        : english ? unknown.arm : 'Die Unterstützung in pTOS für ARM wurde nicht verifiziert.'}</p>
+      <p slot="x32" class="prm-unsupported">{page.native
+        ? <a href={page.native + '#calling-convention'}>{english ? 'See the pTOS x32 calling convention.' : 'x32-Aufrufkonvention für pTOS'}</a>
+        : english ? unknown.x32 : 'Die Unterstützung in pTOS für x32 wurde nicht verifiziert.'}</p>
+      {page.bindings?.gfa ? <pre class="prm-code" slot="gfa"><code>{page.bindings.gfa}</code></pre> : english ? <GfaBinding slot="gfa" /> : <p slot="gfa">Keine GFA-BASIC-Bindung dokumentiert.</p>}
+    </TargetPanels>}
+    <section aria-labelledby="historical-source">
+      <h2 id="historical-source" class="prm-section-heading ruled">{english ? 'Source' : 'Quelle'}</h2>
+      <p><a href={source.href}><code>{source.path}</code></a> · <code>{source.revision.slice(0, 12)}</code></p>
+      {page.findings > 0 && <p class="revision-note">English translation needs review. <a href="/source/historical-report.json">Translation findings</a></p>}
+    </section>
+    <nav class="historical-nav" aria-label={english ? 'Historical reference navigation' : 'Navigation im historischen Handbuch'}>
+      {page.nav.map(item => <a href={item.href}>{item.label}</a>)}
+    </nav>
+  </article>
+</Layout>

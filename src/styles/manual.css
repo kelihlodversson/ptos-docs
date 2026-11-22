@@ -286,3 +286,29 @@ figure figcaption { margin-top: .4rem; color: var(--prm-muted); font-size: .8rem
 
 /* Allow long C declarations, selectors and examples to wrap on narrow screens. */
 .prm-code, .prm-prototype { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.historical-entry { overflow-wrap: anywhere; }
+.historical-entry .table-scroll { max-width: 100%; }
+.historical-entry .historical-table { margin-block: .7rem; }
+.historical-entry .historical-nowrap { white-space: nowrap; }
+.historical-entry .historical-table td.historical-align-right { text-align: right; }
+.historical-entry .historical-table td.historical-align-center { text-align: center; }
+.historical-entry img { max-width: 100%; height: auto; }
+.historical-entry pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: .91rem/1.55 var(--mono);
+}
+.historical-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem 1rem;
+  border-top: 1px solid var(--prm-line);
+  padding-top: .75rem;
+  font-size: .86rem;
+}
+
+@media print {
+  .historical-nav { display: none; }
+  .historical-entry .table-scroll { overflow: visible; }
+}
