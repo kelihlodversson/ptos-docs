@@ -7,7 +7,7 @@ import GfaBinding from '../../../components/GfaBinding.astro';
 import HistoricalNativeTarget from '../../../components/HistoricalNativeTarget.astro';
 import { sourceLink } from '../../../data/catalog';
 import { pages } from '../../../data/historical';
-import { historicalBreadcrumbs } from '../../../data/manual-structure';
+import { importedNavigation } from '../../../data/manual-structure';
 import type { HistoricalPage } from '../../../data/historical';
 
 export function getStaticPaths() {
@@ -22,11 +22,11 @@ const { page } = Astro.props;
 const english = page.language === 'en';
 const source = sourceLink(['tos', page.path, 'Original UDO source']);
 const description = page.description || page.title;
+const { chapter, breadcrumbs } = importedNavigation(page);
 ---
-<Layout title={page.title} {description} running={`tos.hyp — ${page.subsystem}`}
-  breadcrumbs={historicalBreadcrumbs(page.language, page.slug)}>
+<Layout title={page.title} {description} running={chapter?.name ?? `tos.hyp — ${page.subsystem}`} {breadcrumbs}>
   <article class="historical-entry" lang={page.language}>
-    {page.function ? <div id={page.id}><Masthead name={page.title} title={page.operation} subsystem={page.subsystem} /></div>
+    {page.function ? <div id={page.id}><Masthead name={page.title} title={page.operation} subsystem={chapter?.name ?? page.subsystem} /></div>
       : <header class="directory-head"><h1 id={page.id}>{page.title}</h1></header>}
     {page.prototype && <section aria-labelledby="prm-prototype-heading">
       <h2 id="prm-prototype-heading" class="prm-section-heading">{english ? 'C Prototype' : 'C-Deklaration'}</h2>

@@ -9,6 +9,8 @@ It reads the compiler’s node-to-file map for provenance, keeps aliases and
 cross-references, and adapts the generated HTML into the reference layout and
 target selector. The generated parent indexes supply the chapter hierarchy
 and historical breadcrumbs. The importer takes UDO source as input.
+It uses the author date from the German SE protocol source header for its
+signature, keeping the rendered page independent of the day UDO runs.
 
 The generated records are committed so the ordinary Astro build only needs
 Node and npm. To regenerate on Linux, install a C compiler and run:
