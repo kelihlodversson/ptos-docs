@@ -323,6 +323,16 @@ try {
   if (unfolded.length === mainBytes.length) throw new Error('The UDO split directive has changed');
   writeFileSync(main, Buffer.from(unfolded, 'latin1'));
 
+  // UDO expands (!today) to the build date. The SE protocol source header
+  // records the author's original date, so use it for the rendered signature.
+  const protocol = join(source, 'protokol/seproto/seproto_de.ui');
+  const protocolText = readFileSync(protocol, 'latin1');
+  const credit = /^# @\(#\)seproto\.u, (Dirk Haun), (\d{2}\.\d{2}\.\d{4})\r?$/m.exec(protocolText);
+  if (!credit) throw new Error('Missing original SE protocol author date');
+  const signature = protocolText.replace(/^Dirk Haun, \(!today\)(?=\r?$)/m, credit[1] + ', ' + credit[2]);
+  if (signature === protocolText) throw new Error('The SE protocol author signature has changed');
+  writeFileSync(protocol, signature, 'latin1');
+
   const report = { revision: tos.revision, compiler: udo.revision, languages: {}, outOfCorpus: [] };
   const used = new Set();
   let englishFunctions;
