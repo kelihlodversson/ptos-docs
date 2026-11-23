@@ -160,6 +160,31 @@ test('chapter navigation follows tos.hyp and places extensions with related call
   await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'AES', exact: true })).toHaveAttribute('href', '/subsystems/aes/');
 });
 
+test('imported function breadcrumbs return to the manual chapters', async ({ page }) => {
+  await page.goto('/subsystems/bios/');
+  await page.getByRole('link', { name: 'About the BIOS', exact: true }).click();
+  await page.getByRole('link', { name: 'Bconin', exact: true }).click();
+  const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb' });
+  await expect(breadcrumb.getByRole('listitem')).toHaveText(['Subsystems', 'BIOS', 'About the BIOS', 'Bconin']);
+  await expect(breadcrumb.getByRole('link', { name: 'About the BIOS' })).toHaveAttribute('href', '/subsystems/bios/about-the-bios/');
+  await breadcrumb.getByRole('link', { name: 'BIOS', exact: true }).click();
+  await expect(page).toHaveURL('/subsystems/bios/');
+
+  for (const [path, chapter, section] of [
+    ['/historical/de/bconin/', 'BIOS', 'About the BIOS'],
+    ['/historical/en/fopen/', 'GEMDOS', 'File functions'],
+    ['/historical/de/fopen/', 'GEMDOS', 'File functions'],
+    ['/historical/en/v-opnwk/', 'VDI', 'Control functions'],
+    ['/historical/en/xhgetversion/', 'XHDI', 'XHDI functions'],
+  ]) {
+    await page.goto(path);
+    await expect(breadcrumb.getByRole('link').nth(0)).toHaveText('Subsystems');
+    await expect(breadcrumb.getByRole('link').nth(1)).toHaveText(chapter);
+    await expect(breadcrumb.getByRole('link').nth(2)).toHaveText(section);
+    await expect(breadcrumb.getByRole('link', { name: 'tos.hyp', exact: true })).toHaveCount(0);
+  }
+});
+
 test('the main sections contain only the assigned chapters', async ({ page }) => {
   await page.goto('/');
   const main = page.getByRole('main');

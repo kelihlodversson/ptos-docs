@@ -1,5 +1,5 @@
 import { pages, records } from './historical';
-import type { Edition } from './historical';
+import type { Edition, HistoricalPage } from './historical';
 
 export const historicalPath = (language: Edition, slug: string) => `/historical/${language}/${slug}/`;
 export const upstreamTosHyp = 'https://freemint.github.io/tos.hyp/';
@@ -32,6 +32,7 @@ export type ManualChapter = ManualTopic & { area: Area; sections: ManualTopic[] 
 
 const english = pages('en');
 const englishBySlug = new Map(english.map(page => [page.slug, page]));
+const germanBySlug = new Map(pages('de').map(({ slug, title, path, id }) => [slug, { title, path, id }]));
 export const historicalSectionBody = (slug: string) => englishBySlug.get(slug)?.body;
 const parents = {
   en: records<Record<string, string>>('en-parents.json'),
@@ -99,10 +100,34 @@ export const manualAreas = areas.map(({ chapters: slugs, ...metadata }) => {
 
 export const chapters = manualAreas.flatMap(area => area.chapters);
 
-export function location(slug: string) {
-  const [chapterSlug, sectionSlug] = [...ancestors('en', slug), slug];
-  if (chapterSlug === 'xcontrol') return chapterLocation('protocols', 'xcontrol');
-  return chapterLocation(chapterSlug, sectionSlug);
+const germanChapterSlugs: Record<string, string> = {
+  protokolle: 'protocols',
+  'der-pmmu-funktionshandler': 'the-pmmu-functions-handler',
+};
+
+export function location(slug: string, language: Edition = 'en'): ReturnType<typeof chapterLocation> {
+  const [root, sectionSlug] = [...ancestors(language, slug), slug];
+  if (root === 'xcontrol') return chapterLocation('protocols', 'xcontrol');
+
+  const chapterSlug = language === 'de' ? germanChapterSlugs[root] ?? root : root;
+  const result = chapterLocation(chapterSlug, sectionSlug);
+  if (language === 'en' || !result.chapter || result.section || !sectionSlug) return result;
+
+  const sectionSource = germanBySlug.get(sectionSlug)?.path;
+  const matchingSections = result.chapter.sections.filter(section =>
+    section.historicalSlug && englishBySlug.get(section.historicalSlug)?.path === sectionSource);
+  if (matchingSections.length === 1) return { ...result, section: matchingSections[0] };
+
+  // Translated headings may have different source files. A shared UDO node
+  // or symbol from the same source file can identify the English subsection.
+  const germanPage = germanBySlug.get(slug);
+  const englishPage = englishBySlug.get(slug);
+  if (germanPage && englishPage &&
+      (germanPage.path === englishPage.path || germanPage.id && germanPage.id === englishPage.id)) {
+    const matchingEntry = location(slug);
+    if (matchingEntry.chapter === result.chapter) return matchingEntry;
+  }
+  return result;
 }
 
 export function chapterLocation(chapterSlug: string, sectionSlug?: string) {
@@ -112,7 +137,11 @@ export function chapterLocation(chapterSlug: string, sectionSlug?: string) {
 
 export function manualBreadcrumbs(chapterSlug: string, sectionSlug?: string) {
   const { chapter, section } = chapterLocation(chapterSlug, sectionSlug);
-  return [chapter?.area, chapter, section].flatMap(node => node ? [{ label: node.name, href: node.href }] : []);
+  return breadcrumbLinks([chapter?.area, chapter, section]);
+}
+
+function breadcrumbLinks(nodes: (Area | ManualTopic | undefined)[]) {
+  return nodes.flatMap(node => node ? [{ label: node.name, href: node.href }] : []);
 }
 
 export function nativeSection(name: string) {
@@ -121,10 +150,19 @@ export function nativeSection(name: string) {
   return 'process-functions';
 }
 
-export function historicalBreadcrumbs(language: Edition, slug: string) {
+export function importedNavigation({ language, slug }: Pick<HistoricalPage, 'language' | 'slug'>) {
   const trail = ancestors(language, slug);
+  const { chapter, section } = location(slug, language);
+  if (chapter) {
+    const breadcrumbs = breadcrumbLinks([
+      chapter.area,
+      trail.length > 0 || section ? chapter : undefined,
+      trail.length > 1 ? section : undefined,
+    ]);
+    return { chapter, breadcrumbs };
+  }
   const titles = language === 'en' ? englishBySlug : germanBySlug;
-  return [
+  const breadcrumbs = [
     { label: 'tos.hyp', href: upstreamTosHyp },
     ...(slug === 'contents' ? [] : [{
       label: language === 'en' ? 'English contents' : 'Deutsche Ausgabe', href: historicalPath(language, 'contents'),
@@ -134,6 +172,5 @@ export function historicalBreadcrumbs(language: Edition, slug: string) {
       href: historicalPath(language, parent),
     })),
   ];
+  return { chapter, breadcrumbs };
 }
-
-const germanBySlug = new Map(pages('de').map(page => [page.slug, { title: page.title }]));
