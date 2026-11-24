@@ -1,6 +1,7 @@
 import imported from './toshyp.generated.json';
 import revisions from './sources.json';
 import { nativeCalls, nativePath } from './native-calls';
+import { ssystemDescription } from './ssystem-modes';
 import { records } from './historical';
 import type { HistoricalFunction } from './historical';
 import { chapterLocation, elfEntryPath, location, nativeSection } from './manual-structure';
@@ -43,7 +44,7 @@ export const catalog = [
     name: record.name, description: record.operation, subsystem: record.subsystem,
     ...historicalLocation(functionByName.get(record.name)!.historicalHref), href: referencePath(record.name),
   })),
-  { name: 'Ssystem', description: 'Read console dimensions with S_CONSOLE_DIM', subsystem: 'GEMDOS',
+  { name: 'Ssystem', description: ssystemDescription, subsystem: 'GEMDOS',
     ...nativeLocation('Ssystem'), href: referencePath('Ssystem') },
   { name: 'CUIS ABI', description: 'Private x32 syscall selector and session query', subsystem: 'AES',
     ...chapterLocation('aes', 'cuis'), href: '/abi/cuis/', kind: 'abi' as const },

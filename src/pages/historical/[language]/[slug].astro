@@ -5,13 +5,14 @@ import Fact from '../../../components/Fact.astro';
 import TargetPanels from '../../../components/TargetPanels.astro';
 import GfaBinding from '../../../components/GfaBinding.astro';
 import HistoricalNativeTarget from '../../../components/HistoricalNativeTarget.astro';
+import HistoricalPtosAvailability from '../../../components/HistoricalPtosAvailability.astro';
 import { sourceLink } from '../../../data/catalog';
 import { pages } from '../../../data/historical';
 import { importedNavigation } from '../../../data/manual-structure';
 import type { HistoricalPage } from '../../../data/historical';
 
 export function getStaticPaths() {
-  return (['en', 'de'] as const).flatMap(language => pages(language).map(page => ({
+  return (['en', 'de'] as const).flatMap(language => pages(language).filter(page => page.slug !== 'ssystem').map(page => ({
     params: { language, slug: page.slug },
     props: { page },
   })));
@@ -23,6 +24,7 @@ const english = page.language === 'en';
 const source = sourceLink(['tos', page.path, 'Original UDO source']);
 const description = page.description || page.title;
 const { chapter, breadcrumbs } = importedNavigation(page);
+const availability = page.function ? page.facts.findIndex(({ label }) => /^(Availability|Verfügbar):?$/.test(label)) : -1;
 ---
 <Layout title={page.title} {description} running={chapter?.name ?? `tos.hyp — ${page.subsystem}`} {breadcrumbs}>
   <article class="historical-entry" lang={page.language}>
@@ -33,7 +35,15 @@ const { chapter, breadcrumbs } = importedNavigation(page);
       <pre class="prm-prototype"><code>{page.prototype}</code></pre>
     </section>}
     {page.native && <p class="revision-note"><a href={page.native}>{english ? 'pTOS and ParaTOS implementation notes' : 'Hinweise zur pTOS- und ParaTOS-Implementierung'}</a></p>}
-    {page.facts.length > 0 && <dl class="prm-facts">{page.facts.map(({ label, value }) => <Fact label={label.replace(/:$/, '')}><div set:html={value} /></Fact>)}</dl>}
+    {(page.facts.length > 0 || page.function) && <dl class="prm-facts">
+      {page.facts.map(({ label, value }, index) => <Fact label={label.replace(/:$/, '')}>
+        <div set:html={value} />
+        {index === availability && <HistoricalPtosAvailability {page} history={value} />}
+      </Fact>)}
+      {page.function && availability < 0 && <Fact label={english ? 'Availability' : 'Verfügbar'}>
+        <HistoricalPtosAvailability {page} />
+      </Fact>}
+    </dl>}
     {page.body && <div class="historical-body" set:html={page.body} />}
     {page.function && <TargetPanels heading={english ? 'Calling Convention' : 'Aufrufkonvention'}>
       <div slot="68k">

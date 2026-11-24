@@ -2,6 +2,7 @@
 import Layout from '../components/Layout.astro';
 import revisions from '../data/sources.json';
 import { gfaSource } from '../data/gfa-reference';
+import { upstreamTosHyp } from '../data/manual-structure';
 ---
 <Layout title="Sources and licensing" description="Revision, attribution and license details for the pTOS Programmer’s Reference Manual.">
   <header class="directory-head"><h1>Sources and Licensing</h1></header>
@@ -10,6 +11,7 @@ import { gfaSource } from '../data/gfa-reference';
     maintainers, translators and contributors. See the original foreword by Rolf Kotzian and the notices maintained
     by Michael Bernstein and Gerhard Stoll. The historical text uses the GNU General Public License published with the upstream source.</p>
   <ul>
+    <li><a href={upstreamTosHyp}>Read tos.hyp on FreeMiNT</a></li>
     <li><a href="/source/tos.hyp/anhang/hilfe.u">Upstream foreword and licensing notice</a></li>
     <li><a href="/source/tos.hyp/COPYING.GPL">GNU General Public License, version 2</a></li>
     <li><a href="/source/historical-report.json">Full UDO coverage and translation review</a></li>

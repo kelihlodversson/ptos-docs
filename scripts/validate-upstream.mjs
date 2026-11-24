@@ -56,10 +56,19 @@ for (const [path, names] of Object.entries(kernelHeaders)) {
   const header = fromKernel(path);
   for (const name of [names].flat()) assert.equal(define(header, 'GEMDOS_' + name.toUpperCase()), get(name).opcode);
 }
-for (const name of ['S_MEMINFO', 'S_DESKINFO', 'S_DESKSET', 'S_MMUPROBE', 'S_PROCNAME', 'S_PROCIDENT', 'S_PROCEXEC']) {
-  const hex = new RegExp(`^#define ${name}\\s+\\(\\(WORD\\)(0x[0-9a-f]+)\\)`, 'm').exec(consoleHeader)?.[1];
-  assert.equal(Number(hex), get(name).mode & 0xffff, name);
+const { ssystemModeGroups } = await import('../src/data/ssystem-modes.ts');
+const documentedModes = ssystemModeGroups.flatMap(group => group.modes);
+const ssystem = fromKernel('bdos/ssystem.c');
+const ssystemDispatch = ssystem.split('\nLONG xssystem(')[1];
+assert.ok(ssystemDispatch);
+const dispatchModes = [...ssystemDispatch.matchAll(/^\s*case (S_[A-Z_]+):/gm)].map(match => match[1]);
+assert.deepEqual(documentedModes.map(mode => mode.name).sort(), dispatchModes.sort());
+for (const { name, number } of documentedModes) {
+  const selector = new RegExp(`^#define ${name}\\s+(?:\\(\\(WORD\\))?(0x[0-9a-f]+|\\d+)\\b`, 'm')
+    .exec(consoleHeader)?.[1];
+  assert.equal(Number(selector), number & 0xffff, name);
 }
+console.log(`Verified all ${documentedModes.length} documented Ssystem selectors against the dispatcher and header`);
 for (const [name, fn] of Object.entries({ LAUNCH_ATTACH: 93, STREAM_RECEIPT: 94, ENDPOINT_BARRIER: 95, STREAM_BATCH: 96 })) {
   assert.equal(define(cuis, `CUIS_${name}`), fn);
 }

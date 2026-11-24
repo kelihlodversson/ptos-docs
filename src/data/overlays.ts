@@ -122,25 +122,29 @@ export const overlays: Record<string, Overlay> = {
   },
   Ssystem: {
     params: [
-      ['mode', 'S_CONSOLE_DIM, the signed word value −2 (0xFFFE).'],
-      ['arg1', 'Address of the caller’s console_dim output buffer, cast to long. May be zero for a size query.'],
-      ['arg2', 'Buffer length in bytes. Use −1 to query the kernel’s structure size.'],
+      ['mode', 'Signed 16-bit selector. The table below lists each pTOS mode.'],
+      ['arg1', 'First mode-specific 32-bit scalar or user pointer. Pass zero when unused.'],
+      ['arg2', 'Second mode-specific 32-bit scalar or user pointer. Pass zero when unused.'],
     ],
     targets: {
       '68k': { status: 'implemented', scope: 'pTOS builds with CONF_WITH_SSYSTEM',
-        detail: 'Use GEMDOS TRAP #1. Push the 32-bit size, 32-bit pointer, 16-bit mode and 16-bit opcode in that order. The result is in D0. Remove 12 argument bytes after return.' },
-      ...gemdos('0x154', ['mode', 'S_CONSOLE_DIM (−2)'], ['Destination pointer', 'Size or −1']),
+        detail: 'Use GEMDOS TRAP #1. Push the 32-bit arg2, 32-bit arg1, 16-bit mode and 16-bit opcode in that order. The result is in D0. Remove 12 argument bytes after return.' },
+      ...gemdos('0x154', ['mode', 'Signed 16-bit mode selector'], ['arg1 · mode-specific', 'arg2 · mode-specific']),
     },
     sources: [
-      ...gemdosSources, ['ptos', 'bdos/ssystem.h', 'S_CONSOLE_DIM contract and console_dim layout'],
-      ['ptos', 'bdos/ssystem.c', 'Console query implementation'],
+      ...gemdosSources, ['ptos', 'bdos/ssystem.h', 'Mode selectors and structure layouts'],
+      ['ptos', 'bdos/ssystem.c', 'Mode dispatch, discovery and implementations'],
+      ['ptos', 'bdos/uaccess.c', 'User buffer validation and restricted modes'],
+      ['ptos', 'bdos/Kconfig', 'Ssystem and PROCESS service configuration'],
+      ['ptos', 'tests/Kconfig', '68k MMU probe configuration'],
+      ['ptos', 'doc/mint-calls.txt', 'MiNT compatibility and mode differences'],
       ['ptos', 'tests/ssystem_info/ssystem_info.c', 'Ssystem mode discovery regression'],
       ['ptos', 'tests/x32_probe/x32_probe.c', 'x32 console pointer and size checks'],
       ['libcmini', 'include/mint/mintbind.h', 'Public Ssystem macro'],
       ['paratos', 'host/posix/sys.c', 'ParaTOS POSIX guest Ssystem modes'],
       ['paratos', 'host/ptos/dispatch.c', 'ParaTOS pTOS-hosted guest Ssystem modes'],
     ],
-    paraTos: 'The POSIX and pTOS-hosted guest dispatchers in ParaTOS PR #27 do not expose S_CONSOLE_DIM.',
+    paraTos: 'The POSIX guest returns zero for the discovery call without checking its arguments, supports guest cookie and system-variable reads, and refuses writes with EACCDN. The pTOS-hosted guest checks each selector, handles cookie reads and system-variable access in the guest, forwards scalar build identification queries to pTOS, and reports zero for S_OSFEATURES. Both guest dispatchers omit the native pTOS modes −2 through −9.',
   },
 };
 

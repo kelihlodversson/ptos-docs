@@ -128,6 +128,7 @@ test('historical entries retain their availability, source and switchable bindin
   await expect(page.getByRole('heading', { name: 'Fopen', exact: true })).toBeVisible();
   await expect(page.locator('.prm-prototype')).toContainText('Fopen');
   await expect(page.getByText('All GEMDOS versions.')).toBeVisible();
+  await expect(page.locator('.ptos-availability')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'gemdos/file/fopen.ui' })).toHaveAttribute('href', /freemint\/tos.hyp\/blob\/20a9cfb4/);
   const select = selectTarget(page);
   await select.selectOption('arm');
@@ -141,6 +142,62 @@ test('historical entries retain their availability, source and switchable bindin
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(results.violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
+test('historical availability reports pTOS exceptions and build requirements across targets', async ({ page }) => {
+  const availability = page.locator('.prm-fact-row').filter({ has: page.locator('dt').getByText(/^(Availability|Verfügbar)$/) });
+  await page.goto('/historical/en/supexec/');
+  await expect(availability).toContainText('All TOS versions.');
+  await expect(availability.getByRole('listitem').filter({ hasText: '68k' })).toContainText('Requires a single address space.');
+  await expect(availability.getByRole('listitem').filter({ hasText: 'ARM, x32' })).toContainText('Not implemented');
+  await selectTarget(page).selectOption('gfa');
+  await expect(availability).toBeVisible();
+  await expect(availability.getByRole('link', { name: 'PR #903' })).toHaveAttribute('href', /pTOS\/pull\/903$/);
+
+  const expected = [
+    ['/historical/en/dgetcwd/', '68k, ARM, x32', 'Implemented', 'CONF_WITH_KPROC'],
+    ['/historical/en/fpipe/', '68k, ARM, x32', 'Not implemented'],
+    ['/historical/de/getbpb/', '68k, ARM', 'Implementiert', 'Nur ohne getrennte Adressräume'],
+    ['/historical/en/graf-mouse/', 'x32', 'Experimental', 'CONF_WITH_LIBAES'],
+    ['/historical/en/v-opnvwk/', 'x32', 'Implemented', 'CONF_WITH_X32_VDI'],
+    ['/historical/en/seedfill/', '68k', 'Implemented', 'CONF_WITH_LINEA'],
+    ['/historical/en/xhreserve/', '68k', 'Not implemented', 'A chained XHDI driver'],
+    ['/historical/de/pmem-size/', '68k', 'Ungeprüft', 'externen PMMU-Funktionshandler'],
+    ['/historical/en/pfork/', '68k, ARM, x32', 'Implemented', 'CONF_WITH_PFORK'],
+  ] as const;
+  for (const [path, targets, status, limitation] of expected) {
+    await page.goto(path);
+    const row = availability.locator('.availability-targets li').filter({ has: page.getByText(targets, { exact: true }) });
+    await expect(row).toContainText(status);
+    if (limitation) await expect(row).toContainText(limitation);
+  }
+});
+
+test('Ssystem combines all native selectors and the historical MiNT reference', async ({ page }) => {
+  await page.goto('/reference/ssystem/');
+  const nativeModes = page.getByRole('region', { name: 'pTOS Mode Selectors' });
+  await expect(nativeModes.locator('tbody tr')).toHaveCount(26);
+  await expect(nativeModes.locator('#native-S_INQUIRE')).toContainText('-1 (0xFFFF)');
+  await expect(nativeModes.locator('#native-S_GETCOOKIE')).toContainText('one-based slot');
+  await expect(nativeModes.locator('#native-S_SETLVAL')).toContainText('EACCDN');
+  await expect(nativeModes.locator('#native-S_PROCEXEC')).toContainText('CONF_WITH_PROCESS_EXEC_TEST');
+  await expect(nativeModes.getByRole('link', { name: 'S_MEMINFO', exact: true })).toHaveAttribute('href', '/reference/s-meminfo/');
+  await expect(page.getByRole('heading', { name: 'Historical MiNT Mode Reference' })).toBeVisible();
+  await expect(page.getByText("Available when a 'MiNT' cookie", { exact: false })).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://docs.ptos.dev/reference/ssystem/');
+
+  const select = selectTarget(page);
+  await select.selectOption('arm');
+  await expect(page.locator('[data-target-panel="arm"]')).toContainText('arg1 · mode-specific');
+  await select.selectOption('gfa');
+  await expect(page.locator('[data-target-panel="gfa"]')).toContainText('GEMDOS(&H154,W:Arg1%,L:Arg2%,L:Arg3%)');
+  await expect(page.locator('.prm-prototype')).toBeVisible();
+
+  for (const language of ['en', 'de']) {
+    await page.goto('/historical/' + language + '/ssystem/#S_OSHEADER', { waitUntil: 'commit' });
+    await expect(page).toHaveURL('/reference/ssystem/#S_OSHEADER');
+    await expect(page.locator('[id="S_OSHEADER"]')).toBeAttached();
+  }
 });
 
 test('chapter navigation follows tos.hyp and places extensions with related calls', async ({ page }) => {
@@ -190,7 +247,7 @@ test('the main sections contain only the assigned chapters', async ({ page }) =>
   const main = page.getByRole('main');
   const navigation = page.getByRole('navigation', { name: 'Manual' });
   await expect(main.getByRole('heading', { name: 'Reference Entries' })).toHaveCount(0);
-  await expect(navigation.getByRole('link', { name: 'tos.hyp', exact: true })).toHaveAttribute('href', 'https://freemint.github.io/tos.hyp/');
+  await expect(navigation.locator('a[href="https://freemint.github.io/tos.hyp/"]')).toHaveCount(0);
   await expect(navigation.getByRole('link', { name: 'Historical TOS' })).toHaveCount(0);
   await navigation.getByRole('link', { name: 'Subsystems', exact: true }).click();
   await expect(main.getByText('Atari introduced TOS in 1985', { exact: false })).toBeVisible();
@@ -214,6 +271,9 @@ test('the main sections contain only the assigned chapters', async ({ page }) =>
   await expect(main.getByText('modular (extendable) control field', { exact: false })).toBeVisible();
   expect((await page.request.get('/subsystems/magic/')).status()).toBe(404);
   expect((await page.request.get('/subsystems/ptos/')).status()).toBe(404);
+  await page.getByRole('link', { name: 'Sources and licensing', exact: true }).click();
+  await expect(page).toHaveURL('/sources/');
+  await expect(main.getByRole('link', { name: 'Read tos.hyp on FreeMiNT' })).toHaveAttribute('href', 'https://freemint.github.io/tos.hyp/');
 });
 
 test('pTOS setup links document the boot files and moved ELF convention', async ({ page }) => {

@@ -1,0 +1,108 @@
+---
+import Layout from '../../components/Layout.astro';
+import Masthead from '../../components/Masthead.astro';
+import Fact from '../../components/Fact.astro';
+import Availability from '../../components/Availability.astro';
+import ParameterList from '../../components/ParameterList.astro';
+import TargetPanels from '../../components/TargetPanels.astro';
+import CallingConvention from '../../components/CallingConvention.astro';
+import GfaBinding from '../../components/GfaBinding.astro';
+import MemoryLayout from '../../components/MemoryLayout.astro';
+import SourceList from '../../components/SourceList.astro';
+import { manualBreadcrumbs } from '../../data/manual-structure';
+import { pages } from '../../data/historical';
+import { overlays } from '../../data/overlays';
+import { ssystemDescription, ssystemModeGroups } from '../../data/ssystem-modes';
+import abi from '../../data/abi.json';
+
+const historical = pages('en').find(page => page.slug === 'ssystem');
+if (!historical) throw new Error('Missing historical Ssystem entry');
+const fact = (label: string) => historical.facts.find(item => item.label === label)?.value;
+const { params, targets, paraTos, sources } = overlays.Ssystem;
+const hex = (mode: number) => '0x' + (mode & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+const processConfig = 'https://github.com/kelihlodversson/pTOS/blob/32aaf698875f13d25c252b8e3f00d33da4f0a62d/bdos/Kconfig';
+---
+<Layout title="Ssystem" description={ssystemDescription} running="GEMDOS — System functions"
+  breadcrumbs={manualBreadcrumbs('gemdos', 'system-functions')}>
+  <article id={historical.id}>
+    <Masthead name="Ssystem" title="System queries and settings" subsystem="GEMDOS" />
+    <section aria-labelledby="prm-prototype-heading">
+      <h2 id="prm-prototype-heading" class="prm-section-heading">C Prototype</h2>
+      <pre class="prm-prototype"><code>long Ssystem(short mode, long arg1, long arg2);</code></pre>
+      <p class="prototype-note">Call signature for the SDK macro in <code>&lt;mint/mintbind.h&gt;</code>.</p>
+    </section>
+    <dl class="prm-facts">
+      <Fact label="Operation">{ssystemDescription}</Fact>
+      <Fact label="Opcode">GEMDOS <code>340 (0x0154)</code></Fact>
+      <Fact label="Parameters"><ParameterList entries={params} /></Fact>
+      <Fact label="Return Value">
+        <p>The result depends on the mode. The dispatcher returns <code>EINVFN</code> for an unimplemented mode.
+          User-address-space builds validate caller buffers and can reject an invalid address with <code>EIMBA</code>.</p>
+      </Fact>
+      <Fact label="Availability">
+        <Availability history={fact('Availability:')} support={targets} {paraTos}>
+          <p><code>CONF_WITH_SSYSTEM</code> defaults on for ARM, x32 and private address-space builds. Options such as
+            the external desktop also select it on 68k. Use <code>S_INQUIRE</code> before relying on an optional mode.</p>
+        </Availability>
+      </Fact>
+    </dl>
+
+    <section aria-labelledby="native-modes">
+      <h2 id="native-modes" class="prm-section-heading ruled">pTOS Mode Selectors</h2>
+      <p>Query a selector with <code>Ssystem(-1, selector, 0L)</code>. A successful probe establishes that the kernel
+        advertises the mode. Arguments, privileges and build features can further restrict the call.
+        The <a href="#historical-mint">historical MiNT mode reference</a> below describes the original interface.</p>
+      {ssystemModeGroups.map(({ title, modes }) => <table class="prm-rule-table prm-key-table">
+        <caption>{title}</caption>
+        <thead><tr><th scope="col">Mode</th><th scope="col">Arguments, result and conditions</th></tr></thead>
+        <tbody>{modes.map(mode => <tr id={`native-${mode.name}`}>
+          <th scope="row">{mode.href ? <a href={mode.href}><code>{mode.name}</code></a> : <code>{mode.name}</code>}
+            <br /><code>{mode.number} ({hex(mode.number)})</code></th>
+          <td>
+            <code>arg1 = {mode.args[0]}</code><br /><code>arg2 = {mode.args[1]}</code><br />
+            {mode.result}{mode.condition && <> {mode.condition}</>}
+            {mode.name === 'S_PROCEXEC' && <> The current PR #903 configuration uses
+              <code>CONF_WITH_MULTITHREADING</code> as its scheduling gate.
+              <a href={processConfig}>Configuration source</a>.</>}
+          </td>
+        </tr>)}</tbody>
+      </table>)}
+      <p>The system-variable modes accept only addresses present in the kernel’s table for the requested width.
+        Unknown addresses return <code>EINVFN</code>. See the linked dispatcher source for the accepted addresses.</p>
+      <p><code>S_CONSOLE_DIM</code>, <code>S_MEMINFO</code>, <code>S_DESKINFO</code> and <code>S_MMUPROBE</code> use
+        the smaller of the supplied length and the kernel structure size. Check the returned byte count before using a field.
+        A size of <code>-1</code> queries the structure size and ignores the buffer. A null buffer or a nonpositive size
+        outside the query form is invalid.</p>
+      <p>Historical modes outside the pTOS tables return <code>EINVFN</code>. <code>S_CLOCKUTC</code> is planned.</p>
+    </section>
+
+    <TargetPanels>
+      <CallingConvention slot="68k" binding={targets['68k']}>
+        <div class="historical-entry" set:html={historical.bindings?.assembly} />
+        <MemoryLayout {...abi.console} byteOrder="Big endian" />
+      </CallingConvention>
+      <CallingConvention slot="arm" binding={targets.arm}>
+        <MemoryLayout {...abi.console} byteOrder="Little endian" />
+      </CallingConvention>
+      <CallingConvention slot="x32" binding={targets.x32}>
+        <MemoryLayout {...abi.console} byteOrder="Little endian" />
+      </CallingConvention>
+      <GfaBinding slot="gfa" symbol="Ssystem" subsystem="GEMDOS" code={historical.bindings?.gfa} raw={historical.bindings?.raw} />
+    </TargetPanels>
+
+    <section class="historical-entry" aria-labelledby="historical-mint">
+      <h2 id="historical-mint" class="prm-section-heading ruled">Historical MiNT Mode Reference</h2>
+      <p>The original <em>tos.hyp</em> entry documents the MiNT selectors and their arguments.</p>
+      <div set:html={fact('Description:')} />
+    </section>
+    <section aria-labelledby="related-heading">
+      <h2 id="related-heading" class="prm-section-heading ruled">See Also</h2>
+      <ul class="related-links">
+        <li><a href="/historical/en/sysconf/">Sysconf</a></li>
+        <li><a href="/historical/en/tgettimeofday/">Tgettimeofday</a></li>
+        <li><a href="/historical/en/tsettimeofday/">Tsettimeofday</a></li>
+      </ul>
+    </section>
+    <SourceList sources={[[ 'tos', historical.path, 'Original tos.hyp Ssystem description and binding' ], ...sources]} />
+  </article>
+</Layout>

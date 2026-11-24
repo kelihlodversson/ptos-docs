@@ -1,0 +1,22 @@
+---
+import { referencePath } from '../../../data/catalog';
+
+export function getStaticPaths() {
+  return ['en', 'de'].map(language => ({ params: { language } }));
+}
+const destination = referencePath('Ssystem');
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Ssystem · pTOS Programmer’s Reference Manual</title>
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href={new URL(destination, Astro.site)} />
+    <script is:inline define:vars={{ destination }}>
+      window.location.replace(destination + window.location.hash);
+    </script>
+    <noscript><meta http-equiv="refresh" content={`0;url=${destination}`} /></noscript>
+  </head>
+  <body><a href={destination}>Ssystem reference</a></body>
+</html>

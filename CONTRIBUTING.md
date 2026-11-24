@@ -102,10 +102,14 @@ node scripts/import-native-bindings.mjs .upstream/pTOS --check
 
 The native binding inventory reads dispatch tables, libaes exports and the
 x32 VDI client at the pinned pTOS commit. Historical binding rules in
-`src/data/historical-bindings.ts` handle shared opcodes, native argument
-structures, and build or privilege restrictions. Review these rules when
-repinning the source. Assign extensions to the closest historical subsection
-using `src/data/manual-structure.ts`.
+`src/data/historical-bindings.ts` supply the Availability summary and native
+calling conventions. They account for shared opcodes, native argument
+structures, and build or privilege restrictions. The summary adds pTOS
+information alongside the imported Availability and omits a redundant summary
+when the original says that all versions support the call and every pTOS
+target implements it without qualification. Review these rules when repinning
+the source. Assign extensions to the closest historical subsection using
+`src/data/manual-structure.ts`.
 
 Keep ABI layouts in structured data with explicit widths and byte offsets.
 Use Chromium print view or capture the reference review images:

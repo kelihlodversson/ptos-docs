@@ -211,7 +211,7 @@ export const nativeCalls: NativeCall[] = [
     ] },
   },
   {
-    name: 'S_PROCEXEC', title: 'Native process launch and observation transport', opcode: 0x154, mode: -9,
+    name: 'S_PROCEXEC', title: 'Private native process launch and observation transport', opcode: 0x154, mode: -9,
     prototype: 'long Ssystem(short mode, long request, long size);',
     args: [['mode', 2, 'S_PROCEXEC (−9).'], ['request', 4, 'Address of a 4-aligned PROCESS_EXEC_REQUEST.'], ['size', 4, 'Exactly 72 bytes.']],
     description: [
@@ -220,7 +220,7 @@ export const nativeCalls: NativeCall[] = [
       'PREPARE accepts policy 0 for asynchronous launch or 1 for deferred replacement. DEFER and START use zero policy and handle. Other unused or reserved values must be zero. SNAPSHOT is the only operation that copies out. A failed SNAPSHOT leaves completion available for retry.',
     ],
     result: 'A scalar status, handle or PID according to operation. Unsupported builds return EINVFN. Invalid requests or unreadable input return a negative GEMDOS error. A SNAPSHOT copy fault can modify part of the output without consuming it.',
-    config: 'CONF_WITH_PROCESS_EXEC requires USER_ASPACE, NATIVE_SCHED and SSYSTEM. S_INQUIRE reports availability. The separate CONF_WITH_PROCESS_EXEC_TEST profile keeps dispatch enabled while suppressing discovery.',
+    config: 'CONF_WITH_PROCESS_EXEC requires CONF_WITH_USER_ASPACE, CONF_WITH_SSYSTEM and native scheduling. S_INQUIRE reports availability. The separate CONF_WITH_PROCESS_EXEC_TEST profile keeps dispatch enabled while suppressing discovery.',
     status: 'experimental', paraTos: noGuestMode,
     sources: [ssystemSource, procConfig, ['ptos', 'include/process_exec.h', 'Transport operations and fixed-size argument'],
       ['ptos', 'include/process_completion.h', 'Completion fields'], ['ptos', 'doc/process-exec.txt', 'Source-level transport contract'],
@@ -309,7 +309,7 @@ const ssystemModes = [
   {
     name: 'S_DESKSET', mode: -5, title: 'Set a legacy desktop option',
     description: 'Item 1 sets the critical error alert, item 2 sets the AES background, and item 3 changes CPU cache settings where available. These options operate through the kernel AES path.',
-    result: 'Zero for a supported item. Returns EINVFN for an unknown or unavailable setting.',
+    result: 'Zero for a supported item. An unknown or unavailable setting returns EINVFN. User processes on address-space builds receive EACCDN.',
     config: 'Requires CONF_WITH_SSYSTEM and kernel AES. Background or cache options also require their corresponding build features.',
   },
   {

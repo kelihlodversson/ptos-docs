@@ -1,0 +1,67 @@
+---
+import { sourceLink, statusLabels } from '../data/catalog';
+import type { Status } from '../data/catalog';
+import type { HistoricalPage } from '../data/historical';
+import { historicalBinding } from '../data/historical-bindings';
+import { nativeCalls, nativePath } from '../data/native-calls';
+import { overlays } from '../data/overlays';
+import revisions from '../data/sources.json';
+import { targets } from '../data/targets';
+
+interface Props { page: HistoricalPage; history?: string }
+const { page, history } = Astro.props;
+const english = page.language === 'en';
+const overlay = page.native ? overlays[page.title] : undefined;
+const native = page.native ? nativeCalls.find(call => nativePath(call.name) === page.native) : undefined;
+const nativeSource = page.native && page.native + '#calling-convention';
+const pTOS = revisions.ptos;
+const pr = `https://github.com/${pTOS.repo}/pull/${pTOS.pullRequest}`;
+const labels: Record<Status, string> = english ? { ...statusLabels, unsupported: 'Not implemented' } : {
+  implemented: 'Implementiert', experimental: 'Experimentell', planned: 'Geplant',
+  unsupported: 'Nicht implementiert', unverified: 'Ungeprüft',
+};
+
+const isMessage = page.path.startsWith('protokol/');
+const isCpx = page.path === 'gem/cpxdoku.u';
+const rows: { architectures: string[]; status: Status; limitation?: string; sources: string[] }[] = [];
+if (!isMessage && !isCpx) {
+  for (const [cpu, label] of targets) {
+    if (cpu === 'gfa') continue;
+    const info = overlay || native ? undefined : historicalBinding(page, cpu);
+    const limitation = overlay
+      ? page.title === 'Fclose' ? undefined : overlay.targets[cpu].scope
+      : native ? native.targets?.[cpu] ?? native.config
+        : info?.limitation;
+    const status = overlay?.targets[cpu].status ?? info?.status ??
+      (native?.targets?.[cpu] ? 'unsupported' : native?.status ?? 'implemented');
+    const source = nativeSource || (info && sourceLink(['ptos', info.source, 'pTOS']).href);
+    const group = rows.find(row => row.status === status && (row.limitation || '') === (limitation || ''));
+    if (group) {
+      group.architectures.push(label);
+      if (source && !group.sources.includes(source)) group.sources.push(source);
+    } else {
+      rows.push({ architectures: [label], status, limitation, sources: source ? [source] : [] });
+    }
+  }
+}
+const historyText = history?.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() ?? '';
+const allVersions = /^(?:All (?:versions|(?:TOS|GEMDOS|BIOS|XBIOS|AES|VDI) versions)|(?:In allen|Alle) (?:(?:TOS|GEMDOS|BIOS|XBIOS|AES|VDI)\s*-?\s*)?Versionen)\.?$/i.test(historyText);
+const redundant = allVersions && rows.length === 1 && rows[0].status === 'implemented' && !rows[0].limitation;
+---
+{!redundant && <div class="ptos-availability">
+  <p><strong>pTOS</strong> · <a href={pr}>PR #{pTOS.pullRequest}</a></p>
+  {isMessage ? <p>{english ? 'Application message. Availability depends on the sending and receiving programs.'
+    : 'Anwendungsnachricht. Die Verfügbarkeit hängt vom sendenden und empfangenden Programm ab.'}</p>
+    : isCpx ? <p>{english ? 'Requires a compatible CPX host. Compatibility with pTOS is unverified.'
+      : 'Erfordert einen kompatiblen CPX-Host. Die Kompatibilität mit pTOS wurde nicht geprüft.'}</p>
+      : <ul class="availability-targets">
+        {rows.map(({ architectures, status, limitation, sources }) => <li>
+          <strong>{architectures.join(', ')}</strong> · {labels[status]}
+          {limitation && <> · <span lang={nativeSource && !english ? 'en' : undefined}>{limitation}</span></>}
+          {sources.length > 0 && <>{' '}<span class="revision-note">({sources.map((href, index) => <>
+            {index > 0 && ', '}<a {href}>{nativeSource ? english ? 'pTOS reference' : 'pTOS-Referenz'
+              : (english ? 'source' : 'Quellcode') + (sources.length > 1 ? ` ${index + 1}` : '')}</a>
+          </>)})</span></>}
+        </li>)}
+      </ul>}
+</div>}
