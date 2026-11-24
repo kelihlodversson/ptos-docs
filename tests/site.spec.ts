@@ -190,7 +190,7 @@ test('the main sections contain only the assigned chapters', async ({ page }) =>
   const main = page.getByRole('main');
   const navigation = page.getByRole('navigation', { name: 'Manual' });
   await expect(main.getByRole('heading', { name: 'Reference Entries' })).toHaveCount(0);
-  await expect(navigation.getByRole('link', { name: 'tos.hyp', exact: true })).toHaveAttribute('href', 'https://freemint.github.io/tos.hyp/');
+  await expect(navigation.locator('a[href="https://freemint.github.io/tos.hyp/"]')).toHaveCount(0);
   await expect(navigation.getByRole('link', { name: 'Historical TOS' })).toHaveCount(0);
   await navigation.getByRole('link', { name: 'Subsystems', exact: true }).click();
   await expect(main.getByText('Atari introduced TOS in 1985', { exact: false })).toBeVisible();
@@ -214,6 +214,9 @@ test('the main sections contain only the assigned chapters', async ({ page }) =>
   await expect(main.getByText('modular (extendable) control field', { exact: false })).toBeVisible();
   expect((await page.request.get('/subsystems/magic/')).status()).toBe(404);
   expect((await page.request.get('/subsystems/ptos/')).status()).toBe(404);
+  await page.getByRole('link', { name: 'Sources and licensing', exact: true }).click();
+  await expect(page).toHaveURL('/sources/');
+  await expect(main.getByRole('link', { name: 'Read tos.hyp on FreeMiNT' })).toHaveAttribute('href', 'https://freemint.github.io/tos.hyp/');
 });
 
 test('pTOS setup links document the boot files and moved ELF convention', async ({ page }) => {
