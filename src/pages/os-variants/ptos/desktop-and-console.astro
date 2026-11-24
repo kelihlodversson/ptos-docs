@@ -1,4 +1,5 @@
 ---
+import TableScroll from '../../../components/TableScroll.astro';
 import PtosGuide from '../../../components/PtosGuide.astro';
 import { elfEntryPath } from '../../../data/manual-structure';
 ---
@@ -13,14 +14,16 @@ import { elfEntryPath } from '../../../data/manual-structure';
   ['ptos', 'lib/aes/build.mk', 'libaes installation path'],
 ]}>
   <h2 class="prm-section-heading ruled">Boot files</h2>
-  <table class="prm-rule-table prm-key-table">
-    <thead><tr><th scope="col">Boot-drive path</th><th scope="col">Purpose</th></tr></thead>
-    <tbody>
-      <tr><th scope="row"><code>\EMUDESK.PRG</code></th><td>Desktop executable for builds with <code>CONF_EXTERNAL_DESK</code>.</td></tr>
-      <tr><th scope="row"><code>\EMUDESK.INF</code></th><td>EmuDesk settings.</td></tr>
-      <tr><th scope="row"><code>\EMUCON.TOS</code></th><td>Console executable for builds with <code>CONF_EXTERNAL_CLI</code>.</td></tr>
-    </tbody>
-  </table>
+  <TableScroll label="Boot-drive paths">
+    <table class="prm-rule-table prm-key-table">
+      <thead><tr><th scope="col">Boot-drive path</th><th scope="col">Purpose</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><code>\EMUDESK.PRG</code></th><td>Desktop executable for builds with <code>CONF_EXTERNAL_DESK</code>.</td></tr>
+        <tr><th scope="row"><code>\EMUDESK.INF</code></th><td>EmuDesk settings.</td></tr>
+        <tr><th scope="row"><code>\EMUCON.TOS</code></th><td>Console executable for builds with <code>CONF_EXTERNAL_CLI</code>.</td></tr>
+      </tbody>
+    </table>
+  </TableScroll>
   <p>Copy the desktop and console built for the same target as the kernel. ARM and x32 executables use ELF even though the
     filenames end in <code>.PRG</code> and <code>.TOS</code>. The 68k build uses the format enabled by the selected toolchain
     and loader. ROM configurations can include EmuDesk or EmuCON in the image.</p>

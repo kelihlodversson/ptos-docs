@@ -291,7 +291,12 @@ test('Ssystem keeps the MiNT modes and pTOS differences in one table', async ({ 
   const table = page.getByRole('table', { name: 'Ssystem mode reference' });
   const mode = (name: string) => table.locator(`:scope > tbody > tr[id="${name}"]`);
   const ptos = (name: string) => mode(name).locator(':scope > td').last();
-  await expect(table.getByRole('columnheader')).toHaveText(['Mode', 'MiNT (historical)', 'pTOS']);
+  await expect(table.locator(':scope > thead').getByRole('columnheader')).toHaveText(['Mode', 'MiNT (historical)', 'pTOS']);
+  const historicalTables = page.locator('table.ssystem-mode-table table').filter({ has: page.locator('thead') });
+  expect(await historicalTables.count()).toBeGreaterThanOrEqual(6);
+  for (const nested of await historicalTables.all()) {
+    await expect(nested.locator(':scope > tbody > tr').first()).not.toHaveText(/^\s*$/);
+  }
   await expect(table.locator(':scope > tbody').first().locator(':scope > tr[id]')).toHaveCount(41);
   await expect(table.locator(':scope > tbody').last().locator(':scope > tr[id]')).toHaveCount(8);
   await expect(table.locator('span[id^="native-S_"]')).toHaveCount(26);
@@ -344,7 +349,7 @@ test('BIOS system variables show separate types and link the six Ssystem access 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(path);
   const table = page.getByRole('table', { name: 'TOS system variables' });
-  await expect(table.getByRole('columnheader')).toHaveText(['Variable', 'Address', 'Type', 'Description']);
+  await expect(table.locator(':scope > thead').getByRole('columnheader')).toHaveText(['Variable', 'Address', 'Type', 'Description']);
   await expect(table.locator(':scope > tbody > tr')).toHaveCount(75);
   const boot = table.locator(':scope > tbody > tr').filter({ has: page.locator('#UDO__bootdev') });
   await expect(boot.locator(':scope > td').first()).toHaveText('0x446');
@@ -497,6 +502,46 @@ test('the GEMDOS signal table has distinct number and name columns with no space
   expect(await longest.evaluate(cell => cell.scrollWidth <= cell.clientWidth)).toBe(true);
   const tableRegion = page.getByRole('region', { name: 'GEMDOS signal table' });
   expect(await tableRegion.evaluate(region => region.scrollWidth <= region.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
+test('imported tables use separate reference fields and keep links and anchors', async ({ page }) => {
+  await page.goto('/subsystems/gemdos/gemdos-error-messages/#E_OK');
+  const errors = page.locator('main table').first();
+  await expect(errors.getByRole('columnheader')).toHaveText(['Number', 'Name', 'Meaning']);
+  const first = errors.locator(':scope > tbody > tr').first();
+  await expect(first.getByRole('rowheader')).toHaveText('E_OK');
+  await expect(first.locator('#E_OK')).toBeAttached();
+
+  await page.goto('/subsystems/bios/bios-error-messages/');
+  await expect(page.getByRole('rowheader', { name: 'E_OK', exact: true }).getByRole('link'))
+    .toHaveAttribute('href', '/historical/en/gemdos-error-messages/#E_OK');
+
+  await page.goto('/historical/de/die-systemvariablen/');
+  const vars = page.locator('main table').first();
+  await expect(vars.locator(':scope > thead').getByRole('columnheader')).toHaveText(['Variable', 'Adresse', 'Typ', 'Beschreibung']);
+  const md = vars.locator(':scope > tbody > tr').filter({ has: page.locator('#themd') });
+  await expect(md.locator(':scope > td').nth(1).getByRole('link', { name: 'MD', exact: true })).toBeVisible();
+});
+
+test('wide ASCII and ABI tables retain readable fields at mobile width', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/conventions/ascii-table/');
+  await expect(page.locator('.ascii-table-groups table')).toHaveCount(4);
+  await expect(page.locator('.ascii-table-groups tbody tr')).toHaveCount(128);
+  await expect(page.locator('.ascii-table-groups table').first().getByRole('columnheader')).toHaveText(['Hex', 'Dec', 'ASCII']);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+
+  await page.goto('/abi/cuis/');
+  await selectTarget(page).selectOption('x32');
+  const transport = page.getByRole('region', { name: 'Private CUIS transport calls' });
+  const symbol = transport.getByRole('rowheader', { name: 'CUIS_LAUNCH_ATTACH' }).locator('code');
+  const lines = await symbol.evaluate(code => {
+    const range = document.createRange();
+    range.selectNodeContents(code);
+    return new Set([...range.getClientRects()].map(box => box.top)).size;
+  });
+  expect(lines).toBe(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 

@@ -1,4 +1,5 @@
 ---
+import { formatHistoricalTables } from '../../../data/format-historical-tables';
 import Layout from '../../../components/Layout.astro';
 import CatalogList from '../../../components/CatalogList.astro';
 import BiosCookieJar from '../../../components/BiosCookieJar.astro';
@@ -39,7 +40,7 @@ const HistoricalBody = section.href === systemVariablesPath ? BiosSystemVariable
   {section.historicalSlug && (entries.length === 0 || section.slug === 'xcontrol') &&
     (HistoricalBody
       ? <HistoricalBody {historicalBody} />
-      : <div class:list={['historical-body', { 'historical-entry': programTopic || cookieJar }]} set:html={historicalBody} />)}
+      : <div class:list={['historical-body', { 'historical-entry': programTopic || cookieJar }]} set:html={formatHistoricalTables(historicalBody)} />)}
   {entries.length > 0 && <CatalogList records={entries} showSubsystem={false} />}
   {section.historicalSlug && <p><a href={historicalPath('en', section.historicalSlug)}>Read the original tos.hyp section</a></p>}
 </Layout>

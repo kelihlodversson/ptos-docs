@@ -1,4 +1,6 @@
 ---
+import TableScroll from './TableScroll.astro';
+import { formatHistoricalTables } from '../data/format-historical-tables';
 import Layout from './Layout.astro';
 import Masthead from './Masthead.astro';
 import Fact from './Fact.astro';
@@ -40,10 +42,10 @@ const sources: Source[] = [
       <Fact label="Opcode">{subsystem === 'AES' ? 'Historical AES operation' : 'GEMDOS'}{' '}<code>{record.opcode} ({`0x${Number(record.opcode).toString(16).toUpperCase()}`})</code></Fact>
       <Fact label="Parameters"><ParameterList entries={overlay.params} /></Fact>
       <Fact label="Description">
-        <div set:html={record.description} />
+        <div set:html={formatHistoricalTables(record.description)} />
       </Fact>
       <Fact label="Return Value">
-        <div set:html={record.returns} />
+        <div set:html={formatHistoricalTables(record.returns)} />
         {name === 'Fclose' && <p class="revision-note">The pTOS libcmini binding returns <code>long</code>. Native GEMDOS uses <code>EIHNDL</code> for an invalid handle. The historical listing uses <code>EBADF</code>.</p>}
       </Fact>
       <Fact label="Availability">
@@ -57,18 +59,20 @@ const sources: Source[] = [
     {name === 'Pexec' && <section aria-labelledby="mode-fields">
       <h2 id="mode-fields" class="prm-section-heading ruled">Parameter Fields · native pTOS modes</h2>
       <p>Use the SDK’s four-argument <code>Pexec(mode, prog, tail, env)</code> binding. The historical prototypes above describe other systems as well.</p>
-      <table class="prm-rule-table">
-        <thead><tr><th scope="col">Mode</th><th scope="col">Arguments after mode</th><th scope="col">Meaning</th></tr></thead>
-        <tbody>{pexecModes.map(([mode, args, meaning]) => <tr><th scope="row">{mode}</th><td><code>{args}</code></td><td>{meaning}</td></tr>)}</tbody>
-      </table>
+      <TableScroll label="Native pTOS Pexec modes">
+        <table class="prm-rule-table">
+          <thead><tr><th scope="col">Mode</th><th scope="col">Arguments after mode</th><th scope="col">Meaning</th></tr></thead>
+          <tbody>{pexecModes.map(([mode, args, meaning]) => <tr><th scope="row">{mode}</th><td><code>{args}</code></td><td>{meaning}</td></tr>)}</tbody>
+        </table>
+      </TableScroll>
       <p>On MMU ARM and x32, staged modes 3, 4, 5, 6, 7, 104 and 106 return <code>EINVFN</code> before arguments are read. Non-MMU ARM retains the legacy paths for 3–7, with compatibility unchecked.</p>
       <p>Mode 200 keeps the existing PROCESS, PID, TID, open files, current directories, parent and children. Public <code>Pexecve</code> is <strong>planned</strong> as a later API migration. <a href="https://github.com/kelihlodversson/pTOS/issues/1008">pTOS #1008</a></p>
     </section>}
 
     <TargetPanels>
       <CallingConvention slot="68k" binding={overlay.targets['68k']} example={record.assembly}>
-        {record.legacyBinding && <div set:html={record.legacyBinding} />}
-        {record.arrays && <div set:html={record.arrays} />}
+        {record.legacyBinding && <div set:html={formatHistoricalTables(record.legacyBinding)} />}
+        {record.arrays && <div set:html={formatHistoricalTables(record.arrays)} />}
         {name === 'Pexec' && <p>ROM/non-MMU 68k keeps its classic staged modes, with 104 and 106 refused. On eligible MMU builds, mode 4 and 104 require the shared-VM PRG path. Mode 200 requires <code>CONF_WITH_PEXEC200</code>.</p>}
       </CallingConvention>
       <CallingConvention slot="arm" binding={overlay.targets.arm}>

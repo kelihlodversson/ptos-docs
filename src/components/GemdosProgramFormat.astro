@@ -1,4 +1,5 @@
 ---
+import TableScroll from './TableScroll.astro';
 import SourceList from './SourceList.astro';
 import { elfEntryPath } from '../data/manual-structure';
 
@@ -13,48 +14,52 @@ const targets = [
   <p><a href="/reference/pexec/">Pexec</a> selects the loader from the file signature. Bytes <code>7F 45 4C 46</code>
     select ELF when <code>CONF_WITH_ELF_LOADER</code> is enabled. The 68k PRG loader uses the signature
     <code>60 1A</code> when <code>CONF_WITH_PRG_LOADER</code> is enabled.</p>
-  <table class="prm-rule-table">
-    <caption>ELF32 class and machine by target</caption>
-    <thead><tr>
-      <th scope="col">Target</th><th scope="col"><code>e_machine</code></th>
-      <th scope="col">Byte order</th><th scope="col">Static loader default</th>
-    </tr></thead>
-    <tbody>
-      {targets.map(target => <tr>
-        <th scope="row">{target.name}</th><td><code>{target.machine}</code> ({target.value})</td>
-        <td>{target.byteOrder}</td><td>{target.default}</td>
-      </tr>)}
-    </tbody>
-  </table>
+  <TableScroll label="ELF32 class and machine by target">
+    <table class="prm-rule-table">
+      <caption>ELF32 class and machine by target</caption>
+      <thead><tr>
+        <th scope="col">Target</th><th scope="col"><code>e_machine</code> symbol</th><th scope="col">Value</th>
+        <th scope="col">Byte order</th><th scope="col">Static loader default</th>
+      </tr></thead>
+      <tbody>
+        {targets.map(target => <tr>
+          <th scope="row">{target.name}</th><td><code>{target.machine}</code></td><td><code>{target.value}</code></td>
+          <td>{target.byteOrder}</td><td>{target.default}</td>
+        </tr>)}
+      </tbody>
+    </table>
+  </TableScroll>
   <p>All three targets use <code>ELFCLASS32</code>. The x32 ABI uses x86-64 instructions and 32-bit user pointers.
     An IA-32 (<code>EM_386</code>) or ELF64 executable fails the native x32 header check.</p>
 
-  <table class="prm-rule-table prm-key-table">
-    <caption>ELF header and program-header records used at load time</caption>
-    <thead><tr><th scope="col">Field or record</th><th scope="col">Loader behavior</th></tr></thead>
-    <tbody>
-      <tr><th scope="row"><code>e_type = ET_EXEC</code></th>
-        <td>Fixed-address executable. When a private address space can preserve the linked address, the static
-          loader needs no relocation entries. Retain relocations with <code>ld --emit-relocs</code> if the image must move.</td></tr>
-      <tr><th scope="row"><code>e_type = ET_DYN</code></th>
-        <td>The static loader accepts a position-independent executable without <code>PT_INTERP</code>.
-          GNU <code>ld -pie --no-dynamic-linker</code> produces this form. Retain any relocations the executable needs.</td></tr>
-      <tr><th scope="row"><code>PT_LOAD</code></th>
-        <td>Load <code>p_filesz</code> bytes from file offset <code>p_offset</code> into the segment at <code>p_vaddr</code>
-          plus the load bias. <code>p_memsz</code> describes the memory extent, including the zero-filled part.</td></tr>
-      <tr><th scope="row"><code>e_entry</code></th>
-        <td>Application entry address before the load bias is applied. For an interpreted executable, the kernel
-          enters the interpreter first and passes the adjusted application entry as <code>AT_ENTRY</code>.</td></tr>
-      <tr><th scope="row"><code>PT_INTERP</code></th>
-        <td>Absolute path to the userspace runtime linker on the boot drive. Requires the experimental
-          <code>CONF_WITH_ELF_SHARED</code> option and separate, demand-paged process address spaces.
-          Builds without this option refuse files that request an interpreter.</td></tr>
-      <tr><th scope="row"><code>PT_PTOS_RELOC</code><br /><code>0x60000001</code></th>
-        <td>Optional pTOS compact relocation stream produced by <code>ptos-elf-pack</code>. When the static loader
-          needs relocations, it uses this stream if present. Otherwise it reads the retained ELF <code>REL</code>
-          or <code>RELA</code> sections.</td></tr>
-    </tbody>
-  </table>
+  <TableScroll label="ELF header and program-header records">
+    <table class="prm-rule-table prm-key-table">
+      <caption>ELF header and program-header records used at load time</caption>
+      <thead><tr><th scope="col">Field or record</th><th scope="col">Loader behavior</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><code>e_type = ET_EXEC</code></th>
+          <td>Fixed-address executable. When a private address space can preserve the linked address, the static
+            loader needs no relocation entries. Retain relocations with <code>ld --emit-relocs</code> if the image must move.</td></tr>
+        <tr><th scope="row"><code>e_type = ET_DYN</code></th>
+          <td>The static loader accepts a position-independent executable without <code>PT_INTERP</code>.
+            GNU <code>ld -pie --no-dynamic-linker</code> produces this form. Retain any relocations the executable needs.</td></tr>
+        <tr><th scope="row"><code>PT_LOAD</code></th>
+          <td>Load <code>p_filesz</code> bytes from file offset <code>p_offset</code> into the segment at <code>p_vaddr</code>
+            plus the load bias. <code>p_memsz</code> describes the memory extent, including the zero-filled part.</td></tr>
+        <tr><th scope="row"><code>e_entry</code></th>
+          <td>Application entry address before the load bias is applied. For an interpreted executable, the kernel
+            enters the interpreter first and passes the adjusted application entry as <code>AT_ENTRY</code>.</td></tr>
+        <tr><th scope="row"><code>PT_INTERP</code></th>
+          <td>Absolute path to the userspace runtime linker on the boot drive. Requires the experimental
+            <code>CONF_WITH_ELF_SHARED</code> option and separate, demand-paged process address spaces.
+            Builds without this option refuse files that request an interpreter.</td></tr>
+        <tr><th scope="row"><code>PT_PTOS_RELOC</code><br /><code>0x60000001</code></th>
+          <td>Optional pTOS compact relocation stream produced by <code>ptos-elf-pack</code>. When the static loader
+            needs relocations, it uses this stream if present. Otherwise it reads the retained ELF <code>REL</code>
+            or <code>RELA</code> sections.</td></tr>
+      </tbody>
+    </table>
+  </TableScroll>
   <p><code>CONF_WITH_ELF_SHARED</code> defaults off. The interpreter backend supports x32, ARM-state
     hard-float EABI5 binaries on MMU ARM, and 68040 address-space builds. The standard interpreter path
     is <code>/GEMSYS/LIB/<var>arch</var>/LD.SO</code>, where <var>arch</var> is <code>X32</code>, <code>ARM</code>,

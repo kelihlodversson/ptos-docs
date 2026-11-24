@@ -1,4 +1,6 @@
 ---
+import TableScroll from './TableScroll.astro';
+import { formatHistoricalTables } from '../data/format-historical-tables';
 import SourceList from './SourceList.astro';
 import { readBiosSystemVariables } from '../data/bios-system-variables';
 
@@ -26,15 +28,17 @@ long read_boot_drive(void)
     <a href="/reference/ssystem/">Ssystem</a>. Select the mode by the variable’s width.
     Pass the address in <code>arg1</code>. Set <code>arg2</code> to zero for reads and pass the new value for writes.</p>
 
-  <table class="prm-rule-table prm-key-table">
-    <caption>Ssystem modes by variable type</caption>
-    <thead><tr><th scope="col">Type</th><th scope="col">Bits</th><th scope="col">Read</th><th scope="col">Write</th></tr></thead>
-    <tbody>{modes.map(([type, bits, read, write]) => <tr>
-      <th scope="row"><code>{type}</code></th><td>{bits}</td>
-      <td><a href={`/reference/ssystem/#${read}`}><code>{read}</code></a></td>
-      <td><a href={`/reference/ssystem/#${write}`}><code>{write}</code></a></td>
-    </tr>)}</tbody>
-  </table>
+  <TableScroll label="Ssystem modes by variable type">
+    <table class="prm-rule-table prm-key-table">
+      <caption>Ssystem modes by variable type</caption>
+      <thead><tr><th scope="col">Type</th><th scope="col">Bits</th><th scope="col">Read</th><th scope="col">Write</th></tr></thead>
+      <tbody>{modes.map(([type, bits, read, write]) => <tr>
+        <th scope="row"><code>{type}</code></th><td>{bits}</td>
+        <td><a href={`/reference/ssystem/#${read}`}><code>{read}</code></a></td>
+        <td><a href={`/reference/ssystem/#${write}`}><code>{write}</code></a></td>
+      </tr>)}</tbody>
+    </table>
+  </TableScroll>
 
   <h3 class="prm-section-heading">pTOS</h3>
   <p>On builds with <code>CONF_WITH_SSYSTEM</code>, <code>Ssystem(S_INQUIRE, mode, 0L)</code> returns zero
@@ -64,7 +68,7 @@ long read_boot_drive(void)
 
 <section class="historical-entry" aria-labelledby="historical-variables">
   <h2 id="historical-variables" class="prm-section-heading ruled">Historical system variables</h2>
-  <div set:html={intro} />
+  <div set:html={formatHistoricalTables(intro)} />
   <div class="table-scroll" tabindex="0" role="region" aria-label="TOS system variables table">
     <table class="prm-rule-table system-variables">
       <caption>TOS system variables</caption>
@@ -77,11 +81,11 @@ long read_boot_drive(void)
         </th>
         <td><code>{address}</code></td>
         <td><code set:html={type} /></td>
-        <td set:html={description} />
+        <td set:html={formatHistoricalTables(description)} />
       </tr>)}</tbody>
     </table>
   </div>
-  <div set:html={notes} />
+  <div set:html={formatHistoricalTables(notes)} />
 </section>
 <SourceList sources={[
   ['tos', 'bios/sys_var_en.u', 'Historical TOS variable names, addresses, widths and descriptions'],

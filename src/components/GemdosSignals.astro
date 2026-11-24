@@ -1,4 +1,5 @@
 ---
+import { formatHistoricalTables } from '../data/format-historical-tables';
 import { serialize } from 'parse5';
 import { readHistoricalTable, takeTrailingAnchors } from '../data/historical-table';
 
@@ -21,7 +22,7 @@ const signals = signalRows.map(cells => {
 });
 ---
 <div class="historical-entry">
-  <div set:html={intro.replace('31 possible signals (0 to 30)', '32 signal numbers (0 to 31)')} />
+  <div set:html={formatHistoricalTables(intro.replace('31 possible signals (0 to 30)', '32 signal numbers (0 to 31)'))} />
   <div class="table-scroll" tabindex="0" role="region" aria-label="GEMDOS signal table">
     <table class="prm-rule-table signal-table">
       <caption>GEMDOS signal numbers and names</caption>
@@ -33,11 +34,11 @@ const signals = signalRows.map(cells => {
           {anchors.map(id => <span {id}></span>)}
           <code>{name}</code>
         </th>
-        <td set:html={serialize(meaning)} />
+        <td set:html={formatHistoricalTables(serialize(meaning))} />
       </tr>)}</tbody>
     </table>
   </div>
-  <div set:html={notes} />
+  <div set:html={formatHistoricalTables(notes)} />
 </div>
 
 <style>
@@ -45,6 +46,7 @@ const signals = signalRows.map(cells => {
   .signal-number { width: 5rem; }
   .signal-name { width: 7.5rem; }
   .signal-table th { white-space: nowrap; }
+  .signal-table td:last-child { overflow-wrap: break-word; }
   @media print {
     .signal-table { min-width: 0; }
     .signal-number { width: 4.5rem; }
