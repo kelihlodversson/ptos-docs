@@ -416,16 +416,17 @@ test('chapter navigation follows tos.hyp and places extensions with related call
 
 test('imported function breadcrumbs return to the manual chapters', async ({ page }) => {
   await page.goto('/subsystems/bios/');
-  await page.getByRole('link', { name: 'About the BIOS', exact: true }).click();
   await page.getByRole('link', { name: 'Bconin', exact: true }).click();
   const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb' });
-  await expect(breadcrumb.getByRole('listitem')).toHaveText(['Subsystems', 'BIOS', 'About the BIOS', 'Bconin']);
-  await expect(breadcrumb.getByRole('link', { name: 'About the BIOS' })).toHaveAttribute('href', '/subsystems/bios/about-the-bios/');
+  await expect(breadcrumb.getByRole('listitem')).toHaveText(['Subsystems', 'BIOS', 'Bconin']);
   await breadcrumb.getByRole('link', { name: 'BIOS', exact: true }).click();
   await expect(page).toHaveURL('/subsystems/bios/');
+  await page.goto('/historical/de/bconin/');
+  await expect(breadcrumb.getByRole('listitem')).toHaveText(['Subsystems', 'BIOS', 'Bconin']);
 
   for (const [path, chapter, section] of [
-    ['/historical/de/bconin/', 'BIOS', 'About the BIOS'],
+    ['/historical/en/dmawrite/', 'XBIOS', 'Drive functions'],
+    ['/historical/de/dmawrite/', 'XBIOS', 'Drive functions'],
     ['/historical/en/fopen/', 'GEMDOS', 'File functions'],
     ['/historical/de/fopen/', 'GEMDOS', 'File functions'],
     ['/historical/en/v-opnwk/', 'VDI', 'Control functions'],
@@ -483,6 +484,24 @@ test('the GEMDOS overview introduces the subsystem and replaces the About subpag
   await expect(main.getByText(/parameters on the stack|processor register d0|680x0 trap #1/i)).toHaveCount(0);
   await page.goto('/subsystems/gemdos/about-the-gemdos/');
   await expect(page).toHaveURL('/subsystems/gemdos/');
+});
+
+test('the BIOS and XBIOS overviews replace their About subpages', async ({ page }) => {
+  for (const [subsystem, opening, entry] of [
+    ['bios', 'The Basic Input/Output System (BIOS)', 'Getmpb'],
+    ['xbios', 'The Extended BIOS (XBIOS)', 'Drive functions'],
+  ]) {
+    const overview = `/subsystems/${subsystem}/`;
+    await page.goto(overview);
+    const main = page.getByRole('main');
+    await expect(main.getByText(opening, { exact: false })).toBeVisible();
+    const index = main.locator('.manual-index');
+    await expect(index.getByRole('link', { name: entry, exact: true })).toBeVisible();
+    await expect(index.getByRole('link', { name: `About the ${subsystem.toUpperCase()}`, exact: true })).toHaveCount(0);
+    await expect(main.getByText(/parameters from the stack|processor register d0|680x0.trap #1[34]/i)).toHaveCount(0);
+    await page.goto(`${overview}about-the-${subsystem}/`);
+    await expect(page).toHaveURL(overview);
+  }
 });
 
 test('the GEMDOS signal table has distinct number and name columns with no spacer row', async ({ page }) => {

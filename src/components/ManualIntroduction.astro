@@ -4,7 +4,9 @@ import { sourceLink } from '../data/catalog';
 interface Props { subject: string }
 const { subject } = Astro.props;
 const introduction = sourceLink(['tos', 'tos/tos_en.ui', 'TOS and GEM in the original UDO source']);
+const bios = sourceLink(['tos', 'bios/bios_en.ui', 'About the BIOS in the original UDO source']);
 const gemdos = sourceLink(['tos', 'gemdos/gemdos.u', 'About the GEMDOS in the original UDO source']);
+const xbios = sourceLink(['tos', 'xbios/xbios.u', 'About the XBIOS in the original UDO source']);
 ---
 {subject === 'subsystems' && <>
   <p>Atari introduced TOS in 1985 with the ST and developed it further for the STE, Mega ST, TT and Falcon.
@@ -14,6 +16,23 @@ const gemdos = sourceLink(['tos', 'gemdos/gemdos.u', 'About the GEMDOS in the or
     Line-A provides low-level 68k graphics operations. The PMMU functions-handler covers 68k memory management,
     and XHDI defines a common interface to block storage drivers. For other TOS-compatible systems, see
     <a href="/os-variants/">OS variants and extensions</a>.</p>
+</>}
+{subject === 'bios' && <>
+  <p id="BIOS_2C_20The">The Basic Input/Output System (BIOS) provides low-level access to devices and system vectors.
+    Its functions transfer characters, report device status, access disk sectors and inspect or replace interrupt vectors.
+    <a href="/subsystems/gemdos/">GEMDOS</a> provides higher-level file and device I/O for applications.</p>
+  <p>Under <a href="/os-variants/magic/">MagiC</a>, the BIOS is reentrant. An interrupt handler can call these functions
+    when the supervisor stack has room. Custom BIOS hooks should be reentrant and work independently of the contents
+    of the legacy <code>saveptr_area</code>.</p>
+  <p class="revision-note">Adapted from <a href={bios.href}>{bios.label}</a>.</p>
+</>}
+{subject === 'xbios' && <>
+  <p>The Extended BIOS (XBIOS) provides access to machine-specific hardware and firmware. Its function groups cover
+    video, sound, storage and DMA, clocks and interrupts, and devices such as keyboards, printers and DSPs.
+    Use the <a href="/subsystems/gemdos/">GEMDOS</a> or <a href="/subsystems/bios/">BIOS</a> services where they cover the operation.</p>
+  <p>Under <a href="/os-variants/magic/">MagiC</a>, the XBIOS is reentrant. An interrupt handler can call an XBIOS function
+    when the supervisor stack has room.</p>
+  <p class="revision-note">Adapted from <a href={xbios.href}>{xbios.label}</a>.</p>
 </>}
 {subject === 'gemdos' && <>
   <p>GEMDOS provides the highest-level operating system functions in TOS. It manages files, directories,
