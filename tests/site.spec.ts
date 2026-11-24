@@ -468,6 +468,18 @@ test('the main sections contain only the assigned chapters', async ({ page }) =>
   await expect(main.getByRole('link', { name: 'Read tos.hyp on FreeMiNT' })).toHaveAttribute('href', 'https://freemint.github.io/tos.hyp/');
 });
 
+test('the GEMDOS overview introduces the subsystem and replaces the About subpage', async ({ page }) => {
+  await page.goto('/subsystems/gemdos/');
+  const main = page.getByRole('main');
+  await expect(main.getByText('GEMDOS provides the highest-level operating system functions', { exact: false })).toBeVisible();
+  await expect(main.locator('#MiNT-compatible_20functions')).toContainText('MiNT added many GEMDOS functions');
+  await expect(main.locator('.manual-index').getByRole('link', { name: 'Process functions' })).toBeVisible();
+  await expect(main.getByRole('link', { name: 'About the GEMDOS', exact: true })).toHaveCount(0);
+  await expect(main.getByText(/parameters on the stack|processor register d0|680x0 trap #1/i)).toHaveCount(0);
+  await page.goto('/subsystems/gemdos/about-the-gemdos/');
+  await expect(page).toHaveURL('/subsystems/gemdos/');
+});
+
 test('pTOS setup links document the boot files and moved ELF convention', async ({ page }) => {
   await page.goto('/os-variants/ptos/');
   const main = page.getByRole('main');

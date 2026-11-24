@@ -8,5 +8,6 @@ export default defineConfig({
   redirects: {
     '/abi/elf-entry/': '/os-variants/ptos/elf-entry/',
     '/historical/': 'https://freemint.github.io/tos.hyp/',
+    '/subsystems/gemdos/about-the-gemdos/': '/subsystems/gemdos/',
   },
 });

@@ -4,6 +4,7 @@ import { sourceLink } from '../data/catalog';
 interface Props { subject: string }
 const { subject } = Astro.props;
 const introduction = sourceLink(['tos', 'tos/tos_en.ui', 'TOS and GEM in the original UDO source']);
+const gemdos = sourceLink(['tos', 'gemdos/gemdos.u', 'About the GEMDOS in the original UDO source']);
 ---
 {subject === 'subsystems' && <>
   <p>Atari introduced TOS in 1985 with the ST and developed it further for the STE, Mega ST, TT and Falcon.
@@ -13,6 +14,20 @@ const introduction = sourceLink(['tos', 'tos/tos_en.ui', 'TOS and GEM in the ori
     Line-A provides low-level 68k graphics operations. The PMMU functions-handler covers 68k memory management,
     and XHDI defines a common interface to block storage drivers. For other TOS-compatible systems, see
     <a href="/os-variants/">OS variants and extensions</a>.</p>
+</>}
+{subject === 'gemdos' && <>
+  <p>GEMDOS provides the highest-level operating system functions in TOS. It manages files, directories,
+    memory and processes. The <a href="/subsystems/bios/">BIOS</a> and <a href="/subsystems/xbios/">XBIOS</a>
+    provide the hardware-dependent services.</p>
+  <p>GEMDOS function names usually start with a letter that identifies their category. <code>F</code> covers
+    files and network calls, <code>D</code> directories, <code>P</code> processes, <code>M</code> memory,
+    <code>S</code> system functions, <code>T</code> date and time, and <code>C</code> character input and output.</p>
+  <p>GEMDOS is reentrant under <a href="/os-variants/magic/">MagiC</a>, including its file system from MagiC 3.0.
+    For example, moving a disk error alert may require allocating memory while a file operation is still in progress.
+    MagiC can service that allocation during the file operation.</p>
+  <p id="MiNT-compatible_20functions">MiNT added many GEMDOS functions. MagiC 3.0 and some
+    <a href="/historical/en/metados/">MetaDOS</a> drivers also implement some MiNT-compatible functions.</p>
+  <p class="revision-note">Adapted from <a href={gemdos.href}>{gemdos.label}</a>.</p>
 </>}
 {subject === 'aes' && <>
   <p>GEM, the Graphics Environment Manager, is the graphical interface through which users interact with TOS.
