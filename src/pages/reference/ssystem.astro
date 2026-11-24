@@ -12,6 +12,7 @@ import SourceList from '../../components/SourceList.astro';
 import { manualBreadcrumbs } from '../../data/manual-structure';
 import { pages } from '../../data/historical';
 import { overlays } from '../../data/overlays';
+import { readSsystemHistory } from '../../data/ssystem-history';
 import { ssystemDescription, ssystemModeGroups } from '../../data/ssystem-modes';
 import abi from '../../data/abi.json';
 
@@ -21,6 +22,23 @@ const fact = (label: string) => historical.facts.find(item => item.label === lab
 const { params, targets, paraTos, sources } = overlays.Ssystem;
 const hex = (mode: number) => '0x' + (mode & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
 const processConfig = 'https://github.com/kelihlodversson/pTOS/blob/32aaf698875f13d25c252b8e3f00d33da4f0a62d/bdos/Kconfig';
+const history = readSsystemHistory(fact('Description:') ?? '');
+const nativeModes = ssystemModeGroups.flatMap(group => group.modes);
+const nativeByName = new Map(nativeModes.map(mode => [mode.name, mode]));
+const mintModes = history.modes.map(mode => {
+  const ptos = nativeByName.get(mode.name);
+  if (ptos && ptos.number !== mode.number) throw new Error(`Ssystem selector mismatch for ${mode.name}`);
+  return { ...mode, ptos };
+});
+const mintNames = new Set(mintModes.map(mode => mode.name));
+const extensions = nativeModes.filter(mode => mode.number < -1)
+  .map(ptos => ({ name: ptos.name, number: ptos.number, meaning: undefined, ptos }));
+if (mintModes.filter(mode => mode.ptos).length + extensions.length !== nativeModes.length ||
+    extensions.some(mode => mintNames.has(mode.name))) throw new Error('Unmatched pTOS Ssystem selector');
+const modeSections = [
+  { title: undefined, rows: mintModes },
+  { title: 'pTOS extensions', rows: extensions },
+];
 ---
 <Layout title="Ssystem" description={ssystemDescription} running="GEMDOS — System functions"
   breadcrumbs={manualBreadcrumbs('gemdos', 'system-functions')}>
@@ -47,33 +65,52 @@ const processConfig = 'https://github.com/kelihlodversson/pTOS/blob/32aaf698875f
       </Fact>
     </dl>
 
-    <section aria-labelledby="native-modes">
-      <h2 id="native-modes" class="prm-section-heading ruled">pTOS Mode Selectors</h2>
-      <p>Query a selector with <code>Ssystem(-1, selector, 0L)</code>. A successful probe establishes that the kernel
-        advertises the mode. Arguments, privileges and build features can further restrict the call.
-        The <a href="#historical-mint">historical MiNT mode reference</a> below describes the original interface.</p>
-      {ssystemModeGroups.map(({ title, modes }) => <table class="prm-rule-table prm-key-table">
-        <caption>{title}</caption>
-        <thead><tr><th scope="col">Mode</th><th scope="col">Arguments, result and conditions</th></tr></thead>
-        <tbody>{modes.map(mode => <tr id={`native-${mode.name}`}>
-          <th scope="row">{mode.href ? <a href={mode.href}><code>{mode.name}</code></a> : <code>{mode.name}</code>}
-            <br /><code>{mode.number} ({hex(mode.number)})</code></th>
-          <td>
-            <code>arg1 = {mode.args[0]}</code><br /><code>arg2 = {mode.args[1]}</code><br />
-            {mode.result}{mode.condition && <> {mode.condition}</>}
-            {mode.name === 'S_PROCEXEC' && <> The current PR #903 configuration uses
-              <code>CONF_WITH_MULTITHREADING</code> as its scheduling gate.
-              <a href={processConfig}>Configuration source</a>.</>}
-          </td>
-        </tr>)}</tbody>
-      </table>)}
+    <section class="historical-entry" aria-labelledby="historical-mint">
+      <h2 id="historical-mint" class="prm-section-heading ruled">Ssystem modes</h2>
+      <p>Query a pTOS mode with <code>Ssystem(-1, selector, 0L)</code>. A successful probe establishes that the kernel
+        advertises the mode. Arguments, privileges and build features can further restrict the call.</p>
+      <h3 class="prm-section-heading">Historical MiNT introduction</h3>
+      <div set:html={history.intro} />
+      <div id="native-modes" class="table-scroll" tabindex="0" role="region" aria-label="Ssystem mode table">
+        <table class="prm-rule-table ssystem-mode-table">
+          <caption>Ssystem mode reference</caption>
+          <colgroup><col class="mode-number" /><col /><col class="mode-ptos" /></colgroup>
+          <thead><tr><th scope="col">Mode</th><th scope="col">MiNT (historical)</th><th scope="col">pTOS</th></tr></thead>
+          {modeSections.map(({ title, rows }) => <tbody>
+            {title && <tr><th colspan="3" scope="rowgroup">{title}</th></tr>}
+            {rows.map(({ name, number, meaning, ptos }) => <tr id={name}>
+              <th scope="row">
+                {ptos && <span id={`native-${name}`}></span>}
+                {ptos?.href ? <a href={ptos.href}><code>{name}</code></a> : <code>{name}</code>}
+                <br /><code>{number} ({hex(number)})</code>
+              </th>
+              {meaning !== undefined ? <td set:html={meaning} /> : <td>—</td>}
+              <td>
+                {ptos ? <>
+                  <code>arg1 = {ptos.args[0]}</code><br /><code>arg2 = {ptos.args[1]}</code><br />
+                  {ptos.result}{ptos.condition && <> {ptos.condition}</>}
+                  {name === 'S_PROCEXEC' && <>
+                    {' '}The current PR #903 configuration uses <code>CONF_WITH_MULTITHREADING</code> as its scheduling gate.
+                    {' '}<a href={processConfig}>Configuration source</a>.
+                  </>}
+                  {ptos.description?.map(detail => <p class="mode-detail">{detail}</p>)}
+                </> : <>
+                  {name === 'S_CLOCKUTC' ? 'Planned.' : 'Unimplemented.'} Returns <code>EINVFN</code>.
+                </>}
+              </td>
+            </tr>)}
+          </tbody>)}
+        </table>
+      </div>
+      <h3 class="prm-section-heading">pTOS mode notes</h3>
       <p>The system-variable modes accept only addresses present in the kernel’s table for the requested width.
         Unknown addresses return <code>EINVFN</code>. See the linked dispatcher source for the accepted addresses.</p>
       <p><code>S_CONSOLE_DIM</code>, <code>S_MEMINFO</code>, <code>S_DESKINFO</code> and <code>S_MMUPROBE</code> use
         the smaller of the supplied length and the kernel structure size. Check the returned byte count before using a field.
         A size of <code>-1</code> queries the structure size and ignores the buffer. A null buffer or a nonpositive size
         outside the query form is invalid.</p>
-      <p>Historical modes outside the pTOS tables return <code>EINVFN</code>. <code>S_CLOCKUTC</code> is planned.</p>
+      <h3 class="prm-section-heading">Historical MiNT notes</h3>
+      <div set:html={history.notes} />
     </section>
 
     <TargetPanels>
@@ -90,11 +127,6 @@ const processConfig = 'https://github.com/kelihlodversson/pTOS/blob/32aaf698875f
       <GfaBinding slot="gfa" symbol="Ssystem" subsystem="GEMDOS" code={historical.bindings?.gfa} raw={historical.bindings?.raw} />
     </TargetPanels>
 
-    <section class="historical-entry" aria-labelledby="historical-mint">
-      <h2 id="historical-mint" class="prm-section-heading ruled">Historical MiNT Mode Reference</h2>
-      <p>The original <em>tos.hyp</em> entry documents the MiNT selectors and their arguments.</p>
-      <div set:html={fact('Description:')} />
-    </section>
     <section aria-labelledby="related-heading">
       <h2 id="related-heading" class="prm-section-heading ruled">See Also</h2>
       <ul class="related-links">
@@ -106,3 +138,15 @@ const processConfig = 'https://github.com/kelihlodversson/pTOS/blob/32aaf698875f
     <SourceList sources={[[ 'tos', historical.path, 'Original tos.hyp Ssystem description and binding' ], ...sources]} />
   </article>
 </Layout>
+
+<style>
+  .ssystem-mode-table { table-layout: fixed; min-width: 44rem; }
+  .mode-number { width: 9.5rem; }
+  .mode-ptos { width: 34%; }
+  .mode-detail { margin: .5rem 0 0; }
+  @media print {
+    .ssystem-mode-table { min-width: 0; }
+    .mode-number { width: 7rem; }
+    .ssystem-mode-table > tbody > tr { break-inside: auto; }
+  }
+</style>

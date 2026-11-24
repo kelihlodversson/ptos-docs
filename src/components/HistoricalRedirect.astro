@@ -10,7 +10,7 @@ const { name, destination } = Astro.props;
     <meta name="robots" content="noindex" />
     <link rel="canonical" href={new URL(destination, Astro.site)} />
     <script is:inline define:vars={{ destination }}>
-      window.location.replace(destination + window.location.hash);
+      window.location.replace(destination + (destination.includes('#') ? '' : window.location.hash));
     </script>
     <noscript><meta http-equiv="refresh" content={`0;url=${destination}`} /></noscript>
   </head>

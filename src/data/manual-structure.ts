@@ -146,7 +146,7 @@ function breadcrumbLinks(nodes: (Area | ManualTopic | undefined)[]) {
 
 export function nativeSection(name: string) {
   if (['Mmap', 'Mprot', 'Munmap', 'S_MEMINFO', 'S_MMUPROBE'].includes(name)) return 'memory-management';
-  if (['Ssystem', 'S_DESKINFO', 'S_DESKSET'].includes(name)) return 'system-functions';
+  if (['Ssystem', 'Syield'].includes(name)) return 'system-functions';
   return 'process-functions';
 }
 

@@ -1,5 +1,6 @@
 {
   "pfork": "/reference/pfork/",
   "pvfork": "/reference/pvfork/",
-  "ssystem": "/reference/ssystem/"
+  "ssystem": "/reference/ssystem/",
+  "syield": "/reference/syield/"
 }
