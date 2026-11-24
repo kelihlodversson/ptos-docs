@@ -62,13 +62,12 @@ function validateBitFields(diagram) {
 }
 
 test('bit diagrams have contiguous bit ranges with no overlapping fields', () => {
-  validateBitFields(abi.cuis.selector);
+  validateBitFields(abi.x32.selector);
+  assert.deepEqual(abi.x32.selector.fields, [{ hi: 63, lo: 32, width: 32 }, { hi: 31, lo: 0, width: 32 }]);
   for (const bits of [8, 16, 32, 64]) {
     validateBitFields({ bits, fields: [{ hi: bits - 1, lo: 1, width: bits - 1 }, { hi: 0, lo: 0, width: 1 }] });
   }
   assert.throws(() => validateBitFields({ bits: 8, fields: [{ hi: 7, lo: 0, width: 7 }] }));
-  const [high, low] = abi.cuis.example.slice(2).split('_');
-  assert.equal(BigInt(`0x${high}${low}`), (BigInt(abi.cuis.class) << 32n) | BigInt(abi.cuis.sessionQuery));
 });
 
 test('stack and structure slots match word and pointer sizes', () => {
@@ -104,6 +103,12 @@ test('the historical import preserves every UDO node and names its input file', 
     }
     assert.deepEqual(coverage.languages[language].missingLinks, []);
     assert.ok(records.some(row => row.slug === 'contents'));
+    const [tpaFigure] = coverage.languages[language].transcribedFigures;
+    assert.equal(createHash('sha256').update(read('public/source/tos.hyp/' + tpaFigure.path)).digest('hex'), tpaFigure.sha256);
+    const tpa = records.find(row => row.slug === (language === 'en' ? 'program-launch-and-tpa' : 'programmstart-und-tpa'));
+    assert.doesNotMatch(tpa.body, /<img\b/);
+    assert.match(tpa.body, /<caption>.*Mshrink<\/caption>/);
+    assert.match(tpa.body, /p_bbase.*p_dbase.*p_tbase.*p_lowtpa/s);
   }
   assert.ok(coverage.languages.en.findings.length > 0);
   assert.ok(coverage.languages.de.declarationsWithoutExactEnglishMatch.length > 0);

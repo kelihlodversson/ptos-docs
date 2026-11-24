@@ -1,4 +1,5 @@
 import inventory from './native-inventory.json';
+import abi from './abi.json';
 import type { HistoricalPage } from './historical';
 import type { Binding, Register } from './overlays';
 import type { CPU } from './targets';
@@ -76,7 +77,8 @@ export function historicalBinding(page: HistoricalPage, cpu: CPU): Result {
   const opcode = vt52 ? { Cconout: 2, Cconws: 9, Cursconf: 21 }[vt52]!
     : leadingNumber ? Number(leadingNumber[1]) : NaN;
   const subcode = Number(/(?:sub[- ]?opcode|gdp|escape|unterfunktion|unter-opcode)\s*[:=]?\s*(\d+)/i.exec(text)?.[1] ?? 0);
-  const classNumber = vt52 ? vt52 === 'Cursconf' ? 14 : 1 : { GEMDOS: 1, BIOS: 13, XBIOS: 14 }[page.subsystem];
+  const classes: Partial<Record<string, number>> = abi.x32.classes;
+  const classNumber = classes[vt52 ? vt52 === 'Cursconf' ? 'XBIOS' : 'GEMDOS' : page.subsystem];
   const trapSource = cpu === 'arm'
     ? classNumber === 1 ? 'bdos/arch/arm/uspace.c' : 'bios/arch/arm/vectorsasm.S'
     : 'bios/arch/x86_64/trap.c';
@@ -95,10 +97,12 @@ export function historicalBinding(page: HistoricalPage, cpu: CPU): Result {
     return {
       status: 'implemented', scope, source, extraSource: trapSource, limitation,
       detail: [detail, limitation, note].filter(Boolean).join(' '),
+      x32Selector: cpu === 'x32' && classNumber !== undefined
+        ? { trapClass: classNumber, functionNumber: Number.isFinite(opcode) ? opcode : undefined } : undefined,
       registers: [
         cpu === 'arm'
           ? ['R0', `${fn} · ${t('function on entry, result on return', 'Funktionsnummer beim Aufruf, Ergebnis bei Rückkehr')}`]
-          : ['RAX', `(${classNumber} << 32) | ${fn} · ${t('selector on entry, result on return', 'Selektor beim Aufruf, Ergebnis bei Rückkehr')}`],
+          : ['RAX', t('64-bit selector on entry, result on return', '64-Bit-Selektor beim Aufruf, Ergebnis bei Rückkehr')],
         ...registerArgs,
       ],
     };

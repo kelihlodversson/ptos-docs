@@ -61,6 +61,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 
       const select = document.querySelector<HTMLSelectElement>('#target');
       const panels = document.querySelectorAll<HTMLElement>('[data-target-panel]');
+      const tabList = document.querySelector<HTMLElement>('[data-target-tabs]');
+      const tabs = tabList?.querySelectorAll<HTMLButtonElement>('[data-target-tab]') ?? [];
       const caption = document.querySelector<HTMLElement>('[data-target-caption]');
       const storageKey = 'ptos.docs.target';
 
@@ -68,6 +70,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         const [target, label] = targets.find(([id]) => id === value) ?? targets[0];
         if (select) select.value = target;
         for (const panel of panels) panel.hidden = panel.dataset.targetPanel !== target;
+        for (const tab of tabs) {
+          const selected = tab.dataset.targetTab === target;
+          tab.setAttribute('aria-selected', String(selected));
+          tab.tabIndex = selected ? 0 : -1;
+        }
         if (caption) caption.textContent = label;
         return target;
       }
@@ -80,14 +87,36 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         }
       }
 
+      function choose(value: string | null) {
+        const target = show(value);
+        try { localStorage.setItem(storageKey, target); } catch { /* Keep the current selection. */ }
+      }
+
       if (select) {
         restore();
         select.disabled = false;
-        select.addEventListener('change', () => {
-          const target = show(select.value);
-          try { localStorage.setItem(storageKey, target); } catch { /* Keep the current selection. */ }
-        });
+        select.addEventListener('change', () => choose(select.value));
         window.addEventListener('pageshow', event => { if (event.persisted) restore(); });
+      }
+      if (tabList) {
+        tabList.hidden = false;
+        tabs.forEach((tab, index) => {
+          tab.addEventListener('click', () => choose(tab.dataset.targetTab ?? null));
+          tab.addEventListener('keydown', event => {
+            const next: Partial<Record<string, number>> = {
+              ArrowLeft: (index + tabs.length - 1) % tabs.length,
+              ArrowRight: (index + 1) % tabs.length,
+              Home: 0,
+              End: tabs.length - 1,
+            };
+            const indexToFocus = next[event.key];
+            if (indexToFocus === undefined) return;
+            event.preventDefault();
+            const nextTab = tabs[indexToFocus];
+            choose(nextTab.dataset.targetTab ?? null);
+            nextTab.focus();
+          });
+        });
       }
     </script>
   </body>

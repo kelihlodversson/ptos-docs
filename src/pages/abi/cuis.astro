@@ -5,7 +5,6 @@ import Fact from '../../components/Fact.astro';
 import TargetPanels from '../../components/TargetPanels.astro';
 import CallingConvention from '../../components/CallingConvention.astro';
 import GfaBinding from '../../components/GfaBinding.astro';
-import BitLayout from '../../components/BitLayout.astro';
 import SourceList from '../../components/SourceList.astro';
 import { elfEntryPath, manualBreadcrumbs } from '../../data/manual-structure';
 import abi from '../../data/abi.json';
@@ -27,10 +26,8 @@ import abi from '../../data/abi.json';
         detail: 'The CUIS class is compiled only for x86-64 user address spaces. There is no ARM CUIS SVC.' }} />
       <CallingConvention slot="x32" binding={{ status: 'experimental', scope: 'x32 · CONF_WITH_CUIS',
         detail: 'Enter the kernel with SYSCALL from ring 3. RCX and R11 are clobbered. With CUIS disabled the dispatcher returns EINVFN.',
-        registers: [['RAX', '64-bit selector on entry, sign-extended status on return'], ['RDI', 'Session handle, a scalar in the range 0 through 0x7FFFFFFF']] }}>
-        <h3 class="prm-section-heading">Instruction / Data Format</h3>
-        <BitLayout {...abi.cuis.selector} />
-        <pre class="prm-code"><code>RAX = (trap_class &lt;&lt; 32) | function_number<br />RAX = {abi.cuis.example}</code></pre>
+        registers: [['RAX', '64-bit selector on entry, sign-extended status on return'], ['RDI', 'Session handle, a scalar in the range 0 through 0x7FFFFFFF']],
+        x32Selector: { trapClass: abi.cuis.class, functionNumber: abi.cuis.sessionQuery } }}>
         <p><code>E_OK</code> (0) indicates a live endpoint owned by the calling PROCESS. <code>EACCDN</code> indicates no matching owned endpoint. <code>EINVAL</code> indicates an out-of-range handle.</p>
         <h3 class="prm-section-heading">Private Transport Calls in PR #903</h3>
         <p>These selectors are used inside pTOS and libaes. Arguments occupy <code>RDI, RSI, RDX, R10, R8, R9</code> in order.

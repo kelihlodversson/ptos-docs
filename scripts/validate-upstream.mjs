@@ -16,7 +16,13 @@ const cuis = fromKernel('include/cuis.h');
 const define = (header, name) => Number(new RegExp(`^#define\\s+${name}\\s+(0x[0-9a-fA-F]+|\\d+)`, 'm').exec(header)?.[1]);
 assert.equal(define(cuis, 'CUIS_SERVICE_CLASS'), abi.cuis.class);
 assert.equal(define(cuis, 'CUIS_SESSION_QUERY'), abi.cuis.sessionQuery);
-assert.match(fromKernel('bios/arch/x86_64/trap.c'), /frame->rax\s*>>\s*32/);
+const x32Trap = fromKernel('bios/arch/x86_64/trap.c');
+assert.match(x32Trap, /trap_class\s*=\s*frame->rax\s*>>\s*32/);
+assert.match(x32Trap, /ULONG fn = \(ULONG\)frame->rax/);
+const x32Classes = fromKernel('bios/arch/x86_64/trap.h');
+for (const [name, value] of Object.entries(abi.x32.classes)) {
+  assert.equal(define(x32Classes, 'X86_64_TRAP_' + name), value);
+}
 assert.match(fromKernel('tests/cuis/program.c'), /raw\(CUIS_SESSION_QUERY, handle\) == E_OK/);
 assert.match(fromKernel('aes/Kconfig'), /config CONF_WITH_CUIS\s+bool\s+depends on ARCH_X86_64 && CONF_WITH_USER_ASPACE/);
 

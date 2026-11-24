@@ -1,12 +1,24 @@
 ---
-import { targets } from '../data/catalog';
+import { targets } from '../data/targets';
 interface Props { heading?: string }
 const { heading = 'Calling Convention' } = Astro.props;
 ---
 <section id="calling-convention" aria-labelledby="prm-abi-heading">
-  <h2 id="prm-abi-heading" class="prm-section-heading ruled">{heading} <span class="target-caption" data-target-caption aria-live="polite">68k</span></h2>
-  {targets.map(([value, label]) => (
-    <div data-target-panel={value} hidden={value !== '68k'} aria-label={label}>
+  <div class="prm-target-heading ruled">
+    <h2 id="prm-abi-heading" class="prm-section-heading">{heading}</h2>
+    <div class="prm-target-tabs" data-target-tabs role="tablist" aria-labelledby="prm-abi-heading" hidden>
+      {targets.map(([value, label]) => (
+        <button type="button" role="tab" id={`prm-target-tab-${value}`} data-target-tab={value}
+          aria-controls={`prm-target-panel-${value}`} aria-selected={value === '68k'} tabindex={value === '68k' ? 0 : -1}>
+          {label}
+        </button>
+      ))}
+    </div>
+    <span class="target-caption" data-target-caption>68k</span>
+  </div>
+  {targets.map(([value]) => (
+    <div id={`prm-target-panel-${value}`} data-target-panel={value} hidden={value !== '68k'}
+      role="tabpanel" aria-labelledby={`prm-target-tab-${value}`} tabindex="0">
       {value === '68k' && <slot name="68k" />}
       {value === 'arm' && <slot name="arm" />}
       {value === 'x32' && <slot name="x32" />}

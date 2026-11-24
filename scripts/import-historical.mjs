@@ -4,7 +4,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writ
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defaultTreeAdapter as tree, parse, serialize } from 'parse5';
+import { defaultTreeAdapter as tree, parse, parseFragment, serialize } from 'parse5';
 import { translationFindings } from './translation.mjs';
 import { gfaTrap } from './gfa-trap.mjs';
 
@@ -24,6 +24,7 @@ const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const outputPaths = new Set();
 const assetFolder = 'public/source/tos.hyp/bilder/gif';
 const issueExamples = JSON.parse(readFileSync(join(root, 'src/data/translation-review.json')));
+const historicalMerges = JSON.parse(readFileSync(join(root, 'src/data/historical-merges.json')));
 const permittedFigure = /^(?:aligment|cl_width(?:_en)?|drv_u|drv_udev|drvuproc|email_gs|email_mb|extent(?:_en)?|filesys|fontinfo(?:_en)?|gdos_ahn|koords(?:_en)?|linien|marker|meta_3|metafile|muster|raster(?:_en)?|tpa(?:_en)?|wr_modi(?:_en)?)\.gif$/;
 const allowedTags = new Set('a b blockquote br caption center code dd div dl dt em h1 h2 h3 h4 h5 h6 hr i img kbd li ol p pre small span strong sub sup table tbody td th thead tr tt u ul q'.split(' '));
 const ignoredTags = new Set(['script', 'style', 'iframe', 'object', 'embed']);
@@ -40,6 +41,24 @@ const content = node => !node ? '' : node.nodeName === '#text' ? node.value
 const plain = node => normalize(content(node));
 const route = (language, slug) => `/historical/${language}/${slug}/`;
 const pinnedSource = path => `https://github.com/${tos.repo}/blob/${tos.revision}/${path}`;
+const tpaFigures = {
+  en: {
+    slug: 'program-launch-and-tpa', image: 'tpa_en.gif',
+    caption: 'Classic PRG TPA after Mshrink',
+    columns: ['Region (high to low)', 'Address', 'Length'],
+    stack: ['Stack', 'Stack pointer at the upper end', 'Space reserved by startup code'],
+    names: ['Uninitialized data', 'Initialized data', 'Program code', 'Basepage'],
+    bytes: '256 bytes', original: 'Original TPA diagram',
+  },
+  de: {
+    slug: 'programmstart-und-tpa', image: 'tpa.gif',
+    caption: 'Klassische PRG-TPA nach Mshrink',
+    columns: ['Bereich (von oben nach unten)', 'Adresse', 'Länge'],
+    stack: ['Stack', 'Stack-Pointer am oberen Ende', 'Vom Startcode reservierter Speicher'],
+    names: ['Variablenbereich', 'Datenbereich', 'Programmcode', 'Basepage'],
+    bytes: '256 Bytes', original: 'Originalabbildung der TPA',
+  },
+};
 const englishNotes = {
   Fclose: '/reference/fclose/',
   Pexec: '/reference/pexec/',
@@ -55,7 +74,7 @@ const englishNotes = {
   Ptermres: '/reference/ptermres/',
   Syield: '/reference/syield/',
 };
-const publishedRoute = (language, slug) => slug === 'ssystem' ? englishNotes.Ssystem : route(language, slug);
+const publishedRoute = (language, slug) => historicalMerges[slug] ?? route(language, slug);
 
 function save(path, contents) {
   outputPaths.add(path);
@@ -129,7 +148,7 @@ function buildLanguage(language) {
     records.set(file, { title, slug, path, ...relevantNodes(element(doc, 'body')) });
   }
 
-  const diagnostics = { missingLinks: [], linkedFigures: [], inlinedFigures: [], findings: [] };
+  const diagnostics = { missingLinks: [], linkedFigures: [], inlinedFigures: [], transcribedFigures: [], findings: [] };
   const copied = new Set();
 
   function link(href, file) {
@@ -152,6 +171,34 @@ function buildLanguage(language) {
     }
     if (!node.tagName || ignoredTags.has(node.tagName)) return;
     if (!allowedTags.has(node.tagName)) throw new Error(`Unreviewed UDO element <${node.tagName}> in ${file}`);
+    const tpa = tpaFigures[language];
+    if (node.tagName === 'p' && records.get(file).slug === tpa.slug) {
+      const [figure, ...other] = elements(node);
+      const path = `bilder/gif/${tpa.image}`;
+      if (figure?.tagName === 'img' && attr(figure, 'src') === path && other.length === 0 && !plain(node)) {
+        const bytes = readFileSync(join(source, path));
+        diagnostics.transcribedFigures.push({ file, path, sha256: hash(bytes) });
+        if (!copied.has(tpa.image)) save(`${assetFolder}/${tpa.image}`, bytes);
+        copied.add(tpa.image);
+        const [bss, data, text, basepage] = tpa.names;
+        const [stack, stackPointer, stackLength] = tpa.stack;
+        const fragment = parseFragment(`
+<table class="historical-table prm-rule-table classic-tpa-layout">
+  <caption>${tpa.caption}</caption>
+  <thead><tr>${tpa.columns.map(label => `<th scope="col">${label}</th>`).join('')}</tr></thead>
+  <tbody>
+    <tr><th scope="row">${stack}</th><td>${stackPointer}</td><td>${stackLength}</td></tr>
+    <tr><th scope="row">${bss} (<code>BSS</code>)</th><td><code>p_bbase</code></td><td><code>p_blen</code></td></tr>
+    <tr><th scope="row">${data} (<code>DATA</code>)</th><td><code>p_dbase</code></td><td><code>p_dlen</code></td></tr>
+    <tr><th scope="row">${text} (<code>TEXT</code>)</th><td><code>p_tbase</code></td><td><code>p_tlen</code></td></tr>
+    <tr><th scope="row">${basepage}</th><td><code>p_lowtpa</code></td><td>${tpa.bytes}</td></tr>
+  </tbody>
+</table>
+<p class="revision-note"><a href="${pinnedSource(path)}">${tpa.original}</a></p>`);
+        for (const child of children(fragment)) tree.appendChild(parent, child);
+        return;
+      }
+    }
     const tag = { center: 'div', tt: 'code', h1: 'h2' }[node.tagName] ?? node.tagName;
     const attrs = [];
     const id = attr(node, 'id') || (tag === 'a' && attr(node, 'name'));
@@ -208,6 +255,26 @@ function buildLanguage(language) {
       ]);
       tree.appendChild(region, copy);
       tree.appendChild(parent, region);
+      if (['the-program-format', 'das-programmformat'].includes(records.get(file).slug)) {
+        const [header, ...rows] = childRows(node);
+        const ns = 'http://www.w3.org/1999/xhtml';
+        const caption = tree.createElement('caption', ns, []);
+        tree.insertText(caption, language === 'en' ? 'Digital Research symbol types' : 'Digital-Research-Symboltypen');
+        tree.appendChild(copy, caption);
+        const thead = tree.createElement('thead', ns, []);
+        const tr = tree.createElement('tr', ns, []);
+        for (const cell of elements(header)) {
+          const th = tree.createElement('th', ns, [{ name: 'scope', value: 'col' }]);
+          tree.insertText(th, plain(cell));
+          tree.appendChild(tr, th);
+        }
+        tree.appendChild(thead, tr);
+        tree.appendChild(copy, thead);
+        const tbody = tree.createElement('tbody', ns, []);
+        for (const row of rows) renderNode(row, tbody, file);
+        tree.appendChild(copy, tbody);
+        return;
+      }
     } else {
       tree.appendChild(parent, copy);
     }
@@ -355,6 +422,7 @@ try {
         page.function && !englishFunctions.has(`${page.path}:${page.title}`))
         .map(page => ({ title: page.title, path: page.path, href: page.href })) : undefined,
     };
+    if (diagnostics.transcribedFigures.length !== 1) throw new Error(`Missing or duplicate ${language} TPA diagram`);
     console.log(`${language}: ${paths.length} UDO pages, ${functions.length} function records, ${diagnostics.findings.length} pages flagged for translation review`);
   }
   report.outOfCorpus = decode(git('ls-tree', '-r', '--name-only', tos.revision)).split('\n')

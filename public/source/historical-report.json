@@ -228,14 +228,16 @@
           "sha256": "6cb17d28d5aa4553aa2f8fb45ed050b516ca60e52750af086396596746e7f32d"
         },
         {
-          "file": "gemdos_tpa.html",
-          "path": "bilder/gif/tpa_en.gif",
-          "sha256": "ec47277ed0a2eb701cb9403d799db28afcefabcad2299f74c693c3bd6deedc1a"
-        },
-        {
           "file": "magic_driveu.html",
           "path": "bilder/gif/drv_u.gif",
           "sha256": "906d1d7008a8a7a7bddc9ebf97b781d5d756ea60b9bc3fc91ecb41ec4982930d"
+        }
+      ],
+      "transcribedFigures": [
+        {
+          "file": "gemdos_tpa.html",
+          "path": "bilder/gif/tpa_en.gif",
+          "sha256": "ec47277ed0a2eb701cb9403d799db28afcefabcad2299f74c693c3bd6deedc1a"
         }
       ],
       "findings": [
@@ -1633,14 +1635,16 @@
           "sha256": "6cb17d28d5aa4553aa2f8fb45ed050b516ca60e52750af086396596746e7f32d"
         },
         {
-          "file": "gemdos_tpa.html",
-          "path": "bilder/gif/tpa.gif",
-          "sha256": "c84db0b363253f8a434242079a6663285d1ca61953ca937d638bd52a43daa8d8"
-        },
-        {
           "file": "magic_driveu.html",
           "path": "bilder/gif/drv_u.gif",
           "sha256": "906d1d7008a8a7a7bddc9ebf97b781d5d756ea60b9bc3fc91ecb41ec4982930d"
+        }
+      ],
+      "transcribedFigures": [
+        {
+          "file": "gemdos_tpa.html",
+          "path": "bilder/gif/tpa.gif",
+          "sha256": "c84db0b363253f8a434242079a6663285d1ca61953ca937d638bd52a43daa8d8"
         }
       ],
       "findings": [],

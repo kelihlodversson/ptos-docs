@@ -4,6 +4,7 @@ import MemoryLayout from './MemoryLayout.astro';
 import type { CPU } from '../data/targets';
 import type { NativeCall } from '../data/native-calls';
 import type { Binding, Register } from '../data/overlays';
+import abi from '../data/abi.json';
 
 interface Props { call: NativeCall; cpu: CPU }
 const { call, cpu } = Astro.props;
@@ -20,7 +21,7 @@ const fields = [{ name: 'Opcode', offset: 0, bytes: 2, detail: opcode },
 const registers: Register[] = cpu === 'arm'
   ? [['R0', `Function ${opcode} on entry, result on return`],
     ...call.args.map(([name, , detail], index): Register => [`R${index + 1}`, `${name} · ${detail}`])]
-  : [['RAX', `Selector (1 << 32) | ${opcode} on entry, result on return`],
+  : [['RAX', '64-bit selector on entry, result on return'],
     ...call.args.map(([name, , detail], index): Register => [['RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9'][index], `${name} · ${detail}`])];
 const conventions = {
   '68k': `Push the packed arguments and opcode, then execute TRAP #1. The result is in D0. If the call returns, remove ${offset} bytes from the user stack.`,
@@ -30,10 +31,12 @@ const conventions = {
 const binding: Binding = unavailable
   ? { status: 'unsupported', scope: 'pTOS', detail: unavailable }
   : { status: call.status ?? 'implemented', scope: 'pTOS', detail: conventions[cpu],
+    x32Selector: cpu === 'x32' ? { trapClass: abi.x32.classes.GEMDOS, functionNumber: call.opcode } : undefined,
     registers: cpu === '68k' ? undefined : registers };
 ---
 <CallingConvention {binding}>
   {cpu === '68k' && <MemoryLayout caption="Caller stack at TRAP #1" {fields} bytes={offset} alignment={2} {byteOrder} />}
   {call.layout && <MemoryLayout {...call.layout}
     alignment={cpu === '68k' ? call.layout.align68k ?? call.layout.alignment : call.layout.alignment} {byteOrder} />}
+  <slot />
 </CallingConvention>
