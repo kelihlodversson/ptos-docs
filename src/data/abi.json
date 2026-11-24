@@ -1,16 +1,17 @@
 {
-  "cuis": {
+  "x32": {
+    "classes": { "GEMDOS": 1, "BIOS": 13, "XBIOS": 14 },
     "selector": {
       "bits": 64,
-      "caption": "Syscall selector in RAX, most significant bit at left",
       "fields": [
-        { "name": "Trap class", "hi": 63, "lo": 32, "width": 32, "detail": "Unsigned class. CUIS_SERVICE_CLASS = 0x103." },
-        { "name": "Function number", "hi": 31, "lo": 0, "width": 32, "detail": "Unsigned function selector. CUIS_SESSION_QUERY = 1." }
+        { "hi": 63, "lo": 32, "width": 32 },
+        { "hi": 31, "lo": 0, "width": 32 }
       ]
-    },
+    }
+  },
+  "cuis": {
     "class": 259,
-    "sessionQuery": 1,
-    "example": "0x00000103_00000001"
+    "sessionQuery": 1
   },
   "fclose": {
     "caption": "Caller stack at GEMDOS trap entry",

@@ -1,0 +1,26 @@
+---
+import BitLayout from './BitLayout.astro';
+import abi from '../data/abi.json';
+import type { Binding } from '../data/overlays';
+
+interface Props {
+  selector: NonNullable<Binding['x32Selector']>;
+  language?: 'en' | 'de';
+}
+const { selector, language = 'en' } = Astro.props;
+const german = language === 'de';
+const caption = german ? 'Systemaufrufselektor in RAX, höchstwertiges Bit links'
+  : 'Syscall selector in RAX, most significant bit at left';
+const { bits, fields: ranges } = abi.x32.selector;
+const names = german ? ['Trap-Klasse', 'Funktionsnummer'] : ['Trap class', 'Function number'];
+const values = [selector.trapClass, selector.functionNumber];
+const descriptions = german ? ['32-Bit-Klasse ohne Vorzeichen.', '32-Bit-Funktionsnummer ohne Vorzeichen.']
+  : ['Unsigned 32-bit class.', 'Unsigned 32-bit function number within the class.'];
+const fields = ranges.map((range, index) => ({
+  ...range,
+  name: names[index],
+  detail: descriptions[index],
+  value: values[index] === undefined ? undefined : `0x${values[index].toString(16).toUpperCase()}`,
+}));
+---
+<BitLayout {bits} {caption} {fields} boundaryLabels {language} />

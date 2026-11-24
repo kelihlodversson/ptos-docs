@@ -1,5 +1,6 @@
 ---
 import RegisterMap from './RegisterMap.astro';
+import RaxSelector from './RaxSelector.astro';
 import { sourceLink } from '../data/catalog';
 import type { HistoricalPage } from '../data/historical';
 import { historicalBinding } from '../data/historical-bindings';
@@ -19,6 +20,7 @@ const sources = binding ? [...new Set([binding.source, binding.extraSource].filt
     {' · '}{binding.scope}<br />{binding.detail}
   </p>
   {binding.registers && <RegisterMap rows={binding.registers} />}
+  {binding.x32Selector && <RaxSelector selector={binding.x32Selector} language={page.language} />}
   <p class="revision-note">{english ? 'pTOS source' : 'pTOS-Quellcode'} · {sources.map((path, index) => <>
     {index > 0 && ' · '}<a href={sourceLink(['ptos', path, path]).href}><code>{path}</code></a>
   </>)}</p>

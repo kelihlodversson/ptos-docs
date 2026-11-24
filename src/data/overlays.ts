@@ -7,6 +7,7 @@ export type Binding = {
   scope: string;
   detail: string;
   registers?: Register[];
+  x32Selector?: { trapClass: number; functionNumber?: number };
   code?: string;
   stack?: typeof abi.fclose;
 };
@@ -41,9 +42,10 @@ function gemdos(opcode: string, args: Register, rest: string[] = []): Record<'ar
       status: 'implemented',
       scope: 'Native pTOS x32 GEMDOS',
       detail: 'SYSCALL enters ring 0 from ring 3. The instruction clobbers RCX and R11. Pointers are 32-bit user addresses in 64-bit register slots.',
-      registers: [['RAX', `Selector (1 << 32) | ${opcode} on entry, result on return`],
+      x32Selector: { trapClass: abi.x32.classes.GEMDOS, functionNumber: Number(opcode) },
+      registers: [['RAX', '64-bit selector on entry, result on return'],
         ...values.map((value, index): Register => [['RDI', 'RSI', 'RDX', 'R10'][index], value])],
-      code: `; RAX = (1 << 32) | ${opcode}, RDI = ${description}\nsyscall`,
+      code: `; RDI = ${description}\nsyscall`,
     },
   };
 }

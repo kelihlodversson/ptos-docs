@@ -2,25 +2,45 @@
 interface Props {
   bits: number;
   caption: string;
-  fields: { name: string; hi: number; lo: number; width: number; detail: string }[];
+  fields: { name: string; hi: number; lo: number; width: number; detail: string; value?: string }[];
+  boundaryLabels?: boolean;
+  language?: 'en' | 'de';
 }
-const { bits, caption, fields } = Astro.props;
+const { bits, caption, fields, boundaryLabels = false, language = 'en' } = Astro.props;
+const german = language === 'de';
+const hasValues = fields.some(field => field.value !== undefined);
+const lastField = fields.length - 1;
 ---
-<figure class="prm-abi-figure">
+<figure class:list={['prm-abi-figure', { 'prm-bit-boundaries': boundaryLabels }]}>
   <div class="bit-scroll" role="region" aria-label={caption} tabindex="0">
     <div class="prm-bit-endpoints" style={`--bits:${bits}`} aria-hidden="true">
-      {fields.map(field => <span style={`--span:${field.width}`}><span>{field.hi}</span>{field.hi !== field.lo && <span>{field.lo}</span>}</span>)}
+      {fields.map((field, index) => <span style={`--span:${field.width}`}>
+        {(!boundaryLabels || index === 0) && <span>{field.hi}</span>}
+        {(field.hi !== field.lo || boundaryLabels && index > 0) &&
+          <span class:list={['prm-bit-low', { 'prm-bit-boundary': boundaryLabels && index < lastField }]}>{field.lo}</span>}
+      </span>)}
     </div>
     <div class="prm-bit-fields" style={`--bits:${bits}`} aria-hidden="true">
-      {fields.map(field => <span class="prm-bit-field" style={`--span:${field.width}`}>{field.name}<small>{field.width} {field.width === 1 ? 'bit' : 'bits'}</small></span>)}
+      {fields.map(field => <span class="prm-bit-field" style={`--span:${field.width}`}>
+        {field.value !== undefined ? <><code>{field.value}</code><small>{field.name}</small></>
+          : <>{field.name}<small>{field.width} {german ? 'Bit' : field.width === 1 ? 'bit' : 'bits'}</small></>}
+      </span>)}
     </div>
   </div>
-  <figcaption>{caption} · {bits} bits</figcaption>
+  <figcaption>{caption} · {bits} {german ? 'Bit' : 'bits'}</figcaption>
 </figure>
-<h3 class="prm-section-heading">Instruction Fields</h3>
+<h3 class="prm-section-heading">{german ? 'Bitfelder' : 'Instruction Fields'}</h3>
 <table class="prm-rule-table">
-  <thead><tr><th scope="col">Bits</th><th scope="col">Field</th><th scope="col">Definition</th></tr></thead>
+  <thead><tr>
+    <th scope="col">Bits</th><th scope="col">{german ? 'Feld' : 'Field'}</th>
+    {hasValues && <th scope="col">{german ? 'Wert' : 'Value'}</th>}
+    <th scope="col">Definition</th>
+  </tr></thead>
   <tbody>
-    {fields.map(field => <tr><td><code>{field.hi}{field.hi !== field.lo && `–${field.lo}`}</code></td><th scope="row">{field.name}</th><td>{field.detail}</td></tr>)}
+    {fields.map(field => <tr>
+      <td><code>{field.hi}{field.hi !== field.lo && `–${field.lo}`}</code></td><th scope="row">{field.name}</th>
+      {hasValues && <td>{field.value !== undefined && <code>{field.value}</code>}</td>}
+      <td>{field.detail}</td>
+    </tr>)}
   </tbody>
 </table>

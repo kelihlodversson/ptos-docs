@@ -62,13 +62,12 @@ function validateBitFields(diagram) {
 }
 
 test('bit diagrams have contiguous bit ranges with no overlapping fields', () => {
-  validateBitFields(abi.cuis.selector);
+  validateBitFields(abi.x32.selector);
+  assert.deepEqual(abi.x32.selector.fields, [{ hi: 63, lo: 32, width: 32 }, { hi: 31, lo: 0, width: 32 }]);
   for (const bits of [8, 16, 32, 64]) {
     validateBitFields({ bits, fields: [{ hi: bits - 1, lo: 1, width: bits - 1 }, { hi: 0, lo: 0, width: 1 }] });
   }
   assert.throws(() => validateBitFields({ bits: 8, fields: [{ hi: 7, lo: 0, width: 7 }] }));
-  const [high, low] = abi.cuis.example.slice(2).split('_');
-  assert.equal(BigInt(`0x${high}${low}`), (BigInt(abi.cuis.class) << 32n) | BigInt(abi.cuis.sessionQuery));
 });
 
 test('stack and structure slots match word and pointer sizes', () => {
