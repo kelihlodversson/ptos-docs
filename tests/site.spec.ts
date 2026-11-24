@@ -371,6 +371,27 @@ test('BIOS system variables show separate types and link the six Ssystem access 
   }
 });
 
+test('Cookie jar documents Ssystem lookup and links the known cookie keys from both pages', async ({ page }) => {
+  const cookieJar = '/subsystems/bios/cookie-jar/';
+  const keyList = '/historical/en/cookie-and-xbra-list/';
+  const keyListLabel = 'Known cookie keys (Cookie and XBRA list)';
+  await page.goto(cookieJar);
+  const guide = page.getByRole('region', { name: 'Access with Ssystem' });
+  await expect(guide).toContainText('pTOS builds with CONF_WITH_SSYSTEM');
+  await expect(guide).toContainText('MiNT or FreeMiNT');
+  await expect(guide.locator('pre')).toContainText('Ssystem(S_GETCOOKIE, 0x5F435055L, (long)value)');
+  await expect(page.getByRole('heading', { name: 'Classic TOS cookie jar' })).toBeVisible();
+  await expect(guide.getByRole('link', { name: keyListLabel })).toHaveAttribute('href', keyList);
+
+  await guide.getByRole('link', { name: 'Ssystem(S_GETCOOKIE)', exact: true }).click();
+  await expect(page).toHaveURL('/reference/ssystem/#S_GETCOOKIE');
+  const mode = page.locator('tr#S_GETCOOKIE');
+  await expect(mode.getByRole('link', { name: 'Cookie jar access guide' })).toHaveAttribute('href', cookieJar + '#ssystem-access');
+  await mode.getByRole('link', { name: keyListLabel }).click();
+  await expect(page).toHaveURL(keyList);
+  await expect(page.getByRole('heading', { name: 'Cookie and XBRA list', exact: true })).toBeVisible();
+});
+
 test('chapter navigation follows tos.hyp and places extensions with related calls', async ({ page }) => {
   await page.goto('/subsystems/');
   await page.getByRole('link', { name: 'GEMDOS', exact: true }).click();

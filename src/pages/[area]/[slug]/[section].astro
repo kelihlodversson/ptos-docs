@@ -1,11 +1,12 @@
 ---
 import Layout from '../../../components/Layout.astro';
 import CatalogList from '../../../components/CatalogList.astro';
+import BiosCookieJar from '../../../components/BiosCookieJar.astro';
 import BiosSystemVariables from '../../../components/BiosSystemVariables.astro';
 import GemdosProgramFormat from '../../../components/GemdosProgramFormat.astro';
 import GemdosProgramLaunch from '../../../components/GemdosProgramLaunch.astro';
 import { catalog } from '../../../data/catalog';
-import { chapters, historicalPath, historicalSectionBody, manualBreadcrumbs, systemVariablesPath } from '../../../data/manual-structure';
+import { chapters, cookieJarPath, historicalPath, historicalSectionBody, manualBreadcrumbs, systemVariablesPath } from '../../../data/manual-structure';
 
 export function getStaticPaths() {
   return chapters.flatMap(chapter => chapter.sections.filter(section => !section.standalone).map(section => ({
@@ -21,6 +22,7 @@ const entries = catalog.filter(entry => entry.chapter?.slug === chapter.slug && 
 const programFormat = chapter.slug === 'gemdos' && section.slug === 'the-program-format';
 const programLaunch = chapter.slug === 'gemdos' && section.slug === 'program-launch-and-tpa';
 const programTopic = programFormat || programLaunch;
+const cookieJar = section.href === cookieJarPath;
 ---
 <Layout title={section.name} description={`${section.name} in the ${chapter.name} chapter.`} running={chapter.name}
   breadcrumbs={manualBreadcrumbs(chapter.slug)}>
@@ -28,10 +30,12 @@ const programTopic = programFormat || programLaunch;
   {programFormat && <GemdosProgramFormat />}
   {programLaunch && <GemdosProgramLaunch />}
   {programTopic && <h2 class="prm-section-heading ruled">{programFormat ? 'Classic GEMDOS PRG format' : 'Classic GEMDOS PRG startup'}</h2>}
+  {cookieJar && <BiosCookieJar />}
+  {cookieJar && <h2 class="prm-section-heading ruled">Classic TOS cookie jar</h2>}
   {section.historicalSlug && (entries.length === 0 || section.slug === 'xcontrol') &&
     (section.href === systemVariablesPath
       ? <BiosSystemVariables historicalBody={historicalSectionBody(section.historicalSlug)} />
-      : <div class:list={['historical-body', { 'historical-entry': programTopic }]} set:html={historicalSectionBody(section.historicalSlug)} />)}
+      : <div class:list={['historical-body', { 'historical-entry': programTopic || cookieJar }]} set:html={historicalSectionBody(section.historicalSlug)} />)}
   {entries.length > 0 && <CatalogList records={entries} showSubsystem={false} />}
   {section.historicalSlug && <p><a href={historicalPath('en', section.historicalSlug)}>Read the original tos.hyp section</a></p>}
 </Layout>

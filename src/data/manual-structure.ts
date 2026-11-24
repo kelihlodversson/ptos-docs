@@ -5,6 +5,8 @@ export const historicalPath = (language: Edition, slug: string) => `/historical/
 export const upstreamTosHyp = 'https://freemint.github.io/tos.hyp/';
 export const elfEntryPath = '/os-variants/ptos/elf-entry/';
 export const systemVariablesPath = '/subsystems/bios/the-system-variables/';
+export const cookieJarPath = '/subsystems/bios/cookie-jar/';
+export const cookieKeysPath = historicalPath('en', 'cookie-and-xbra-list');
 
 const areas = [
   {

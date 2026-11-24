@@ -1,0 +1,31 @@
+---
+import { sourceLink } from '../data/catalog';
+import { cookieKeysPath } from '../data/manual-structure';
+
+const ptosSource = sourceLink(['ptos', 'bdos/ssystem.c', 'pTOS cookie lookup source']);
+const example = `#include <stdint.h>
+#include <mint/mintbind.h>
+
+long read_cpu_cookie(uint32_t *value)
+{
+    return Ssystem(S_GETCOOKIE, 0x5F435055L, (long)value);
+}`;
+---
+<section aria-labelledby="ssystem-access">
+  <h2 id="ssystem-access" class="prm-section-heading ruled">Access with Ssystem</h2>
+  <p>On pTOS builds with <code>CONF_WITH_SSYSTEM</code> and on MiNT or FreeMiNT versions that provide this mode,
+    use <a href="/reference/ssystem/#S_GETCOOKIE"><code>Ssystem(S_GETCOOKIE)</code></a> to look up cookies through the kernel.
+    This avoids dereferencing the legacy <code>_p_cookies</code> pointer at <code>0x05A0</code>.</p>
+  <p>Pass the four ASCII bytes of the key packed most significant byte first in <code>arg1</code>.
+    Pass a pointer to a writable 32-bit value in <code>arg2</code>. The example looks up <code>_CPU</code>.
+    Read the output only if the call returns zero. <a href={cookieKeysPath}>Known cookie keys (Cookie and XBRA list)</a></p>
+  <pre class="prm-code"><code>{example}</code></pre>
+  <p>Check for the mode on pTOS with <code>Ssystem(S_INQUIRE, S_GETCOOKIE, 0L)</code>.
+    On FreeMiNT 1.15.12 and 1.18.0, <code>Ssystem(S_INQUIRE, 0L, 0L)</code> checks for <code>Ssystem</code>,
+    and both releases implement the lookup shown above.
+    <a href={ptosSource.href}>{ptosSource.label}</a> ·
+    <a href="https://github.com/freemint/freemint/blob/34dcbdf0e485a110bed49a614107b3abd1a23521/sys/cookie.c">FreeMiNT 1.15.12 lookup source</a> ·
+    <a href="https://github.com/freemint/freemint/blob/6d135b4fbc49650e4218f7330da196e6d4445f22/sys/cookie.c">FreeMiNT 1.18.0 lookup source</a></p>
+  <p>Use <a href="/reference/ssystem/#S_SETCOOKIE"><code>S_SETCOOKIE</code></a> to add or update a cookie and
+    <a href="/reference/ssystem/#S_DELCOOKIE"><code>S_DELCOOKIE</code></a> to remove one, subject to the system’s permissions.</p>
+</section>
