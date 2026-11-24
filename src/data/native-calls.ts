@@ -175,7 +175,8 @@ export const nativeCalls: NativeCall[] = [
     description: ['Gives runnable managed peers an opportunity to run and checks pending group cancellation at a safe boundary. The independent timer-preemption capability is configuration-gated.'],
     result: 'Returns the scheduler result as an int in the SDK. A THREAD cancelled at the boundary does not resume.',
     config: processConfig, paraTos: 'The pTOS-hosted guest dispatcher yields its guest task. The POSIX backend leaves Syield unimplemented.',
-    sources: [mintDispatcher, ['ptos', 'bdos/native_sched.c', 'Native yield implementation'], sdk, paraDispatch, paraSsystem], related: ['Ptermgrp', 'Pthjoin'],
+    sources: [mintDispatcher, ['ptos', 'bdos/native_sched.c', 'Native yield implementation'], sdk, paraDispatch, paraSsystem],
+    related: ['Ptermgrp', 'Pthjoin', 'Pause', 'Fselect'],
   },
   {
     name: 'S_PROCNAME', title: 'Read the current native process image name', opcode: 0x154, mode: -7,

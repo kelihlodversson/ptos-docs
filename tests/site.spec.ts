@@ -255,6 +255,37 @@ test('GEMDOS format and launch topics document ELF and render the TPA layout as 
   expect(results.violations).toEqual([]);
 });
 
+test('Syield combines pTOS and historical documentation under GEMDOS system functions', async ({ page }) => {
+  for (const language of ['en', 'de']) {
+    await page.goto(`/historical/${language}/syield/#Syield`, { waitUntil: 'commit' });
+    await expect(page).toHaveURL('/reference/syield/#Syield');
+    await expect(page.locator('#Syield')).toBeAttached();
+  }
+  const availability = page.locator('.prm-fact-row').filter({ has: page.getByText('Availability', { exact: true }) });
+  await expect(availability).toContainText('In MagiC as of Version 3.0, and when the MiNT cookie is present.');
+  await expect(availability).toContainText('CONF_WITH_NATIVE_SCHED');
+  await expect(availability).toContainText('The POSIX backend leaves Syield unimplemented.');
+  await expect(page.locator('.prm-prototype')).toHaveText('int Syield(void);');
+
+  const history = page.getByRole('region', { name: 'Historical MiNT reference' });
+  await expect(history).toContainText('void Syield ( void );');
+  await expect(history).toContainText('will be ignored in the Auto folder');
+  await expect(history).toContainText('The function does not return a result.');
+  await expect(page.getByText('Original tos.hyp availability and bindings')).toHaveCount(0);
+  await expect(page.locator('[data-target-panel="68k"]')).toContainText('#255,-(sp)');
+  await page.getByRole('tab', { name: 'x32' }).click();
+  await expect(page.locator('[data-target-panel="x32"] .prm-bit-fields code')).toHaveText(['0x1', '0xFF']);
+  await page.getByRole('tab', { name: 'GFA BASIC' }).click();
+  await expect(page.locator('[data-target-panel="gfa"]')).toContainText('Result%=GEMDOS(&HFF)');
+  await expect(page.getByRole('link', { name: 'Pause', exact: true })).toHaveAttribute('href', '/historical/en/pause/');
+  await expect(page.getByRole('link', { name: 'Fselect', exact: true })).toHaveAttribute('href', '/historical/en/fselect/');
+  await expect(page.getByRole('link', { name: 'Original tos.hyp MiNT description and binding' })).toHaveAttribute('href', /gemdos\/system\/syield\.ui$/);
+
+  await page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'System functions' }).click();
+  await expect(page).toHaveURL('/subsystems/gemdos/system-functions/');
+  await expect(page.getByRole('link', { name: 'Syield', exact: true })).toHaveAttribute('href', '/reference/syield/');
+});
+
 test('Ssystem combines all native selectors and the historical MiNT reference', async ({ page }) => {
   await page.goto('/reference/ssystem/');
   const nativeModes = page.getByRole('region', { name: 'pTOS Mode Selectors' });
