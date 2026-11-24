@@ -128,6 +128,7 @@ test('historical entries retain their availability, source and switchable bindin
   await expect(page.getByRole('heading', { name: 'Fopen', exact: true })).toBeVisible();
   await expect(page.locator('.prm-prototype')).toContainText('Fopen');
   await expect(page.getByText('All GEMDOS versions.')).toBeVisible();
+  await expect(page.locator('.ptos-availability')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'gemdos/file/fopen.ui' })).toHaveAttribute('href', /freemint\/tos.hyp\/blob\/20a9cfb4/);
   const select = selectTarget(page);
   await select.selectOption('arm');
@@ -141,6 +142,35 @@ test('historical entries retain their availability, source and switchable bindin
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(results.violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
+test('historical availability reports pTOS exceptions and build requirements across targets', async ({ page }) => {
+  const availability = page.locator('.prm-fact-row').filter({ has: page.locator('dt').getByText(/^(Availability|Verfügbar)$/) });
+  await page.goto('/historical/en/supexec/');
+  await expect(availability).toContainText('All TOS versions.');
+  await expect(availability.getByRole('listitem').filter({ hasText: '68k' })).toContainText('Requires a single address space.');
+  await expect(availability.getByRole('listitem').filter({ hasText: 'ARM, x32' })).toContainText('Not implemented');
+  await selectTarget(page).selectOption('gfa');
+  await expect(availability).toBeVisible();
+  await expect(availability.getByRole('link', { name: 'PR #903' })).toHaveAttribute('href', /pTOS\/pull\/903$/);
+
+  const expected = [
+    ['/historical/en/dgetcwd/', '68k, ARM, x32', 'Implemented', 'CONF_WITH_KPROC'],
+    ['/historical/en/fpipe/', '68k, ARM, x32', 'Not implemented'],
+    ['/historical/de/getbpb/', '68k, ARM', 'Implementiert', 'Nur ohne getrennte Adressräume'],
+    ['/historical/en/graf-mouse/', 'x32', 'Experimental', 'CONF_WITH_LIBAES'],
+    ['/historical/en/v-opnvwk/', 'x32', 'Implemented', 'CONF_WITH_X32_VDI'],
+    ['/historical/en/seedfill/', '68k', 'Implemented', 'CONF_WITH_LINEA'],
+    ['/historical/en/xhreserve/', '68k', 'Not implemented', 'A chained XHDI driver'],
+    ['/historical/de/pmem-size/', '68k', 'Ungeprüft', 'externen PMMU-Funktionshandler'],
+    ['/historical/en/pfork/', '68k, ARM, x32', 'Implemented', 'CONF_WITH_PFORK'],
+  ] as const;
+  for (const [path, targets, status, limitation] of expected) {
+    await page.goto(path);
+    const row = availability.locator('.availability-targets li').filter({ has: page.getByText(targets, { exact: true }) });
+    await expect(row).toContainText(status);
+    if (limitation) await expect(row).toContainText(limitation);
+  }
 });
 
 test('Ssystem combines all native selectors and the historical MiNT reference', async ({ page }) => {

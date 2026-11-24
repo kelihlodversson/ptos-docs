@@ -16,7 +16,7 @@ const gemdos = {};
 for (const [, , count, shape, opcode] of dispatch.matchAll(/F\((\w+)\)[^\n]*W_N\((\d+),(\w+)\)[^\n]*\/\* (0x[\da-f]+)/gi)) {
   const args = shape.replace(/^[R]?(?=.)/, '').replace(/^V$/, '');
   assert.equal(Number(count), args.length, opcode);
-  gemdos[Number(opcode)] = { args, config: { '0x14': 'CONF_WITH_ALT_RAM' }[opcode] };
+  gemdos[Number(opcode)] = { args, config: { '0x14': 'CONF_WITH_ALT_RAM', '0x15': 'CONF_WITH_VIDEL' }[opcode] };
 }
 assert.deepEqual(gemdos[0x3d], { args: 'PW', config: undefined });
 assert.equal(gemdos[0x4b].args, 'WLLL');
@@ -43,13 +43,44 @@ for (const [name, args, config] of [
   gemdos[extendedNumbers[symbol]] = { args, config };
 }
 
-const nativeVectors = (path, prefix) => {
-  const table = source(path).split(`const PFLONG ${prefix}_vecs[] = {`)[1].split('};')[0];
-  return Object.fromEntries([...table.matchAll(new RegExp(`VEC\\(${prefix}_([\\da-f]+), (\\w+)\\)`, 'g'))]
-    .map(([, op, name]) => [parseInt(op, 16), name.toLowerCase()]));
-};
-const bios = nativeVectors('bios/bios.c', 'bios');
-const xbios = nativeVectors('bios/xbios.c', 'xbios');
+const vectorTable = prefix => source(`bios/${prefix}.c`).split(`const PFLONG ${prefix}_vecs[] = {`)[1].split('};')[0];
+const bios = {}, xbios = {}, xbiosConfig = {};
+for (const [prefix, vectors] of [['bios', bios], ['xbios', xbios]]) {
+  const vector = new RegExp(`VEC\\(${prefix}_([\\da-f]+), (\\w+)\\)`);
+  let gate;
+  for (const line of vectorTable(prefix).split('\n')) {
+    if (/^#(?:if|else|elif|endif)\b/.test(line)) {
+      gate = /^#if (CONF_\w+)\s*$/.exec(line)?.[1];
+    }
+    const match = vector.exec(line);
+    if (!match) continue;
+    const opcode = parseInt(match[1], 16);
+    vectors[opcode] = match[2].toLowerCase();
+    if (prefix === 'xbios' && gate) xbiosConfig[opcode] = gate;
+  }
+}
+assert.equal(xbiosConfig[0x0d], 'CONF_WITH_MFP');
+assert.equal(xbiosConfig[0x58], 'CONF_WITH_VIDEL');
+const atariXbios = source('bios/arch/m68k/m68kusertrap.c');
+const allowList = atariXbios.split('static BOOL atari_xbios_allowed(WORD fn)')[1].split('return TRUE;')[0];
+const higherHalfXbios = [...allowList.matchAll(/case (0x[\da-f]+):/gi)].map(([, number]) => Number(number));
+assert.ok(higherHalfXbios.includes(0x05) && !higherHalfXbios.includes(0x26));
+
+const linea = source('bios/arch/m68k/linea.S');
+assert.match(linea, /#if CONF_WITH_USER_ASPACE[^\n]*\n[\s\S]+?jra\s+C_SYM\(linea_fault_vec\)/);
+const lineACount = [...linea.split('linea_vecs:')[1].split('linea_ents:')[0].matchAll(/^\s*\.dc\.l\s+/gm)].length;
+assert.equal(lineACount, 16);
+
+const xhdiDispatch = source('bios/xhdi.c');
+const xhdiCases = xhdiDispatch.split('switch (opcode)')[1];
+const xhdi = Object.fromEntries(Object.entries(defineNumbers(source('bios/xhdi.h')))
+  .filter(([name]) => xhdiCases.includes(`case ${name}:`))
+  .map(([name, number]) => [number, name.toLowerCase()]));
+const xhdiDriverOnly = [...xhdiDispatch.matchAll(/^static long (XH\w+)\([^)]*\)\n\{\n([\s\S]*?)^\}/gm)]
+  .filter(([, , body]) => /return next_handler\(/.test(body) && /^    return (?:ERR|EINVFN);[^\n]*\n$/m.test(body))
+  .map(([, name]) => Number(Object.keys(xhdi).find(number => xhdi[number] === name.toLowerCase())));
+assert.equal(Object.keys(xhdi).length, 20);
+assert.deepEqual(xhdiDriverOnly, [2, 3, 4, 5, 13, 15, 16, 18, 19]);
 const xbiosDoc = source('doc/x86_64-syscall.txt').split('XBIOS (the calls this configuration has)')[1].split('Not implemented here')[0];
 const x32Xbios = [...xbiosDoc.matchAll(/^\s+(\d+(?:, \d+)*)\s+\w+\(/gm)]
   .flatMap(([, opcodes]) => opcodes.split(', ').map(Number)).sort((a, b) => a - b);
@@ -99,7 +130,8 @@ assert.match(source('vdi/vdi_user_draw.c'), /case 102:[^\n]*vq_extnd\(1\)[\s\S]*
 assert.match(source('bios/arch/arm/vectorsasm.S'), /C_SYM\(gemtrap\):\s*cmp\s+r0, #0x73/);
 
 const inventory = {
-  revision: ptos.revision, gemdos, bios, xbios, x32Xbios, aesNative, aesLibrary, legacyVdi, x32Vdi,
+  revision: ptos.revision, gemdos, bios, xbios, xbiosConfig, higherHalfXbios, x32Xbios,
+  lineACount, xhdi, xhdiDriverOnly, aesNative, aesLibrary, legacyVdi, x32Vdi,
 };
 const output = JSON.stringify(inventory, null, 2) + '\n';
 const path = new URL('../src/data/native-inventory.json', import.meta.url);

@@ -154,6 +154,8 @@ article, section { min-width: 0; }
 .udo-list dd p { overflow-wrap: anywhere; }
 .availability-targets { margin: .35rem 0 .8rem; padding-left: 1.2rem; }
 .historical-availability { margin-bottom: .8rem; }
+.ptos-availability { overflow-wrap: anywhere; }
+.ptos-availability .availability-targets li + li { margin-top: .25rem; }
 
 .prm-rule-table {
   border-collapse: collapse;
