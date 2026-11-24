@@ -1,6 +1,7 @@
 ---
 import ReferenceLeaf from '../../components/ReferenceLeaf.astro';
 import NativeReference from '../../components/NativeReference.astro';
+import HistoricalRedirect from '../../components/HistoricalRedirect.astro';
 import { historical } from '../../data/catalog';
 import type { Historical } from '../../data/catalog';
 import { nativeCalls, nativePath } from '../../data/native-calls';
@@ -20,4 +21,6 @@ export function getStaticPaths() {
 type Props = { record: Historical; native?: never } | { native: NativeCall; record?: never };
 const { record, native } = Astro.props;
 ---
-{native ? <NativeReference call={native} /> : <ReferenceLeaf name={record.name} {record} />}
+{native?.embeddedInSsystem
+  ? <HistoricalRedirect name={native.name} destination={`/reference/ssystem/#${native.name}`} />
+  : native ? <NativeReference call={native} /> : <ReferenceLeaf name={record.name} {record} />}

@@ -38,7 +38,7 @@ const nativeLocation = (name: string) => chapterLocation('gemdos', nativeSection
 export const catalog = [
   ...importedFunctions.filter(entry => !migratedFunctions.has(entry.name))
     .map(entry => ({ ...entry, ...historicalLocation(entry.historicalHref) })),
-  ...nativeCalls.map(call => ({
+  ...nativeCalls.filter(call => !call.embeddedInSsystem).map(call => ({
     name: call.name, description: call.title, subsystem: 'GEMDOS', ...nativeLocation(call.name), href: nativePath(call.name),
   })),
   ...Object.values(imported).map(record => ({

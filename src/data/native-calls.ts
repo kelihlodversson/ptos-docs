@@ -15,6 +15,7 @@ export interface NativeCall {
   related: string[];
   historical?: string;
   mode?: number;
+  embeddedInSsystem?: true;
   targets?: Partial<Record<CPU, string>>;
   status?: 'experimental';
   layout?: {
@@ -303,12 +304,12 @@ const ssystemModes = [
     result: standardSizeResult, config: 'Requires CONF_WITH_SSYSTEM.',
   },
   {
-    name: 'S_DESKINFO', mode: -4, title: 'Read native desktop capabilities',
-    description: 'Returns a 32-bit boot flag word followed by six 16-bit fields for resolution change, alternative RAM, cache control, shutdown, VIDEL and TT shifter availability. The fields describe the active kernel and machine.',
+    name: 'S_DESKINFO', mode: -4, title: 'Read native desktop capabilities', embeddedInSsystem: true as const,
+    description: 'The 16-byte struct desk_info contains a 32-bit bootflags word followed by six 16-bit fields for resolution change, alternative RAM, cache control, shutdown, VIDEL and TT shifter availability. The fields describe the active kernel and machine.',
     result: standardSizeResult, config: 'Requires CONF_WITH_SSYSTEM. Intended for the external desktop.',
   },
   {
-    name: 'S_DESKSET', mode: -5, title: 'Set a legacy desktop option',
+    name: 'S_DESKSET', mode: -5, title: 'Set a legacy desktop option', embeddedInSsystem: true as const,
     description: 'Item 1 sets the critical error alert, item 2 sets the AES background, and item 3 changes CPU cache settings where available. These options operate through the kernel AES path.',
     result: 'Zero for a supported item. An unknown or unavailable setting returns EINVFN. User processes on address-space builds receive EACCDN.',
     config: 'Requires CONF_WITH_SSYSTEM and kernel AES. Background or cache options also require their corresponding build features.',

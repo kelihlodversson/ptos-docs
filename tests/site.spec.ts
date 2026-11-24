@@ -286,16 +286,29 @@ test('Syield combines pTOS and historical documentation under GEMDOS system func
   await expect(page.getByRole('link', { name: 'Syield', exact: true })).toHaveAttribute('href', '/reference/syield/');
 });
 
-test('Ssystem combines all native selectors and the historical MiNT reference', async ({ page }) => {
+test('Ssystem keeps the MiNT modes and pTOS differences in one table', async ({ page }) => {
   await page.goto('/reference/ssystem/');
-  const nativeModes = page.getByRole('region', { name: 'pTOS Mode Selectors' });
-  await expect(nativeModes.locator('tbody tr')).toHaveCount(26);
-  await expect(nativeModes.locator('#native-S_INQUIRE')).toContainText('-1 (0xFFFF)');
-  await expect(nativeModes.locator('#native-S_GETCOOKIE')).toContainText('one-based slot');
-  await expect(nativeModes.locator('#native-S_SETLVAL')).toContainText('EACCDN');
-  await expect(nativeModes.locator('#native-S_PROCEXEC')).toContainText('CONF_WITH_PROCESS_EXEC_TEST');
-  await expect(nativeModes.getByRole('link', { name: 'S_MEMINFO', exact: true })).toHaveAttribute('href', '/reference/s-meminfo/');
-  await expect(page.getByRole('heading', { name: 'Historical MiNT Mode Reference' })).toBeVisible();
+  const table = page.getByRole('table', { name: 'Ssystem mode reference' });
+  const mode = (name: string) => table.locator(`:scope > tbody > tr[id="${name}"]`);
+  const ptos = (name: string) => mode(name).locator(':scope > td').last();
+  await expect(table.getByRole('columnheader')).toHaveText(['Mode', 'MiNT (historical)', 'pTOS']);
+  await expect(table.locator(':scope > tbody').first().locator(':scope > tr[id]')).toHaveCount(41);
+  await expect(table.locator(':scope > tbody').last().locator(':scope > tr[id]')).toHaveCount(8);
+  await expect(table.locator('span[id^="native-S_"]')).toHaveCount(26);
+  await expect(mode('S_INQUIRE')).toContainText('-1 (0xFFFF)');
+  await expect(mode('S_OSNAME').locator(':scope > td').first()).toContainText("0x4d694e54 ('MiNT')");
+  await expect(ptos('S_OSNAME')).toContainText('0x70544F53');
+  await expect(ptos('S_OSHEADER')).toHaveText('Unimplemented. Returns EINVFN.');
+  await expect(ptos('S_CLOCKUTC')).toHaveText('Planned. Returns EINVFN.');
+  await expect(ptos('S_GETCOOKIE')).toContainText('one-based slot');
+  await expect(ptos('S_SETLVAL')).toContainText('EACCDN');
+  await expect(ptos('S_PROCEXEC')).toContainText('CONF_WITH_PROCESS_EXEC_TEST');
+  await expect(ptos('S_DESKINFO')).toContainText('16-byte struct desk_info');
+  await expect(ptos('S_DESKSET')).toContainText('item 2 sets the AES background');
+  await expect(ptos('S_DESKSET')).toContainText('User processes on address-space builds receive EACCDN');
+  await expect(mode('S_MEMINFO').getByRole('link', { name: 'S_MEMINFO', exact: true })).toHaveAttribute('href', '/reference/s-meminfo/');
+  await expect(page.getByRole('heading', { name: 'Historical MiNT notes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'pTOS Mode Selectors' })).toHaveCount(0);
   await expect(page.getByText("Available when a 'MiNT' cookie", { exact: false })).toBeVisible();
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://docs.ptos.dev/reference/ssystem/');
 
@@ -309,7 +322,20 @@ test('Ssystem combines all native selectors and the historical MiNT reference', 
   for (const language of ['en', 'de']) {
     await page.goto('/historical/' + language + '/ssystem/#S_OSHEADER', { waitUntil: 'commit' });
     await expect(page).toHaveURL('/reference/ssystem/#S_OSHEADER');
-    await expect(page.locator('[id="S_OSHEADER"]')).toBeAttached();
+    await expect(mode('S_OSHEADER')).toBeAttached();
+  }
+  await page.goto('/reference/ssystem/#native-S_GETCOOKIE');
+  await expect(mode('S_GETCOOKIE').locator('#native-S_GETCOOKIE')).toBeAttached();
+
+  for (const [slug, name] of [['s-deskinfo', 'S_DESKINFO'], ['s-deskset', 'S_DESKSET']]) {
+    await page.goto(`/reference/${slug}/#calling-convention`, { waitUntil: 'commit' });
+    await expect(page).toHaveURL(`/reference/ssystem/#${name}`);
+    await expect(mode(name)).toBeAttached();
+  }
+  for (const path of ['/subsystems/gemdos/system-functions/', '/functions/']) {
+    await page.goto(path);
+    await expect(page.getByRole('link', { name: 'Ssystem', exact: true })).toHaveAttribute('href', '/reference/ssystem/');
+    await expect(page.getByRole('link', { name: /^S_DESK(INFO|SET)$/ })).toHaveCount(0);
   }
 });
 

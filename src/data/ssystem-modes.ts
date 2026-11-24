@@ -9,6 +9,7 @@ interface Mode {
   result: string;
   condition?: string;
   href?: string;
+  description?: string[];
 }
 
 export const ssystemModeGroups: { title: string; modes: Mode[] }[] = [
@@ -59,7 +60,7 @@ export const ssystemModeGroups: { title: string; modes: Mode[] }[] = [
       name: call.name, number: call.mode!, args: [call.args[1][0], call.args[2][0]],
       result: call.title + '. ' + call.result,
       condition: call.status === 'experimental' ? `Experimental. ${call.config}` : call.config,
-      href: nativePath(call.name),
+      ...(call.embeddedInSsystem ? { description: call.description } : { href: nativePath(call.name) }),
     } satisfies Mode)).sort((a, b) => b.number - a.number),
   ] },
 ];
