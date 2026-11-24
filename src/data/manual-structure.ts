@@ -4,6 +4,9 @@ import type { Edition, HistoricalPage } from './historical';
 export const historicalPath = (language: Edition, slug: string) => `/historical/${language}/${slug}/`;
 export const upstreamTosHyp = 'https://freemint.github.io/tos.hyp/';
 export const elfEntryPath = '/os-variants/ptos/elf-entry/';
+export const systemVariablesPath = '/subsystems/bios/the-system-variables/';
+export const cookieJarPath = '/subsystems/bios/cookie-jar/';
+export const cookieKeysPath = historicalPath('en', 'cookie-and-xbra-list');
 
 const areas = [
   {
@@ -80,7 +83,8 @@ export const manualAreas = areas.map(({ chapters: slugs, ...metadata }) => {
     const historicalSlug = slug === 'ptos' ? undefined : renamedChapters[slug]?.historicalSlug ?? slug;
     const original = historicalSlug ? englishBySlug.get(historicalSlug) : undefined;
     if (historicalSlug && !original) throw new Error(`Missing tos.hyp chapter: ${historicalSlug}`);
-    const historicalSections = historicalSlug ? children(historicalSlug) : [];
+    const historicalSections = historicalSlug ? children(historicalSlug).filter(section =>
+      slug !== 'gemdos' || section.slug !== 'about-the-gemdos') : [];
     return {
       slug, href, area, historicalSlug, name: renamedChapters[slug]?.name ?? original?.title ?? 'pTOS',
       sections: [

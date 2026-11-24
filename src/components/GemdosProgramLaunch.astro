@@ -1,4 +1,5 @@
 ---
+import TableScroll from './TableScroll.astro';
 import SourceList from './SourceList.astro';
 import { elfEntryPath } from '../data/manual-structure';
 ---
@@ -8,35 +9,39 @@ import { elfEntryPath } from '../data/manual-structure';
     The Pexec reference gives the conditions for asynchronous launch and process-image replacement.
     On 68k builds with public staged PRG loading, <code>Pexec(3)</code> refuses an ELF file with
     <code>EPLFMT</code>. MMU ARM and x32 refuse mode 3 with <code>EINVFN</code>.</p>
-  <table class="prm-rule-table">
-    <caption>ELF image placement and startup</caption>
-    <thead><tr><th scope="col">Launch path</th><th scope="col">Memory placement</th><th scope="col">Initial entry</th></tr></thead>
-    <tbody>
-      <tr><th scope="row">Static ELF, single address space</th>
-        <td>Load segments into the TPA following the basepage, with padding where alignment requires it.
-          Startup code can release surplus TPA with <a href="/historical/en/mshrink/">Mshrink</a>
-          after reserving the image, argument storage and stack.</td>
-        <td>Adjusted <code>e_entry</code> with the target’s basepage convention.</td></tr>
-      <tr><th scope="row">Static ELF, private address space</th>
-        <td>Load segments directly into the process’s private pages. The TPA holds the basepage. The image,
-          startup storage and user stack occupy their own ranges.</td>
-        <td>Adjusted <code>e_entry</code> with the target’s basepage convention and a private user stack.</td></tr>
-      <tr><th scope="row">ELF with <code>PT_INTERP</code></th>
-        <td>Map the executable, interpreter and initial stack into the child’s private address space.
-          The interpreter resolves shared-library dependencies before it transfers control to the executable.</td>
-        <td>The interpreter starts with its stack pointer at <code>argc</code>, followed by <code>argv</code>,
-          <code>envp</code> and the auxiliary vector. See <a href={elfEntryPath}>ELF32 process entry</a>.</td></tr>
-    </tbody>
-  </table>
-  <table class="prm-rule-table">
-    <caption>Basepage at ordinary static ELF entry</caption>
-    <thead><tr><th scope="col">Target</th><th scope="col">Basepage location</th></tr></thead>
-    <tbody>
-      <tr><th scope="row">68k</th><td><code>4(SP)</code>, with <code>A0</code> cleared.</td></tr>
-      <tr><th scope="row">ARM</th><td><code>R0</code>.</td></tr>
-      <tr><th scope="row">x32</th><td><code>RDI</code>, with <code>RSI = 0</code> for an ordinary program.</td></tr>
-    </tbody>
-  </table>
+  <TableScroll label="ELF image placement and startup">
+    <table class="prm-rule-table">
+      <caption>ELF image placement and startup</caption>
+      <thead><tr><th scope="col">Launch path</th><th scope="col">Memory placement</th><th scope="col">Initial entry</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Static ELF, single address space</th>
+          <td class="table-prose">Load segments into the TPA following the basepage, with padding where alignment requires it.
+            Startup code can release surplus TPA with <a href="/historical/en/mshrink/">Mshrink</a>
+            after reserving the image, argument storage and stack.</td>
+          <td>Adjusted <code>e_entry</code> with the target’s basepage convention.</td></tr>
+        <tr><th scope="row">Static ELF, private address space</th>
+          <td class="table-prose">Load segments directly into the process’s private pages. The TPA holds the basepage. The image,
+            startup storage and user stack occupy their own ranges.</td>
+          <td>Adjusted <code>e_entry</code> with the target’s basepage convention and a private user stack.</td></tr>
+        <tr><th scope="row">ELF with <code>PT_INTERP</code></th>
+          <td class="table-prose">Map the executable, interpreter and initial stack into the child’s private address space.
+            The interpreter resolves shared-library dependencies before it transfers control to the executable.</td>
+          <td class="table-prose">The interpreter starts with its stack pointer at <code>argc</code>, followed by <code>argv</code>,
+            <code>envp</code> and the auxiliary vector. See <a href={elfEntryPath}>ELF32 process entry</a>.</td></tr>
+      </tbody>
+    </table>
+  </TableScroll>
+  <TableScroll label="Basepage at ordinary static ELF entry">
+    <table class="prm-rule-table">
+      <caption>Basepage at ordinary static ELF entry</caption>
+      <thead><tr><th scope="col">Target</th><th scope="col">Basepage location</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">68k</th><td><code>4(SP)</code>, with <code>A0</code> cleared.</td></tr>
+        <tr><th scope="row">ARM</th><td><code>R0</code>.</td></tr>
+        <tr><th scope="row">x32</th><td><code>RDI</code>, with <code>RSI = 0</code> for an ordinary program.</td></tr>
+      </tbody>
+    </table>
+  </TableScroll>
   <p>For static ELF, <code>p_tbase</code> holds the relocated entry address and <code>p_dlen</code> is zero.
     The ELF loader reports the file-backed image through <code>p_tlen</code> and the trailing region through
     <code>p_bbase</code> and <code>p_blen</code>. Use the <code>PT_LOAD</code> records for individual segment boundaries.</p>

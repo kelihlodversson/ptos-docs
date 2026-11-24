@@ -1,4 +1,5 @@
 ---
+import TableScroll from '../../../components/TableScroll.astro';
 import PtosGuide from '../../../components/PtosGuide.astro';
 
 const example = [
@@ -33,17 +34,19 @@ const example = [
   <p>This rule selects a native ParaTOS executable for a file with a 68k PRG header when a native loader has not claimed the file.
     Install the target’s ParaTOS executable at the path in the example, or substitute the absolute path to your interpreter.</p>
 
-  <table class="prm-rule-table prm-key-table">
-    <caption>Keys in <code>[binfmt.NAME]</code></caption>
-    <thead><tr><th scope="col">Key</th><th scope="col">Value</th></tr></thead>
-    <tbody>
-      <tr><th scope="row"><code>enabled</code></th><td><code>true</code> or <code>false</code>. Defaults to <code>true</code>.</td></tr>
-      <tr><th scope="row"><code>offset</code></th><td>Unsigned byte offset, decimal or prefixed with <code>0x</code>. Defaults to 0.</td></tr>
-      <tr><th scope="row"><code>magic</code></th><td>Required sequence of one to 32 hex bytes. Omit the <code>0x</code> prefix.</td></tr>
-      <tr><th scope="row"><code>mask</code></th><td>Hex bytes of the same length as <code>magic</code>. Defaults to <code>FF</code> for every byte.</td></tr>
-      <tr><th scope="row"><code>interpreter</code></th><td>Required absolute path to the interpreter. <code>\BIN\APP.TOS</code> is relative to the boot drive’s root. <code>D:\BIN\APP.TOS</code> names another drive explicitly.</td></tr>
-    </tbody>
-  </table>
+  <TableScroll label="PTOS.INI executable handler keys">
+    <table class="prm-rule-table prm-key-table">
+      <caption>Keys in <code>[binfmt.NAME]</code></caption>
+      <thead><tr><th scope="col">Key</th><th scope="col">Value</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><code>enabled</code></th><td><code>true</code> or <code>false</code>. Defaults to <code>true</code>.</td></tr>
+        <tr><th scope="row"><code>offset</code></th><td>Unsigned byte offset, decimal or prefixed with <code>0x</code>. Defaults to 0.</td></tr>
+        <tr><th scope="row"><code>magic</code></th><td>Required sequence of one to 32 hex bytes. Omit the <code>0x</code> prefix.</td></tr>
+        <tr><th scope="row"><code>mask</code></th><td>Hex bytes of the same length as <code>magic</code>. Defaults to <code>FF</code> for every byte.</td></tr>
+        <tr><th scope="row"><code>interpreter</code></th><td>Required absolute path to the interpreter. <code>\BIN\APP.TOS</code> is relative to the boot drive’s root. <code>D:\BIN\APP.TOS</code> names another drive explicitly.</td></tr>
+      </tbody>
+    </table>
+  </TableScroll>
   <p>Use letters, digits, underscores or hyphens in <code>NAME</code>. Invalid handlers are skipped individually.
     Unknown sections are ignored. Unknown keys are diagnosed, and a duplicate key invalidates its handler.</p>
 

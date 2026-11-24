@@ -1,4 +1,5 @@
 ---
+import { formatHistoricalTables } from '../../../data/format-historical-tables';
 import Layout from '../../../components/Layout.astro';
 import Masthead from '../../../components/Masthead.astro';
 import Fact from '../../../components/Fact.astro';
@@ -41,17 +42,17 @@ const destination = (historicalMerges as Record<string, string>)[page.slug];
     {page.native && <p class="revision-note"><a href={page.native}>{english ? 'pTOS and ParaTOS implementation notes' : 'Hinweise zur pTOS- und ParaTOS-Implementierung'}</a></p>}
     {(page.facts.length > 0 || page.function) && <dl class="prm-facts">
       {page.facts.map(({ label, value }, index) => <Fact label={label.replace(/:$/, '')}>
-        <div set:html={value} />
+        <div set:html={formatHistoricalTables(value, page.language)} />
         {index === availability && <HistoricalPtosAvailability {page} history={value} />}
       </Fact>)}
       {page.function && availability < 0 && <Fact label={english ? 'Availability' : 'Verfügbar'}>
         <HistoricalPtosAvailability {page} />
       </Fact>}
     </dl>}
-    {page.body && <div class="historical-body" set:html={page.body} />}
+    {page.body && <div class="historical-body" set:html={formatHistoricalTables(page.body, page.language)} />}
     {page.function && <TargetPanels heading={english ? 'Calling Convention' : 'Aufrufkonvention'}>
       <div slot="68k">
-        {page.bindings?.assembly ? <div set:html={page.bindings.assembly} /> : <p>{english ? 'See the historical entry for available bindings.' : 'Siehe den historischen Eintrag für vorhandene Bindungen.'}</p>}
+        {page.bindings?.assembly ? <div set:html={formatHistoricalTables(page.bindings.assembly, page.language)} /> : <p>{english ? 'See the historical entry for available bindings.' : 'Siehe den historischen Eintrag für vorhandene Bindungen.'}</p>}
         {page.bindings && <a href={page.bindings.href}>{english ? 'Original binding reference' : 'Originalbindung'}</a>}
       </div>
       <HistoricalNativeTarget slot="arm" {page} cpu="arm" />

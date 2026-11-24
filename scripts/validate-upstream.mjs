@@ -65,6 +65,8 @@ for (const [path, names] of Object.entries(kernelHeaders)) {
 const { ssystemModeGroups } = await import('../src/data/ssystem-modes.ts');
 const documentedModes = ssystemModeGroups.flatMap(group => group.modes);
 const ssystem = fromKernel('bdos/ssystem.c');
+assert.match(ssystem, /wval_table\[\] = \{[^}]*SVAR_ENTRY\(0x446, bootdev\)/);
+assert.match(ssystem, /bval_table\[\] = \{[^}]*SVAR_ENTRY\(0x484, conterm\)/);
 const ssystemDispatch = ssystem.split('\nLONG xssystem(')[1];
 assert.ok(ssystemDispatch);
 const dispatchModes = [...ssystemDispatch.matchAll(/^\s*case (S_[A-Z_]+):/gm)].map(match => match[1]);

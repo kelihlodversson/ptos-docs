@@ -291,7 +291,12 @@ test('Ssystem keeps the MiNT modes and pTOS differences in one table', async ({ 
   const table = page.getByRole('table', { name: 'Ssystem mode reference' });
   const mode = (name: string) => table.locator(`:scope > tbody > tr[id="${name}"]`);
   const ptos = (name: string) => mode(name).locator(':scope > td').last();
-  await expect(table.getByRole('columnheader')).toHaveText(['Mode', 'MiNT (historical)', 'pTOS']);
+  await expect(table.locator(':scope > thead').getByRole('columnheader')).toHaveText(['Mode', 'MiNT (historical)', 'pTOS']);
+  const historicalTables = page.locator('table.ssystem-mode-table table').filter({ has: page.locator('thead') });
+  expect(await historicalTables.count()).toBeGreaterThanOrEqual(6);
+  for (const nested of await historicalTables.all()) {
+    await expect(nested.locator(':scope > tbody > tr').first()).not.toHaveText(/^\s*$/);
+  }
   await expect(table.locator(':scope > tbody').first().locator(':scope > tr[id]')).toHaveCount(41);
   await expect(table.locator(':scope > tbody').last().locator(':scope > tr[id]')).toHaveCount(8);
   await expect(table.locator('span[id^="native-S_"]')).toHaveCount(26);
@@ -337,6 +342,59 @@ test('Ssystem keeps the MiNT modes and pTOS differences in one table', async ({ 
     await expect(page.getByRole('link', { name: 'Ssystem', exact: true })).toHaveAttribute('href', '/reference/ssystem/');
     await expect(page.getByRole('link', { name: /^S_DESK(INFO|SET)$/ })).toHaveCount(0);
   }
+});
+
+test('BIOS system variables show separate types and link the six Ssystem access modes', async ({ page }) => {
+  const path = '/subsystems/bios/the-system-variables/';
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(path);
+  const table = page.getByRole('table', { name: 'TOS system variables' });
+  await expect(table.locator(':scope > thead').getByRole('columnheader')).toHaveText(['Variable', 'Address', 'Type', 'Description']);
+  await expect(table.locator(':scope > tbody > tr')).toHaveCount(75);
+  const boot = table.locator(':scope > tbody > tr').filter({ has: page.locator('#UDO__bootdev') });
+  await expect(boot.locator(':scope > td').first()).toHaveText('0x446');
+  await expect(boot.locator(':scope > td').nth(1)).toHaveText('WORD');
+  const themd = table.locator(':scope > tbody > tr').filter({ has: page.locator('#themd') });
+  await expect(themd.locator(':scope > td').nth(1).getByRole('link', { name: 'MD' })).toHaveAttribute('href', '/historical/en/md/');
+  await expect(page.locator('#ssystem-access')).toBeVisible();
+  await expect(page.locator('pre.prm-code')).toContainText('Ssystem(S_GETWVAL, 0x0446L, 0L)');
+  await expect(page.getByText('Ssystem(S_INQUIRE, 0L, 0L)', { exact: true })).toBeVisible();
+  const scrollRegion = page.getByRole('region', { name: 'TOS system variables table' });
+  expect(await scrollRegion.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+
+  const accessModes = page.getByRole('table', { name: 'Ssystem modes by variable type' });
+  const modes = ['S_GETLVAL', 'S_GETWVAL', 'S_GETBVAL', 'S_SETLVAL', 'S_SETWVAL', 'S_SETBVAL'];
+  for (const mode of modes) {
+    await expect(accessModes.getByRole('link', { name: mode })).toHaveAttribute('href', `/reference/ssystem/#${mode}`);
+  }
+  await accessModes.getByRole('link', { name: 'S_GETWVAL' }).click();
+  await expect(page).toHaveURL('/reference/ssystem/#S_GETWVAL');
+  for (const mode of modes) {
+    await expect(page.locator(`tr[id="${mode}"]`).getByRole('link', { name: 'BIOS system variables' }))
+      .toHaveAttribute('href', path + '#ssystem-access');
+  }
+});
+
+test('Cookie jar documents Ssystem lookup and links the known cookie keys from both pages', async ({ page }) => {
+  const cookieJar = '/subsystems/bios/cookie-jar/';
+  const keyList = '/historical/en/cookie-and-xbra-list/';
+  const keyListLabel = 'Known cookie keys (Cookie and XBRA list)';
+  await page.goto(cookieJar);
+  const guide = page.getByRole('region', { name: 'Access with Ssystem' });
+  await expect(guide).toContainText('pTOS builds with CONF_WITH_SSYSTEM');
+  await expect(guide).toContainText('MiNT or FreeMiNT');
+  await expect(guide.locator('pre')).toContainText('Ssystem(S_GETCOOKIE, 0x5F435055L, (long)value)');
+  await expect(page.getByRole('heading', { name: 'Classic TOS cookie jar' })).toBeVisible();
+  await expect(guide.getByRole('link', { name: keyListLabel })).toHaveAttribute('href', keyList);
+
+  await guide.getByRole('link', { name: 'Ssystem(S_GETCOOKIE)', exact: true }).click();
+  await expect(page).toHaveURL('/reference/ssystem/#S_GETCOOKIE');
+  const mode = page.locator('tr#S_GETCOOKIE');
+  await expect(mode.getByRole('link', { name: 'Cookie jar access guide' })).toHaveAttribute('href', cookieJar + '#ssystem-access');
+  await mode.getByRole('link', { name: keyListLabel }).click();
+  await expect(page).toHaveURL(keyList);
+  await expect(page.getByRole('heading', { name: 'Cookie and XBRA list', exact: true })).toBeVisible();
 });
 
 test('chapter navigation follows tos.hyp and places extensions with related calls', async ({ page }) => {
@@ -413,6 +471,78 @@ test('the main sections contain only the assigned chapters', async ({ page }) =>
   await page.getByRole('link', { name: 'Sources and licensing', exact: true }).click();
   await expect(page).toHaveURL('/sources/');
   await expect(main.getByRole('link', { name: 'Read tos.hyp on FreeMiNT' })).toHaveAttribute('href', 'https://freemint.github.io/tos.hyp/');
+});
+
+test('the GEMDOS overview introduces the subsystem and replaces the About subpage', async ({ page }) => {
+  await page.goto('/subsystems/gemdos/');
+  const main = page.getByRole('main');
+  await expect(main.getByText('GEMDOS provides the highest-level operating system functions', { exact: false })).toBeVisible();
+  await expect(main.locator('#MiNT-compatible_20functions')).toContainText('MiNT added many GEMDOS functions');
+  await expect(main.locator('.manual-index').getByRole('link', { name: 'Process functions' })).toBeVisible();
+  await expect(main.getByRole('link', { name: 'About the GEMDOS', exact: true })).toHaveCount(0);
+  await expect(main.getByText(/parameters on the stack|processor register d0|680x0 trap #1/i)).toHaveCount(0);
+  await page.goto('/subsystems/gemdos/about-the-gemdos/');
+  await expect(page).toHaveURL('/subsystems/gemdos/');
+});
+
+test('the GEMDOS signal table has distinct number and name columns with no spacer row', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/subsystems/gemdos/signals/#SIGVTALRM');
+  const table = page.getByRole('table', { name: 'GEMDOS signal numbers and names' });
+  await expect(table.locator('thead').getByRole('columnheader')).toHaveText(['Number', 'Name', 'Meaning']);
+  const rows = table.locator(':scope > tbody > tr');
+  await expect(rows).toHaveCount(32);
+  await expect(rows.first().locator('td').first()).toHaveText('0');
+  await expect(rows.first().getByRole('rowheader')).toHaveText('SIGNULL');
+  await expect(rows.last().locator('td').first()).toHaveText('31');
+  await expect(rows.last().getByRole('rowheader')).toHaveText('SIGPWR');
+  const longest = table.getByRole('rowheader', { name: 'SIGVTALRM' });
+  await expect(longest.locator('#SIGVTALRM')).toBeAttached();
+  await expect(longest).toHaveCSS('white-space', 'nowrap');
+  expect(await longest.evaluate(cell => cell.scrollWidth <= cell.clientWidth)).toBe(true);
+  const tableRegion = page.getByRole('region', { name: 'GEMDOS signal table' });
+  expect(await tableRegion.evaluate(region => region.scrollWidth <= region.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
+test('imported tables use separate reference fields and keep links and anchors', async ({ page }) => {
+  await page.goto('/subsystems/gemdos/gemdos-error-messages/#E_OK');
+  const errors = page.locator('main table').first();
+  await expect(errors.getByRole('columnheader')).toHaveText(['Number', 'Name', 'Meaning']);
+  const first = errors.locator(':scope > tbody > tr').first();
+  await expect(first.getByRole('rowheader')).toHaveText('E_OK');
+  await expect(first.locator('#E_OK')).toBeAttached();
+
+  await page.goto('/subsystems/bios/bios-error-messages/');
+  await expect(page.getByRole('rowheader', { name: 'E_OK', exact: true }).getByRole('link'))
+    .toHaveAttribute('href', '/historical/en/gemdos-error-messages/#E_OK');
+
+  await page.goto('/historical/de/die-systemvariablen/');
+  const vars = page.locator('main table').first();
+  await expect(vars.locator(':scope > thead').getByRole('columnheader')).toHaveText(['Variable', 'Adresse', 'Typ', 'Beschreibung']);
+  const md = vars.locator(':scope > tbody > tr').filter({ has: page.locator('#themd') });
+  await expect(md.locator(':scope > td').nth(1).getByRole('link', { name: 'MD', exact: true })).toBeVisible();
+});
+
+test('wide ASCII and ABI tables retain readable fields at mobile width', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/conventions/ascii-table/');
+  await expect(page.locator('.ascii-table-groups table')).toHaveCount(4);
+  await expect(page.locator('.ascii-table-groups tbody tr')).toHaveCount(128);
+  await expect(page.locator('.ascii-table-groups table').first().getByRole('columnheader')).toHaveText(['Hex', 'Dec', 'ASCII']);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+
+  await page.goto('/abi/cuis/');
+  await selectTarget(page).selectOption('x32');
+  const transport = page.getByRole('region', { name: 'Private CUIS transport calls' });
+  const symbol = transport.getByRole('rowheader', { name: 'CUIS_LAUNCH_ATTACH' }).locator('code');
+  const lines = await symbol.evaluate(code => {
+    const range = document.createRange();
+    range.selectNodeContents(code);
+    return new Set([...range.getClientRects()].map(box => box.top)).size;
+  });
+  expect(lines).toBe(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 
 test('pTOS setup links document the boot files and moved ELF convention', async ({ page }) => {

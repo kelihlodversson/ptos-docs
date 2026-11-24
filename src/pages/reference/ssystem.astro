@@ -1,4 +1,5 @@
 ---
+import { formatHistoricalTables } from '../../data/format-historical-tables';
 import Layout from '../../components/Layout.astro';
 import Masthead from '../../components/Masthead.astro';
 import Fact from '../../components/Fact.astro';
@@ -9,7 +10,7 @@ import CallingConvention from '../../components/CallingConvention.astro';
 import GfaBinding from '../../components/GfaBinding.astro';
 import MemoryLayout from '../../components/MemoryLayout.astro';
 import SourceList from '../../components/SourceList.astro';
-import { manualBreadcrumbs } from '../../data/manual-structure';
+import { cookieJarPath, cookieKeysPath, manualBreadcrumbs, systemVariablesPath } from '../../data/manual-structure';
 import { pages } from '../../data/historical';
 import { overlays } from '../../data/overlays';
 import { readSsystemHistory } from '../../data/ssystem-history';
@@ -70,7 +71,7 @@ const modeSections = [
       <p>Query a pTOS mode with <code>Ssystem(-1, selector, 0L)</code>. A successful probe establishes that the kernel
         advertises the mode. Arguments, privileges and build features can further restrict the call.</p>
       <h3 class="prm-section-heading">Historical MiNT introduction</h3>
-      <div set:html={history.intro} />
+      <div set:html={formatHistoricalTables(history.intro)} />
       <div id="native-modes" class="table-scroll" tabindex="0" role="region" aria-label="Ssystem mode table">
         <table class="prm-rule-table ssystem-mode-table">
           <caption>Ssystem mode reference</caption>
@@ -84,7 +85,7 @@ const modeSections = [
                 {ptos?.href ? <a href={ptos.href}><code>{name}</code></a> : <code>{name}</code>}
                 <br /><code>{number} ({hex(number)})</code>
               </th>
-              {meaning !== undefined ? <td set:html={meaning} /> : <td>—</td>}
+              {meaning !== undefined ? <td set:html={formatHistoricalTables(meaning)} /> : <td>—</td>}
               <td>
                 {ptos ? <>
                   <code>arg1 = {ptos.args[0]}</code><br /><code>arg2 = {ptos.args[1]}</code><br />
@@ -94,6 +95,13 @@ const modeSections = [
                     {' '}<a href={processConfig}>Configuration source</a>.
                   </>}
                   {ptos.description?.map(detail => <p class="mode-detail">{detail}</p>)}
+                  {name === 'S_GETCOOKIE' && <p class="mode-detail">
+                    <a href={cookieJarPath + '#ssystem-access'}>Cookie jar access guide</a> ·
+                    <a href={cookieKeysPath}>Known cookie keys (Cookie and XBRA list)</a>
+                  </p>}
+                  {/^(S_GET|S_SET)[LWB]VAL$/.test(name) && <p class="mode-detail">
+                    <a href={systemVariablesPath + '#ssystem-access'}>BIOS system variables</a>
+                  </p>}
                 </> : <>
                   {name === 'S_CLOCKUTC' ? 'Planned.' : 'Unimplemented.'} Returns <code>EINVFN</code>.
                 </>}
@@ -110,12 +118,12 @@ const modeSections = [
         A size of <code>-1</code> queries the structure size and ignores the buffer. A null buffer or a nonpositive size
         outside the query form is invalid.</p>
       <h3 class="prm-section-heading">Historical MiNT notes</h3>
-      <div set:html={history.notes} />
+      <div set:html={formatHistoricalTables(history.notes)} />
     </section>
 
     <TargetPanels>
       <CallingConvention slot="68k" binding={targets['68k']}>
-        <div class="historical-entry" set:html={historical.bindings?.assembly} />
+        <div class="historical-entry" set:html={formatHistoricalTables(historical.bindings?.assembly)} />
         <MemoryLayout {...abi.console} byteOrder="Big endian" />
       </CallingConvention>
       <CallingConvention slot="arm" binding={targets.arm}>

@@ -1,0 +1,109 @@
+---
+import TableScroll from './TableScroll.astro';
+import { formatHistoricalTables } from '../data/format-historical-tables';
+import SourceList from './SourceList.astro';
+import { readBiosSystemVariables } from '../data/bios-system-variables';
+
+interface Props { historicalBody?: string }
+const { historicalBody = '' } = Astro.props;
+const { intro, notes, variables } = readBiosSystemVariables(historicalBody);
+const modes = [
+  ['BYTE', 8, 'S_GETBVAL', 'S_SETBVAL'],
+  ['WORD', 16, 'S_GETWVAL', 'S_SETWVAL'],
+  ['LONG', 32, 'S_GETLVAL', 'S_SETLVAL'],
+] as const;
+const example = `#include <mint/mintbind.h>
+
+long read_boot_drive(void)
+{
+    long result = Ssystem(S_INQUIRE, (long)S_GETWVAL, 0L);
+    if (result != 0)
+        return result;
+    return Ssystem(S_GETWVAL, 0x0446L, 0L);
+}`;
+---
+<section aria-labelledby="ssystem-access">
+  <h2 id="ssystem-access" class="prm-section-heading ruled">Access with Ssystem</h2>
+  <p>On pTOS, pass the TOS address from the table as a numeric identifier to
+    <a href="/reference/ssystem/">Ssystem</a>. Select the mode by the variable’s width.
+    Pass the address in <code>arg1</code>. Set <code>arg2</code> to zero for reads and pass the new value for writes.</p>
+
+  <TableScroll label="Ssystem modes by variable type">
+    <table class="prm-rule-table prm-key-table">
+      <caption>Ssystem modes by variable type</caption>
+      <thead><tr><th scope="col">Type</th><th scope="col">Bits</th><th scope="col">Read</th><th scope="col">Write</th></tr></thead>
+      <tbody>{modes.map(([type, bits, read, write]) => <tr>
+        <th scope="row"><code>{type}</code></th><td>{bits}</td>
+        <td><a href={`/reference/ssystem/#${read}`}><code>{read}</code></a></td>
+        <td><a href={`/reference/ssystem/#${write}`}><code>{write}</code></a></td>
+      </tr>)}</tbody>
+    </table>
+  </TableScroll>
+
+  <h3 class="prm-section-heading">pTOS</h3>
+  <p>On builds with <code>CONF_WITH_SSYSTEM</code>, <code>Ssystem(S_INQUIRE, mode, 0L)</code> returns zero
+    when the dispatcher advertises the mode. The read or write still checks the arguments and the caller’s permissions.
+    An address outside the kernel’s table for that width returns <code>EINVFN</code>.</p>
+  <p>This example reads the boot drive from <a href="#UDO__bootdev"><code>_bootdev</code></a>.
+    Valid drive numbers run from 0 for A to 25 for Z. Check the result before using it.</p>
+  <pre class="prm-code"><code>{example}</code></pre>
+  <p>Byte and word reads return zero-extended values. On builds with per-process address spaces,
+    reads of mapped kernel-pointer variables return zero and user calls to the write modes return <code>EACCDN</code>.
+    A supported write stores the low bits for its width and returns zero on success.
+    For example, <code>Ssystem(S_SETBVAL, 0x0484L, attributes)</code> passes a new value for <a href="#conterm"><code>conterm</code></a>.
+    Use <a href="/reference/ssystem/#S_GETCOOKIE"><code>S_GETCOOKIE</code></a> to read a cookie by tag and
+    <a href="/reference/ssystem/#S_MEMINFO"><code>S_MEMINFO</code></a> for memory totals.</p>
+
+  <h3 class="prm-section-heading">MiNT and FreeMiNT</h3>
+  <p>The historical reference describes <code>Ssystem</code> as fully functional from MiNT 1.15.0.
+    On the verified FreeMiNT releases, <code>Ssystem(S_INQUIRE, 0L, 0L)</code> checks for the system call.
+    Use that probe for the boot-drive example on those releases. The modes in the table above take the same address and value arguments.</p>
+  <p>The lower address bound is <code>0x0008</code> in FreeMiNT 1.15.12 and <code>0x0420</code> in 1.18.0.
+    Both releases clear the low address bit for word and longword access,
+    return zero for an address outside the read range, and require root privileges for writes. A rejected
+    unprivileged write returns <code>EPERM</code>. Check the range and permissions for the release you target.
+    <a href="https://github.com/freemint/freemint/blob/34dcbdf0e485a110bed49a614107b3abd1a23521/sys/ssystem.c">FreeMiNT 1.15.12 source</a> ·
+    <a href="https://github.com/freemint/freemint/blob/6d135b4fbc49650e4218f7330da196e6d4445f22/sys/ssystem.c">FreeMiNT 1.18.0 source</a></p>
+</section>
+
+<section class="historical-entry" aria-labelledby="historical-variables">
+  <h2 id="historical-variables" class="prm-section-heading ruled">Historical system variables</h2>
+  <div set:html={formatHistoricalTables(intro)} />
+  <div class="table-scroll" tabindex="0" role="region" aria-label="TOS system variables table">
+    <table class="prm-rule-table system-variables">
+      <caption>TOS system variables</caption>
+      <colgroup><col class="variable-name" /><col class="variable-address" /><col class="variable-type" /><col /></colgroup>
+      <thead><tr><th scope="col">Variable</th><th scope="col">Address</th><th scope="col">Type</th><th scope="col">Description</th></tr></thead>
+      <tbody>{variables.map(({ name, address, type, anchors, description }) => <tr>
+        <th scope="row">
+          {anchors.map(id => <span {id}></span>)}
+          <code>{name}</code>
+        </th>
+        <td><code>{address}</code></td>
+        <td><code set:html={type} /></td>
+        <td set:html={formatHistoricalTables(description)} />
+      </tr>)}</tbody>
+    </table>
+  </div>
+  <div set:html={formatHistoricalTables(notes)} />
+</section>
+<SourceList sources={[
+  ['tos', 'bios/sys_var_en.u', 'Historical TOS variable names, addresses, widths and descriptions'],
+  ['tos', 'gemdos/system/ssystem.ui', 'Historical MiNT Ssystem modes and availability'],
+  ['ptos', 'bdos/ssystem.c', 'pTOS width-specific address tables and access modes'],
+  ['ptos', 'bdos/uaccess.c', 'pTOS permissions for system variable writes'],
+  ['libcmini', 'include/mint/mintbind.h', 'SDK Ssystem binding and mode constants'],
+]} />
+
+<style>
+  .system-variables { table-layout: fixed; min-width: 40rem; }
+  .variable-name { width: 10rem; }
+  .variable-address { width: 6rem; }
+  .variable-type { width: 5rem; }
+  @media print {
+    .system-variables { min-width: 0; }
+    .variable-name { width: 7.5rem; }
+    .variable-address { width: 4.5rem; }
+    .variable-type { width: 3.5rem; }
+  }
+</style>

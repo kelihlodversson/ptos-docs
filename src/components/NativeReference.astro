@@ -1,4 +1,5 @@
 ---
+import { formatHistoricalTables } from '../data/format-historical-tables';
 import Layout from './Layout.astro';
 import Masthead from './Masthead.astro';
 import Fact from './Fact.astro';
@@ -46,7 +47,7 @@ const historicalFact = (label: string) => merged?.facts.find(fact => fact.label 
       <Fact label="Availability">
         {merged && <div class="historical-availability">
           <p><strong>Historical</strong></p>
-          <div set:html={historicalFact('Availability:')} />
+          <div set:html={formatHistoricalTables(historicalFact('Availability:'))} />
         </div>}
         <p><strong>pTOS</strong> · {call.config} <a href={pr(revisions.ptos)}>pTOS PR #903</a></p>
         <p><strong>ParaTOS</strong> · {call.paraTos} <a href={pr(revisions.paratos)}>ParaTOS PR #27</a></p>
@@ -57,7 +58,7 @@ const historicalFact = (label: string) => merged?.facts.find(fact => fact.label 
       <NativeTarget slot="68k" {call} cpu="68k">
         {merged?.bindings?.assembly && <section class="historical-entry" aria-labelledby="historical-assembly">
           <h3 id="historical-assembly" class="prm-section-heading">Historical 68k binding</h3>
-          <div set:html={merged.bindings.assembly} />
+          <div set:html={formatHistoricalTables(merged.bindings.assembly)} />
         </section>}
       </NativeTarget>
       <NativeTarget slot="arm" {call} cpu="arm" />
@@ -75,9 +76,9 @@ const historicalFact = (label: string) => merged?.facts.find(fact => fact.label 
     {merged && <section class="historical-entry" aria-labelledby="historical-mint">
       <h2 id="historical-mint" class="prm-section-heading ruled">Historical MiNT reference</h2>
       <p>Historical C declaration <code>{merged.prototype}</code></p>
-      <div set:html={historicalFact('Description:')} />
+      <div set:html={formatHistoricalTables(historicalFact('Description:'))} />
       <h3 class="prm-section-heading">Historical return values</h3>
-      <div set:html={historicalFact('Return value:')} />
+      <div set:html={formatHistoricalTables(historicalFact('Return value:'))} />
     </section>}
     <section aria-labelledby="related-heading">
       <h2 id="related-heading" class="prm-section-heading ruled">See Also</h2>
