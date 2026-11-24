@@ -5,6 +5,7 @@ import BiosCookieJar from '../../../components/BiosCookieJar.astro';
 import BiosSystemVariables from '../../../components/BiosSystemVariables.astro';
 import GemdosProgramFormat from '../../../components/GemdosProgramFormat.astro';
 import GemdosProgramLaunch from '../../../components/GemdosProgramLaunch.astro';
+import GemdosSignals from '../../../components/GemdosSignals.astro';
 import { catalog } from '../../../data/catalog';
 import { chapters, cookieJarPath, historicalPath, historicalSectionBody, manualBreadcrumbs, systemVariablesPath } from '../../../data/manual-structure';
 
@@ -23,6 +24,9 @@ const programFormat = chapter.slug === 'gemdos' && section.slug === 'the-program
 const programLaunch = chapter.slug === 'gemdos' && section.slug === 'program-launch-and-tpa';
 const programTopic = programFormat || programLaunch;
 const cookieJar = section.href === cookieJarPath;
+const signals = chapter.slug === 'gemdos' && section.slug === 'signals';
+const historicalBody = section.historicalSlug ? historicalSectionBody(section.historicalSlug) ?? '' : '';
+const HistoricalBody = section.href === systemVariablesPath ? BiosSystemVariables : signals ? GemdosSignals : undefined;
 ---
 <Layout title={section.name} description={`${section.name} in the ${chapter.name} chapter.`} running={chapter.name}
   breadcrumbs={manualBreadcrumbs(chapter.slug)}>
@@ -33,9 +37,9 @@ const cookieJar = section.href === cookieJarPath;
   {cookieJar && <BiosCookieJar />}
   {cookieJar && <h2 class="prm-section-heading ruled">Classic TOS cookie jar</h2>}
   {section.historicalSlug && (entries.length === 0 || section.slug === 'xcontrol') &&
-    (section.href === systemVariablesPath
-      ? <BiosSystemVariables historicalBody={historicalSectionBody(section.historicalSlug)} />
-      : <div class:list={['historical-body', { 'historical-entry': programTopic || cookieJar }]} set:html={historicalSectionBody(section.historicalSlug)} />)}
+    (HistoricalBody
+      ? <HistoricalBody {historicalBody} />
+      : <div class:list={['historical-body', { 'historical-entry': programTopic || cookieJar }]} set:html={historicalBody} />)}
   {entries.length > 0 && <CatalogList records={entries} showSubsystem={false} />}
   {section.historicalSlug && <p><a href={historicalPath('en', section.historicalSlug)}>Read the original tos.hyp section</a></p>}
 </Layout>

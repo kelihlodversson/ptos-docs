@@ -1,20 +1,5 @@
-import { defaultTreeAdapter, serialize } from 'parse5';
-import { readHistoricalTable } from './historical-table.ts';
-import type { Element } from './historical-table.ts';
-
-function takeTrailingAnchors(cell: Element) {
-  const anchors: string[] = [];
-  // UDO emits anchors for the following variable at the end of the previous cell.
-  for (const child of [...cell.childNodes].reverse()) {
-    if (defaultTreeAdapter.isTextNode(child) && !child.value.trim()) continue;
-    if (!defaultTreeAdapter.isElementNode(child) || child.tagName !== 'a' || child.childNodes.length) break;
-    const id = child.attrs.find(attr => attr.name === 'id');
-    if (!id) break;
-    anchors.unshift(id.value);
-    defaultTreeAdapter.detachNode(child);
-  }
-  return anchors;
-}
+import { serialize } from 'parse5';
+import { readHistoricalTable, takeTrailingAnchors } from './historical-table.ts';
 
 export function readBiosSystemVariables(html: string) {
   const { heading, rows, intro, notes } = readHistoricalTable(html, 'BIOS system variables');

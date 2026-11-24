@@ -1,11 +1,25 @@
-import { parseFragment, serialize } from 'parse5';
+import { defaultTreeAdapter, parseFragment, serialize } from 'parse5';
 import type { DefaultTreeAdapterTypes } from 'parse5';
 
 type Tree = DefaultTreeAdapterTypes.DefaultTreeAdapterMap;
-export type Element = Tree['element'];
+type Element = Tree['element'];
 
 export function elements(parent: Tree['parentNode'], name: string): Element[] {
   return parent.childNodes.filter((node): node is Element => 'tagName' in node && node.tagName === name);
+}
+
+export function takeTrailingAnchors(cell: Element) {
+  const anchors: string[] = [];
+  // UDO can emit the anchors for a row at the end of the previous cell.
+  for (const child of [...cell.childNodes].reverse()) {
+    if (defaultTreeAdapter.isTextNode(child) && !child.value.trim()) continue;
+    if (!defaultTreeAdapter.isElementNode(child) || child.tagName !== 'a' || child.childNodes.length) break;
+    const id = child.attrs.find(attr => attr.name === 'id');
+    if (!id) break;
+    anchors.unshift(id.value);
+    defaultTreeAdapter.detachNode(child);
+  }
+  return anchors;
 }
 
 export function readHistoricalTable(html: string, section: string) {

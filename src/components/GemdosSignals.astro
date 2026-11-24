@@ -1,0 +1,52 @@
+---
+import { serialize } from 'parse5';
+import { readHistoricalTable, takeTrailingAnchors } from '../data/historical-table';
+
+interface Props { historicalBody: string }
+const { historicalBody } = Astro.props;
+const { heading, rows, intro, notes } = readHistoricalTable(historicalBody, 'GEMDOS signals');
+const [spacer, ...signalRows] = rows;
+if (heading.length !== 2 || serialize(heading[0]).trim() !== 'Number Name' ||
+    spacer.length !== 2 || serialize(spacer[0]).replaceAll('&nbsp;', '').trim()) {
+  throw new Error('Unexpected tos.hyp GEMDOS signals table heading');
+}
+
+let previous = spacer[1];
+const signals = signalRows.map(cells => {
+  const match = cells.length === 2 && /^(\d+)\s+(SIG[A-Z0-9]+)$/.exec(serialize(cells[0]).replaceAll('&nbsp;', ' ').trim());
+  if (!match) throw new Error('Unexpected row in the tos.hyp GEMDOS signals table');
+  const anchors = takeTrailingAnchors(previous);
+  previous = cells[1];
+  return { number: match[1], name: match[2], meaning: cells[1], anchors };
+});
+---
+<div class="historical-entry">
+  <div set:html={intro.replace('31 possible signals (0 to 30)', '32 signal numbers (0 to 31)')} />
+  <div class="table-scroll" tabindex="0" role="region" aria-label="GEMDOS signal table">
+    <table class="prm-rule-table signal-table">
+      <caption>GEMDOS signal numbers and names</caption>
+      <colgroup><col class="signal-number" /><col class="signal-name" /><col /></colgroup>
+      <thead><tr><th scope="col">Number</th><th scope="col">Name</th><th scope="col">Meaning</th></tr></thead>
+      <tbody>{signals.map(({ number, name, meaning, anchors }) => <tr>
+        <td><code>{number}</code></td>
+        <th scope="row">
+          {anchors.map(id => <span {id}></span>)}
+          <code>{name}</code>
+        </th>
+        <td set:html={serialize(meaning)} />
+      </tr>)}</tbody>
+    </table>
+  </div>
+  <div set:html={notes} />
+</div>
+
+<style>
+  .signal-table { table-layout: fixed; min-width: 21rem; }
+  .signal-number { width: 5rem; }
+  .signal-name { width: 7.5rem; }
+  .signal-table th { white-space: nowrap; }
+  @media print {
+    .signal-table { min-width: 0; }
+    .signal-number { width: 4.5rem; }
+  }
+</style>

@@ -480,6 +480,26 @@ test('the GEMDOS overview introduces the subsystem and replaces the About subpag
   await expect(page).toHaveURL('/subsystems/gemdos/');
 });
 
+test('the GEMDOS signal table has distinct number and name columns with no spacer row', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/subsystems/gemdos/signals/#SIGVTALRM');
+  const table = page.getByRole('table', { name: 'GEMDOS signal numbers and names' });
+  await expect(table.locator('thead').getByRole('columnheader')).toHaveText(['Number', 'Name', 'Meaning']);
+  const rows = table.locator(':scope > tbody > tr');
+  await expect(rows).toHaveCount(32);
+  await expect(rows.first().locator('td').first()).toHaveText('0');
+  await expect(rows.first().getByRole('rowheader')).toHaveText('SIGNULL');
+  await expect(rows.last().locator('td').first()).toHaveText('31');
+  await expect(rows.last().getByRole('rowheader')).toHaveText('SIGPWR');
+  const longest = table.getByRole('rowheader', { name: 'SIGVTALRM' });
+  await expect(longest.locator('#SIGVTALRM')).toBeAttached();
+  await expect(longest).toHaveCSS('white-space', 'nowrap');
+  expect(await longest.evaluate(cell => cell.scrollWidth <= cell.clientWidth)).toBe(true);
+  const tableRegion = page.getByRole('region', { name: 'GEMDOS signal table' });
+  expect(await tableRegion.evaluate(region => region.scrollWidth <= region.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
 test('pTOS setup links document the boot files and moved ELF convention', async ({ page }) => {
   await page.goto('/os-variants/ptos/');
   const main = page.getByRole('main');
