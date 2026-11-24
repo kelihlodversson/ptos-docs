@@ -163,7 +163,6 @@ test('historical availability reports pTOS exceptions and build requirements acr
     ['/historical/en/seedfill/', '68k', 'Implemented', 'CONF_WITH_LINEA'],
     ['/historical/en/xhreserve/', '68k', 'Not implemented', 'A chained XHDI driver'],
     ['/historical/de/pmem-size/', '68k', 'Ungeprüft', 'externen PMMU-Funktionshandler'],
-    ['/historical/en/pfork/', '68k, ARM, x32', 'Implemented', 'CONF_WITH_PFORK'],
   ] as const;
   for (const [path, targets, status, limitation] of expected) {
     await page.goto(path);
@@ -171,6 +170,55 @@ test('historical availability reports pTOS exceptions and build requirements acr
     await expect(row).toContainText(status);
     if (limitation) await expect(row).toContainText(limitation);
   }
+});
+
+test('Pfork and Pvfork combine the historical and native reference', async ({ page }) => {
+  for (const [name, decimal, hex] of [['Pfork', '283', '11B'], ['Pvfork', '275', '113']]) {
+    const slug = name.toLowerCase();
+    for (const language of ['en', 'de']) {
+      await page.goto(`/historical/${language}/${slug}/#${name}`, { waitUntil: 'commit' });
+      await expect(page).toHaveURL(`/reference/${slug}/#${name}`);
+      await expect(page.locator(`#${name}`)).toBeAttached();
+    }
+    const availability = page.locator('.prm-fact-row').filter({ has: page.getByText('Availability', { exact: true }) });
+    await expect(availability).toContainText('MultiTOS integrated MiNT version 1.04.');
+    await expect(availability).toContainText('CONF_WITH_PFORK');
+    await expect(availability).toContainText('ParaTOS');
+    const history = page.getByRole('region', { name: 'Historical MiNT reference' });
+    await expect(history).toContainText(`The function ${name} creates a copy of the current process.`);
+    await expect(history).toContainText(/Not enough memory available to create (the|a) new process/);
+    await expect(page.getByText('Original tos.hyp availability and bindings')).toHaveCount(0);
+    await selectTarget(page).selectOption('68k');
+    await expect(page.locator('[data-target-panel="68k"]')).toContainText(`#${decimal},-(sp)`);
+    await selectTarget(page).selectOption('gfa');
+    await expect(page.locator('[data-target-panel="gfa"]')).toContainText(`Result%=GEMDOS(&H${hex})`);
+    await expect(page.locator('.prm-prototype')).toBeVisible();
+  }
+});
+
+test('GEMDOS format and launch topics document ELF and render the TPA layout as a table', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/subsystems/gemdos/the-program-format/');
+  const machines = page.getByRole('table', { name: 'ELF32 class and machine by target' });
+  for (const [cpu, machine] of [['68k', 'EM_68K'], ['ARM', 'EM_ARM'], ['x32', 'EM_X86_64']]) {
+    await expect(machines.getByRole('row').filter({ hasText: cpu })).toContainText(machine);
+  }
+  await expect(page.getByRole('rowheader', { name: 'PT_INTERP' })).toBeVisible();
+  await expect(page.getByRole('table', { name: 'Digital Research symbol types' }).getByRole('columnheader', { name: 'Value' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  await page.getByRole('link', { name: 'Program launch and TPA', exact: true }).click();
+  await expect(page).toHaveURL('/subsystems/gemdos/program-launch-and-tpa/#elf-startup');
+  await expect(page.getByRole('row', { name: /Static ELF, private address space/ })).toContainText('private pages');
+  await expect(page.getByRole('row', { name: /ELF with PT_INTERP/ })).toContainText('auxiliary vector');
+  const tpa = page.getByRole('table', { name: 'Classic PRG TPA after Mshrink' });
+  expect(await tpa.getByRole('rowheader').allTextContents()).toEqual([
+    'Stack', 'Uninitialized data (BSS)', 'Initialized data (DATA)', 'Program code (TEXT)', 'Basepage',
+  ]);
+  await expect(tpa.getByRole('row', { name: /Basepage/ })).toContainText('p_lowtpa');
+  await expect(page.locator('img[src*="tpa"]')).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(results.violations).toEqual([]);
 });
 
 test('Ssystem combines all native selectors and the historical MiNT reference', async ({ page }) => {

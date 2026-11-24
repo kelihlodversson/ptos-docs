@@ -104,6 +104,12 @@ test('the historical import preserves every UDO node and names its input file', 
     }
     assert.deepEqual(coverage.languages[language].missingLinks, []);
     assert.ok(records.some(row => row.slug === 'contents'));
+    const [tpaFigure] = coverage.languages[language].transcribedFigures;
+    assert.equal(createHash('sha256').update(read('public/source/tos.hyp/' + tpaFigure.path)).digest('hex'), tpaFigure.sha256);
+    const tpa = records.find(row => row.slug === (language === 'en' ? 'program-launch-and-tpa' : 'programmstart-und-tpa'));
+    assert.doesNotMatch(tpa.body, /<img\b/);
+    assert.match(tpa.body, /<caption>.*Mshrink<\/caption>/);
+    assert.match(tpa.body, /p_bbase.*p_dbase.*p_tbase.*p_lowtpa/s);
   }
   assert.ok(coverage.languages.en.findings.length > 0);
   assert.ok(coverage.languages.de.declarationsWithoutExactEnglishMatch.length > 0);

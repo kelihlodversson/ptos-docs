@@ -1,16 +1,12 @@
 ---
-import { referencePath } from '../../../data/catalog';
-
-export function getStaticPaths() {
-  return ['en', 'de'].map(language => ({ params: { language } }));
-}
-const destination = referencePath('Ssystem');
+interface Props { name: string; destination: string }
+const { name, destination } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Ssystem · pTOS Programmer’s Reference Manual</title>
+    <title>{name} · pTOS Programmer’s Reference Manual</title>
     <meta name="robots" content="noindex" />
     <link rel="canonical" href={new URL(destination, Astro.site)} />
     <script is:inline define:vars={{ destination }}>
@@ -18,5 +14,5 @@ const destination = referencePath('Ssystem');
     </script>
     <noscript><meta http-equiv="refresh" content={`0;url=${destination}`} /></noscript>
   </head>
-  <body><a href={destination}>Ssystem reference</a></body>
+  <body><a href={destination}>{name} reference</a></body>
 </html>

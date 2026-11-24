@@ -1,6 +1,8 @@
 ---
 import Layout from '../../../components/Layout.astro';
 import CatalogList from '../../../components/CatalogList.astro';
+import GemdosProgramFormat from '../../../components/GemdosProgramFormat.astro';
+import GemdosProgramLaunch from '../../../components/GemdosProgramLaunch.astro';
 import { catalog } from '../../../data/catalog';
 import { chapters, historicalPath, historicalSectionBody, manualBreadcrumbs } from '../../../data/manual-structure';
 
@@ -15,12 +17,18 @@ interface Props {
 }
 const { chapter, section } = Astro.props;
 const entries = catalog.filter(entry => entry.chapter?.slug === chapter.slug && entry.section?.slug === section.slug);
+const programFormat = chapter.slug === 'gemdos' && section.slug === 'the-program-format';
+const programLaunch = chapter.slug === 'gemdos' && section.slug === 'program-launch-and-tpa';
+const programTopic = programFormat || programLaunch;
 ---
 <Layout title={section.name} description={`${section.name} in the ${chapter.name} chapter.`} running={chapter.name}
   breadcrumbs={manualBreadcrumbs(chapter.slug)}>
   <header class="directory-head"><h1>{section.name}</h1></header>
+  {programFormat && <GemdosProgramFormat />}
+  {programLaunch && <GemdosProgramLaunch />}
+  {programTopic && <h2 class="prm-section-heading ruled">{programFormat ? 'Classic GEMDOS PRG format' : 'Classic GEMDOS PRG startup'}</h2>}
   {section.historicalSlug && (entries.length === 0 || section.slug === 'xcontrol') &&
-    <div class="historical-body" set:html={historicalSectionBody(section.historicalSlug)} />}
+    <div class:list={['historical-body', { 'historical-entry': programTopic }]} set:html={historicalSectionBody(section.historicalSlug)} />}
   {entries.length > 0 && <CatalogList records={entries} showSubsystem={false} />}
   {section.historicalSlug && <p><a href={historicalPath('en', section.historicalSlug)}>Read the original tos.hyp section</a></p>}
 </Layout>

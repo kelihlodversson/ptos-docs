@@ -36,4 +36,5 @@ const binding: Binding = unavailable
   {cpu === '68k' && <MemoryLayout caption="Caller stack at TRAP #1" {fields} bytes={offset} alignment={2} {byteOrder} />}
   {call.layout && <MemoryLayout {...call.layout}
     alignment={cpu === '68k' ? call.layout.align68k ?? call.layout.alignment : call.layout.alignment} {byteOrder} />}
+  <slot />
 </CallingConvention>

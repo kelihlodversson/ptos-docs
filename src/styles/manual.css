@@ -173,6 +173,7 @@ article, section { min-width: 0; }
 }
 .prm-rule-table th { font-weight: 700; }
 .prm-key-table th:first-child { width: 1%; white-space: nowrap; }
+.classic-tpa-layout th:first-child { width: 35%; }
 .table-scroll { overflow: auto; }
 .prm-code {
   margin: .65rem 0 1.4rem;
