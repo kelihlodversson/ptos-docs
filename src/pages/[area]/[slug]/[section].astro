@@ -1,10 +1,11 @@
 ---
 import Layout from '../../../components/Layout.astro';
 import CatalogList from '../../../components/CatalogList.astro';
+import BiosSystemVariables from '../../../components/BiosSystemVariables.astro';
 import GemdosProgramFormat from '../../../components/GemdosProgramFormat.astro';
 import GemdosProgramLaunch from '../../../components/GemdosProgramLaunch.astro';
 import { catalog } from '../../../data/catalog';
-import { chapters, historicalPath, historicalSectionBody, manualBreadcrumbs } from '../../../data/manual-structure';
+import { chapters, historicalPath, historicalSectionBody, manualBreadcrumbs, systemVariablesPath } from '../../../data/manual-structure';
 
 export function getStaticPaths() {
   return chapters.flatMap(chapter => chapter.sections.filter(section => !section.standalone).map(section => ({
@@ -28,7 +29,9 @@ const programTopic = programFormat || programLaunch;
   {programLaunch && <GemdosProgramLaunch />}
   {programTopic && <h2 class="prm-section-heading ruled">{programFormat ? 'Classic GEMDOS PRG format' : 'Classic GEMDOS PRG startup'}</h2>}
   {section.historicalSlug && (entries.length === 0 || section.slug === 'xcontrol') &&
-    <div class:list={['historical-body', { 'historical-entry': programTopic }]} set:html={historicalSectionBody(section.historicalSlug)} />}
+    (section.href === systemVariablesPath
+      ? <BiosSystemVariables historicalBody={historicalSectionBody(section.historicalSlug)} />
+      : <div class:list={['historical-body', { 'historical-entry': programTopic }]} set:html={historicalSectionBody(section.historicalSlug)} />)}
   {entries.length > 0 && <CatalogList records={entries} showSubsystem={false} />}
   {section.historicalSlug && <p><a href={historicalPath('en', section.historicalSlug)}>Read the original tos.hyp section</a></p>}
 </Layout>

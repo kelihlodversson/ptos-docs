@@ -339,6 +339,38 @@ test('Ssystem keeps the MiNT modes and pTOS differences in one table', async ({ 
   }
 });
 
+test('BIOS system variables show separate types and link the six Ssystem access modes', async ({ page }) => {
+  const path = '/subsystems/bios/the-system-variables/';
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(path);
+  const table = page.getByRole('table', { name: 'TOS system variables' });
+  await expect(table.getByRole('columnheader')).toHaveText(['Variable', 'Address', 'Type', 'Description']);
+  await expect(table.locator(':scope > tbody > tr')).toHaveCount(75);
+  const boot = table.locator(':scope > tbody > tr').filter({ has: page.locator('#UDO__bootdev') });
+  await expect(boot.locator(':scope > td').first()).toHaveText('0x446');
+  await expect(boot.locator(':scope > td').nth(1)).toHaveText('WORD');
+  const themd = table.locator(':scope > tbody > tr').filter({ has: page.locator('#themd') });
+  await expect(themd.locator(':scope > td').nth(1).getByRole('link', { name: 'MD' })).toHaveAttribute('href', '/historical/en/md/');
+  await expect(page.locator('#ssystem-access')).toBeVisible();
+  await expect(page.locator('pre.prm-code')).toContainText('Ssystem(S_GETWVAL, 0x0446L, 0L)');
+  await expect(page.getByText('Ssystem(S_INQUIRE, 0L, 0L)', { exact: true })).toBeVisible();
+  const scrollRegion = page.getByRole('region', { name: 'TOS system variables table' });
+  expect(await scrollRegion.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+
+  const accessModes = page.getByRole('table', { name: 'Ssystem modes by variable type' });
+  const modes = ['S_GETLVAL', 'S_GETWVAL', 'S_GETBVAL', 'S_SETLVAL', 'S_SETWVAL', 'S_SETBVAL'];
+  for (const mode of modes) {
+    await expect(accessModes.getByRole('link', { name: mode })).toHaveAttribute('href', `/reference/ssystem/#${mode}`);
+  }
+  await accessModes.getByRole('link', { name: 'S_GETWVAL' }).click();
+  await expect(page).toHaveURL('/reference/ssystem/#S_GETWVAL');
+  for (const mode of modes) {
+    await expect(page.locator(`tr[id="${mode}"]`).getByRole('link', { name: 'BIOS system variables' }))
+      .toHaveAttribute('href', path + '#ssystem-access');
+  }
+});
+
 test('chapter navigation follows tos.hyp and places extensions with related calls', async ({ page }) => {
   await page.goto('/subsystems/');
   await page.getByRole('link', { name: 'GEMDOS', exact: true }).click();

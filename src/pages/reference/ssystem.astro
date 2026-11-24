@@ -9,7 +9,7 @@ import CallingConvention from '../../components/CallingConvention.astro';
 import GfaBinding from '../../components/GfaBinding.astro';
 import MemoryLayout from '../../components/MemoryLayout.astro';
 import SourceList from '../../components/SourceList.astro';
-import { manualBreadcrumbs } from '../../data/manual-structure';
+import { manualBreadcrumbs, systemVariablesPath } from '../../data/manual-structure';
 import { pages } from '../../data/historical';
 import { overlays } from '../../data/overlays';
 import { readSsystemHistory } from '../../data/ssystem-history';
@@ -94,6 +94,9 @@ const modeSections = [
                     {' '}<a href={processConfig}>Configuration source</a>.
                   </>}
                   {ptos.description?.map(detail => <p class="mode-detail">{detail}</p>)}
+                  {/^(S_GET|S_SET)[LWB]VAL$/.test(name) && <p class="mode-detail">
+                    <a href={systemVariablesPath + '#ssystem-access'}>BIOS system variables</a>
+                  </p>}
                 </> : <>
                   {name === 'S_CLOCKUTC' ? 'Planned.' : 'Unimplemented.'} Returns <code>EINVFN</code>.
                 </>}

@@ -4,6 +4,7 @@ import type { Edition, HistoricalPage } from './historical';
 export const historicalPath = (language: Edition, slug: string) => `/historical/${language}/${slug}/`;
 export const upstreamTosHyp = 'https://freemint.github.io/tos.hyp/';
 export const elfEntryPath = '/os-variants/ptos/elf-entry/';
+export const systemVariablesPath = '/subsystems/bios/the-system-variables/';
 
 const areas = [
   {
