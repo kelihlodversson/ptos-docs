@@ -11,7 +11,7 @@ import { importedNavigation } from '../../../data/manual-structure';
 import type { HistoricalPage } from '../../../data/historical';
 
 export function getStaticPaths() {
-  return (['en', 'de'] as const).flatMap(language => pages(language).map(page => ({
+  return (['en', 'de'] as const).flatMap(language => pages(language).filter(page => page.slug !== 'ssystem').map(page => ({
     params: { language, slug: page.slug },
     props: { page },
   })));

@@ -7,25 +7,22 @@ import ParameterList from './ParameterList.astro';
 import TargetPanels from './TargetPanels.astro';
 import CallingConvention from './CallingConvention.astro';
 import GfaBinding from './GfaBinding.astro';
-import MemoryLayout from './MemoryLayout.astro';
 import SourceList from './SourceList.astro';
 import { historicalReference, referenceLocation, referencePath } from '../data/catalog';
 import type { Historical, Source } from '../data/catalog';
 import { elfEntryPath, manualBreadcrumbs } from '../data/manual-structure';
 import { overlays, pexecModes } from '../data/overlays';
-import abi from '../data/abi.json';
 import translation from '../data/translation-review.json';
 
-interface Props { name: string; record: Historical | null }
+interface Props { name: string; record: Historical }
 const { name, record } = Astro.props;
 const overlay = overlays[name];
 const location = referenceLocation(name);
 const subsystem = location?.chapter?.name ?? 'GEMDOS';
 const group = location?.group ?? subsystem;
-const title = record?.title ?? 'Read text console dimensions';
-const operation = record?.operation ?? 'Read the text grid and character-cell size through the S_CONSOLE_DIM mode.';
+const { title, operation } = record;
 const sources: Source[] = [
-  ...(record ? [['tos', record.path, 'Historical function and bindings'] satisfies Source] : []),
+  ['tos', record.path, 'Historical function and bindings'],
   ...overlay.sources,
 ];
 ---
@@ -35,31 +32,22 @@ const sources: Source[] = [
     <Masthead {name} {title} {subsystem} />
     <section aria-labelledby="prm-prototype-heading">
       <h2 id="prm-prototype-heading" class="prm-section-heading">C Prototype</h2>
-      <pre class="prm-prototype"><code>{record?.syntax ?? 'long Ssystem(short mode, long arg1, long arg2);'}</code></pre>
-      {name === 'Ssystem' && <p class="prototype-note">Call signature for the SDK macro in <code>&lt;mint/mintbind.h&gt;</code>. Use <code>Ssystem(-2, (long)&amp;dims, (long)sizeof dims)</code>.</p>}
+      <pre class="prm-prototype"><code>{record.syntax}</code></pre>
     </section>
 
     <dl class="prm-facts">
       <Fact label="Operation">{operation}</Fact>
-      <Fact label="Opcode">{subsystem === 'AES' ? 'Historical AES operation' : 'GEMDOS'}{' '}<code>{record?.opcode ?? '340'} ({`0x${Number(record?.opcode ?? 340).toString(16).toUpperCase()}`})</code></Fact>
+      <Fact label="Opcode">{subsystem === 'AES' ? 'Historical AES operation' : 'GEMDOS'}{' '}<code>{record.opcode} ({`0x${Number(record.opcode).toString(16).toUpperCase()}`})</code></Fact>
       <Fact label="Parameters"><ParameterList entries={overlay.params} /></Fact>
       <Fact label="Description">
-        {record ? <div set:html={record.description} /> : <p>
-          The caller supplies a writable result buffer containing four unsigned 16-bit fields.
-          The kernel copies the smaller of the supplied length and its structure size.
-          Check the returned byte count before reading fields. A size query with <code>arg2 = -1</code> leaves the buffer untouched.
-        </p>}
+        <div set:html={record.description} />
       </Fact>
       <Fact label="Return Value">
-        {record ? <div set:html={record.returns} /> : <p>
-          Returns the copied byte count or, for a size query, the kernel buffer size. A null destination
-          or nonpositive length for a write returns <code>EINVFN</code>. Isolated builds check user addresses
-          and can reject an invalid buffer before copying.
-        </p>}
+        <div set:html={record.returns} />
         {name === 'Fclose' && <p class="revision-note">The pTOS libcmini binding returns <code>long</code>. Native GEMDOS uses <code>EIHNDL</code> for an invalid handle. The historical listing uses <code>EBADF</code>.</p>}
       </Fact>
       <Fact label="Availability">
-        <Availability history={record?.availability} support={overlay.targets} paraTos={overlay.paraTos}>
+        <Availability history={record.availability} support={overlay.targets} paraTos={overlay.paraTos}>
           {name === 'Pexec' && <p>Historical version qualifications for modes 6 and 7, and MagiC restrictions, appear in the mode descriptions above.</p>}
           {name === 'appl_init' && <p>ARM and 68k builds with per-process address spaces lack kernel AES at this revision. Native libaes ports for those configurations are <strong>planned</strong> follow-ups.</p>}
         </Availability>
@@ -78,36 +66,30 @@ const sources: Source[] = [
     </section>}
 
     <TargetPanels>
-      <CallingConvention slot="68k" binding={overlay.targets['68k']} example={record?.assembly}>
-        {record?.legacyBinding && <div set:html={record.legacyBinding} />}
-        {record?.arrays && <div set:html={record.arrays} />}
-        {name === 'Ssystem' && <MemoryLayout {...abi.console} byteOrder="Big endian" />}
+      <CallingConvention slot="68k" binding={overlay.targets['68k']} example={record.assembly}>
+        {record.legacyBinding && <div set:html={record.legacyBinding} />}
+        {record.arrays && <div set:html={record.arrays} />}
         {name === 'Pexec' && <p>ROM/non-MMU 68k keeps its classic staged modes, with 104 and 106 refused. On eligible MMU builds, mode 4 and 104 require the shared-VM PRG path. Mode 200 requires <code>CONF_WITH_PEXEC200</code>.</p>}
       </CallingConvention>
       <CallingConvention slot="arm" binding={overlay.targets.arm}>
-        {name === 'Ssystem' && <MemoryLayout {...abi.console} byteOrder="Little endian" />}
         {name === 'Pexec' && <p>On MMU ARM, modes 3, 4, 5, 6, 7, 104 and 106 are unsupported. Mode 100 needs the native scheduler. Mode 200 needs <code>CONF_WITH_PEXEC200</code>.</p>}
       </CallingConvention>
       <CallingConvention slot="x32" binding={overlay.targets.x32}>
-        {name === 'Ssystem' && <MemoryLayout {...abi.console} byteOrder="Little endian" />}
         {name === 'Pexec' && <p>On x32, modes 3, 4, 5, 6, 7, 104 and 106 are unsupported. Mode 100 needs the native scheduler. Mode 200 needs <code>CONF_WITH_PEXEC200</code>.</p>}
         {name === 'appl_init' && <p><a href="/abi/cuis/">CUIS service ABI</a> describes the private transport used by the library.</p>}
       </CallingConvention>
-      <GfaBinding slot="gfa" code={record?.gfa} original={record?.originalGfa} symbol={name} {subsystem}
+      <GfaBinding slot="gfa" code={record.gfa} original={record.originalGfa} symbol={name} {subsystem}
         raw={name === 'Pexec' ? {
           routine: 'GEMDOS', opcode: 75,
           args: [{ width: 'W', operand: 'mode' }, { width: 'L', operand: 'prog' },
             { width: 'L', operand: 'tail' }, { width: 'L', operand: 'env' }],
-        } : name === 'Ssystem' ? {
-          routine: 'GEMDOS', opcode: 0x154,
-          args: [{ width: 'W', operand: '#-2' }, { width: 'L', operand: 'arg1' }, { width: 'L', operand: 'arg2' }],
         } : undefined} />
     </TargetPanels>
 
     <section aria-labelledby="related-heading">
       <h2 id="related-heading" class="prm-section-heading ruled">See Also</h2>
       <ul class="related-links">
-        {record?.related.map(({ label, href }) => <li><a href={historicalReference(label, href)}>{label}</a></li>)}
+        {record.related.map(({ label, href }) => <li><a href={historicalReference(label, href)}>{label}</a></li>)}
         {name === 'Fclose' && <li><a href={referencePath('Pexec')}>Pexec</a></li>}
         {name === 'Pexec' && <>
           <li><a href={elfEntryPath}>ELF32 process entry</a></li>
@@ -116,24 +98,14 @@ const sources: Source[] = [
           <li><a href="/reference/pwaitpid/">Pwaitpid</a></li>
         </>}
         {name === 'appl_init' && <li><a href="/abi/cuis/">CUIS ABI</a></li>}
-        {name === 'Ssystem' && <>
-          <li><a href="/historical/en/ssystem/">Historical Ssystem</a></li>
-          <li><a href="/reference/s-meminfo/">S_MEMINFO</a></li>
-          <li><a href="/reference/s-deskinfo/">S_DESKINFO</a></li>
-          <li><a href="/reference/s-deskset/">S_DESKSET</a></li>
-          <li><a href="/reference/s-mmuprobe/">S_MMUPROBE</a></li>
-          <li><a href="/reference/s-procname/">S_PROCNAME</a></li>
-          <li><a href="/reference/s-procident/">S_PROCIDENT</a></li>
-          <li><a href="/reference/s-procexec/">S_PROCEXEC</a></li>
-        </>}
       </ul>
     </section>
 
     <SourceList {sources} />
-    {record && <p class="revision-note"><a href={`/source/tos.hyp/${record.path}`}>Original English and German UDO</a> ·
+    <p class="revision-note"><a href={`/source/tos.hyp/${record.path}`}>Original English and German UDO</a> ·
       <a href={historicalReference(record.name, '#source-heading')}>Full tos.hyp entry</a> ·
       Translation {record.translation === 'verified' ? 'reviewed' : 'needs review'}.
       {name === 'Pexec' && ` ${translation.Pexec.note}`}
-    </p>}
+    </p>
   </article>
 </Layout>

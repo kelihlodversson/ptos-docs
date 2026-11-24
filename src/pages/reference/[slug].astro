@@ -9,16 +9,15 @@ import type { NativeCall } from '../../data/native-calls';
 export function getStaticPaths() {
   return [
     ...Object.values(historical).map(record => ({
-      params: { slug: record.name.toLowerCase() }, props: { name: record.name, record, native: null },
+      params: { slug: record.name.toLowerCase() }, props: { record },
     })),
-    { params: { slug: 'ssystem' }, props: { name: 'Ssystem', record: null, native: null } },
     ...nativeCalls.map(native => ({
-      params: { slug: nativePath(native.name).split('/')[2] }, props: { name: native.name, record: null, native },
+      params: { slug: nativePath(native.name).split('/')[2] }, props: { native },
     })),
   ];
 }
 
-interface Props { name: string; record: Historical | null; native: NativeCall | null }
-const { name, record, native } = Astro.props;
+type Props = { record: Historical; native?: never } | { native: NativeCall; record?: never };
+const { record, native } = Astro.props;
 ---
-{native ? <NativeReference call={native} /> : <ReferenceLeaf {name} {record} />}
+{native ? <NativeReference call={native} /> : <ReferenceLeaf name={record.name} {record} />}

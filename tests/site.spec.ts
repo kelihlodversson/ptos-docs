@@ -143,6 +143,33 @@ test('historical entries retain their availability, source and switchable bindin
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 
+test('Ssystem combines all native selectors and the historical MiNT reference', async ({ page }) => {
+  await page.goto('/reference/ssystem/');
+  const nativeModes = page.getByRole('region', { name: 'pTOS Mode Selectors' });
+  await expect(nativeModes.locator('tbody tr')).toHaveCount(26);
+  await expect(nativeModes.locator('#native-S_INQUIRE')).toContainText('-1 (0xFFFF)');
+  await expect(nativeModes.locator('#native-S_GETCOOKIE')).toContainText('one-based slot');
+  await expect(nativeModes.locator('#native-S_SETLVAL')).toContainText('EACCDN');
+  await expect(nativeModes.locator('#native-S_PROCEXEC')).toContainText('CONF_WITH_PROCESS_EXEC_TEST');
+  await expect(nativeModes.getByRole('link', { name: 'S_MEMINFO', exact: true })).toHaveAttribute('href', '/reference/s-meminfo/');
+  await expect(page.getByRole('heading', { name: 'Historical MiNT Mode Reference' })).toBeVisible();
+  await expect(page.getByText("Available when a 'MiNT' cookie", { exact: false })).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://docs.ptos.dev/reference/ssystem/');
+
+  const select = selectTarget(page);
+  await select.selectOption('arm');
+  await expect(page.locator('[data-target-panel="arm"]')).toContainText('arg1 · mode-specific');
+  await select.selectOption('gfa');
+  await expect(page.locator('[data-target-panel="gfa"]')).toContainText('GEMDOS(&H154,W:Arg1%,L:Arg2%,L:Arg3%)');
+  await expect(page.locator('.prm-prototype')).toBeVisible();
+
+  for (const language of ['en', 'de']) {
+    await page.goto('/historical/' + language + '/ssystem/#S_OSHEADER', { waitUntil: 'commit' });
+    await expect(page).toHaveURL('/reference/ssystem/#S_OSHEADER');
+    await expect(page.locator('[id="S_OSHEADER"]')).toBeAttached();
+  }
+});
+
 test('chapter navigation follows tos.hyp and places extensions with related calls', async ({ page }) => {
   await page.goto('/subsystems/');
   await page.getByRole('link', { name: 'GEMDOS', exact: true }).click();

@@ -55,6 +55,7 @@ const englishNotes = {
   Ptermres: '/reference/ptermres/',
   Syield: '/reference/syield/',
 };
+const publishedRoute = (language, slug) => slug === 'ssystem' ? englishNotes.Ssystem : route(language, slug);
 
 function save(path, contents) {
   outputPaths.add(path);
@@ -141,7 +142,7 @@ function buildLanguage(language) {
       return null;
     }
     // UDO already escapes special anchor characters in its generated names.
-    return route(language, target.slug) + (fragment ? `#${fragment}` : '');
+    return publishedRoute(language, target.slug) + (fragment ? `#${fragment}` : '');
   }
 
   function renderNode(node, parent, file) {
