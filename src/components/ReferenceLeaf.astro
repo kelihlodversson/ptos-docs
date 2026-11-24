@@ -66,20 +66,25 @@ const sources: Source[] = [
         </table>
       </TableScroll>
       <p>On MMU ARM and x32, staged modes 3, 4, 5, 6, 7, 104 and 106 return <code>EINVFN</code> before arguments are read. Non-MMU ARM retains the legacy paths for 3–7, with compatibility unchecked.</p>
-      <p>Mode 200 keeps the existing PROCESS, PID, TID, open files, current directories, parent and children. Public <code>Pexecve</code> is <strong>planned</strong> as a later API migration. <a href="https://github.com/kelihlodversson/pTOS/issues/1008">pTOS #1008</a></p>
+      <p>Mode 200 keeps the existing PROCESS, PID, TID, open files, current directories, parent and children.
+        <code>CONF_WITH_EXEC_REPLACE</code> defaults on with <code>CONF_WITH_MULTITHREADING</code> and a supported loader.
+        Public <code>Pexecve</code> is <strong>planned</strong> as a later API migration. <a href="https://github.com/kelihlodversson/pTOS/issues/1008">pTOS #1008</a></p>
     </section>}
 
     <TargetPanels>
       <CallingConvention slot="68k" binding={overlay.targets['68k']} example={record.assembly}>
         {record.legacyBinding && <div set:html={formatHistoricalTables(record.legacyBinding)} />}
         {record.arrays && <div set:html={formatHistoricalTables(record.arrays)} />}
-        {name === 'Pexec' && <p>ROM/non-MMU 68k keeps its classic staged modes, with 104 and 106 refused. On eligible MMU builds, mode 4 and 104 require the shared-VM PRG path. Mode 200 requires <code>CONF_WITH_PEXEC200</code>.</p>}
+        {name === 'Pexec' && <p>Non-MMU 68k keeps its classic staged modes, with 104 and 106 refused. On eligible MMU builds, modes 4 and 104 use the shared-VM PRG path.
+          On MMU builds, mode 200 is available with classic PRG or ELF loading, including PRG-only builds. The replacement format determines the startup ABI.</p>}
       </CallingConvention>
       <CallingConvention slot="arm" binding={overlay.targets.arm}>
-        {name === 'Pexec' && <p>On MMU ARM, modes 3, 4, 5, 6, 7, 104 and 106 are unsupported. Mode 100 needs the native scheduler. Mode 200 needs <code>CONF_WITH_PEXEC200</code>.</p>}
+        {name === 'Pexec' && <p>On MMU ARM, modes 3, 4, 5, 6, 7, 104 and 106 are unsupported.
+          Mode 100 needs <code>CONF_WITH_MULTITHREADING</code> and mode 200 needs <code>CONF_WITH_EXEC_REPLACE</code> with ELF loading.</p>}
       </CallingConvention>
       <CallingConvention slot="x32" binding={overlay.targets.x32}>
-        {name === 'Pexec' && <p>On x32, modes 3, 4, 5, 6, 7, 104 and 106 are unsupported. Mode 100 needs the native scheduler. Mode 200 needs <code>CONF_WITH_PEXEC200</code>.</p>}
+        {name === 'Pexec' && <p>On x32, modes 3, 4, 5, 6, 7, 104 and 106 are unsupported.
+          Mode 100 needs <code>CONF_WITH_MULTITHREADING</code> and mode 200 needs <code>CONF_WITH_EXEC_REPLACE</code> with ELF loading.</p>}
         {name === 'appl_init' && <p><a href="/abi/cuis/">CUIS service ABI</a> describes the private transport used by the library.</p>}
       </CallingConvention>
       <GfaBinding slot="gfa" code={record.gfa} original={record.originalGfa} symbol={name} {subsystem}
