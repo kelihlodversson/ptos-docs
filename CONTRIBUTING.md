@@ -84,14 +84,15 @@ the architecture and OS recorded on the reference page.
 ## Native overlays and ABI figures
 
 Add OS-specific material to `src/data/overlays.ts` or `src/data/native-calls.ts`.
-The evidence baseline is pTOS PR #903 and ParaTOS PR #27 at the exact pinned
-commits. Cite the implementation, public header, configuration and
-corresponding test where available. Scope compatibility notes to the native
-kernel, host backend or guest interface the source verifies.
+The evidence baseline is the exact commit pinned in `src/data/sources.json`
+from pTOS `master`, alongside the pinned ParaTOS PR #27 commit. Cite the
+implementation, public header, configuration and corresponding test where
+available. Scope compatibility notes to the native kernel, host backend or
+guest interface the source verifies.
 
 ```sh
 git clone https://github.com/kelihlodversson/pTOS.git .upstream/pTOS
-git -C .upstream/pTOS fetch origin refs/pull/903/head
+git -C .upstream/pTOS fetch origin master
 git clone https://github.com/kelihlodversson/libcmini.git .upstream/libcmini
 git clone https://github.com/SapionAps/ParaTos.git .upstream/ParaTos
 git -C .upstream/ParaTos fetch origin refs/pull/27/head
@@ -101,7 +102,9 @@ node scripts/import-native-bindings.mjs .upstream/pTOS --check
 ```
 
 The native binding inventory reads dispatch tables, libaes exports and the
-x32 VDI client at the pinned pTOS commit. Historical binding rules in
+x32 VDI client at the pinned pTOS commit. To refresh the pin, review the
+changes on `origin/master`, set `ptos.revision` to the reviewed commit, and
+regenerate the inventory. Historical binding rules in
 `src/data/historical-bindings.ts` supply the Availability summary and native
 calling conventions. They account for shared opcodes, native argument
 structures, and build or privilege restrictions. The summary adds pTOS

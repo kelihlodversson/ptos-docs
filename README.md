@@ -3,8 +3,8 @@
 Static Astro and TypeScript source for [docs.ptos.dev](https://docs.ptos.dev/).
 The manual includes the complete English and German tos.hyp corpus, searchable
 function and section indexes, and separate pTOS and ParaTOS implementation notes.
-Native process and thread references use the pinned pTOS PR #903 and ParaTOS
-PR #27 source trees. The GFA BASIC guide cites the Compendium from [BAFO](http://bafo.free.fr/).
+Native process and thread references use pinned revisions from pTOS `master`
+and ParaTOS PR #27. The GFA BASIC guide cites the Compendium from [BAFO](http://bafo.free.fr/).
 
 ## Development
 

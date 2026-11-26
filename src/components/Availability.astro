@@ -1,6 +1,6 @@
 ---
 import { formatHistoricalTables } from '../data/format-historical-tables';
-import { statusLabels, targets } from '../data/catalog';
+import { ptosSourceTree, statusLabels, targets } from '../data/catalog';
 import type { CPU } from '../data/catalog';
 import revisions from '../data/sources.json';
 import type { Binding } from '../data/overlays';
@@ -11,7 +11,7 @@ const { history, support, paraTos } = Astro.props;
   <p><strong>Historical</strong></p>
   <div set:html={formatHistoricalTables(history)} />
 </div>}
-<p><strong>pTOS</strong> · <a href={`https://github.com/${revisions.ptos.repo}/pull/${revisions.ptos.pullRequest}`}>PR #903</a></p>
+<p><strong>pTOS</strong> · <a href={ptosSourceTree}>master snapshot</a></p>
 <ul class="availability-targets">
   {targets.slice(0, 3).map(([id, label]) => {
     const info = support[id as CPU];

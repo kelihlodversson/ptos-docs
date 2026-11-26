@@ -20,6 +20,8 @@ export const statusLabels: Record<Status, string> = {
 };
 
 export type Source = [keyof typeof revisions, string, string];
+export const ptosSourceTree = `https://github.com/${revisions.ptos.repo}/tree/${revisions.ptos.revision}`;
+
 export function sourceLink([key, path, label]: Source) {
   const { repo, revision } = revisions[key];
   return { href: `https://github.com/${repo}/blob/${revision}/${path}`, label, revision, path };

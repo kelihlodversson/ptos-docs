@@ -1,11 +1,10 @@
 ---
-import { sourceLink, statusLabels } from '../data/catalog';
+import { ptosSourceTree, sourceLink, statusLabels } from '../data/catalog';
 import type { Status } from '../data/catalog';
 import type { HistoricalPage } from '../data/historical';
 import { historicalBinding } from '../data/historical-bindings';
 import { nativeCalls, nativePath } from '../data/native-calls';
 import { overlays } from '../data/overlays';
-import revisions from '../data/sources.json';
 import { targets } from '../data/targets';
 
 interface Props { page: HistoricalPage; history?: string }
@@ -14,8 +13,6 @@ const english = page.language === 'en';
 const overlay = page.native ? overlays[page.title] : undefined;
 const native = page.native ? nativeCalls.find(call => nativePath(call.name) === page.native) : undefined;
 const nativeSource = page.native && page.native + '#calling-convention';
-const pTOS = revisions.ptos;
-const pr = `https://github.com/${pTOS.repo}/pull/${pTOS.pullRequest}`;
 const labels: Record<Status, string> = english ? { ...statusLabels, unsupported: 'Not implemented' } : {
   implemented: 'Implementiert', experimental: 'Experimentell', planned: 'Geplant',
   unsupported: 'Nicht implementiert', unverified: 'Ungeprüft',
@@ -49,7 +46,7 @@ const allVersions = /^(?:All (?:versions|(?:TOS|GEMDOS|BIOS|XBIOS|AES|VDI) versi
 const redundant = allVersions && rows.length === 1 && rows[0].status === 'implemented' && !rows[0].limitation;
 ---
 {!redundant && <div class="ptos-availability">
-  <p><strong>pTOS</strong> · <a href={pr}>PR #{pTOS.pullRequest}</a></p>
+  <p><strong>pTOS</strong> · <a href={ptosSourceTree}>{english ? 'master snapshot' : 'master-Stand'}</a></p>
   {isMessage ? <p>{english ? 'Application message. Availability depends on the sending and receiving programs.'
     : 'Anwendungsnachricht. Die Verfügbarkeit hängt vom sendenden und empfangenden Programm ab.'}</p>
     : isCpx ? <p>{english ? 'Requires a compatible CPX host. Compatibility with pTOS is unverified.'

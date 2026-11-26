@@ -1,7 +1,10 @@
 import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 const selectTarget = (page: import('@playwright/test').Page) => page.getByRole('combobox', { name: 'Target / Language' });
+const revisions = JSON.parse(readFileSync(new URL('../src/data/sources.json', import.meta.url), 'utf8'));
+const ptosSourceTree = `https://github.com/${revisions.ptos.repo}/tree/${revisions.ptos.revision}`;
 
 test('target changes in place and persists without moving or hiding the prototype', async ({ page }) => {
   await page.goto('/reference/fclose/');
@@ -184,7 +187,7 @@ test('historical availability reports pTOS exceptions and build requirements acr
   await expect(availability.getByRole('listitem').filter({ hasText: 'ARM, x32' })).toContainText('Not implemented');
   await selectTarget(page).selectOption('gfa');
   await expect(availability).toBeVisible();
-  await expect(availability.getByRole('link', { name: 'PR #903' })).toHaveAttribute('href', /pTOS\/pull\/903$/);
+  await expect(availability.getByRole('link', { name: 'master snapshot' })).toHaveAttribute('href', ptosSourceTree);
 
   const expected = [
     ['/historical/en/dgetcwd/', '68k, ARM, x32', 'Implemented', 'CONF_WITH_KPROC'],
@@ -214,7 +217,9 @@ test('Pfork and Pvfork combine the historical and native reference', async ({ pa
     }
     const availability = page.locator('.prm-fact-row').filter({ has: page.getByText('Availability', { exact: true }) });
     await expect(availability).toContainText('MultiTOS integrated MiNT version 1.04.');
-    await expect(availability).toContainText('CONF_WITH_PFORK');
+    await expect(availability).toContainText('CONF_WITH_FORK');
+    await expect(availability).toContainText('eager allocation or demand paging');
+    await expect(availability).toContainText('ROM-window');
     await expect(availability).toContainText('ParaTOS');
     const history = page.getByRole('region', { name: 'Historical MiNT reference' });
     await expect(history).toContainText(`The function ${name} creates a copy of the current process.`);
@@ -263,7 +268,8 @@ test('Syield combines pTOS and historical documentation under GEMDOS system func
   }
   const availability = page.locator('.prm-fact-row').filter({ has: page.getByText('Availability', { exact: true }) });
   await expect(availability).toContainText('In MagiC as of Version 3.0, and when the MiNT cookie is present.');
-  await expect(availability).toContainText('CONF_WITH_NATIVE_SCHED');
+  await expect(availability).toContainText('CONF_WITH_MULTITHREADING');
+  await expect(page.getByText(/CONF_WITH_PREEMPTION defaults on/)).toBeVisible();
   await expect(availability).toContainText('The POSIX backend leaves Syield unimplemented.');
   await expect(page.locator('.prm-prototype')).toHaveText('int Syield(void);');
 
@@ -308,6 +314,9 @@ test('Ssystem keeps the MiNT modes and pTOS differences in one table', async ({ 
   await expect(ptos('S_GETCOOKIE')).toContainText('one-based slot');
   await expect(ptos('S_SETLVAL')).toContainText('EACCDN');
   await expect(ptos('S_PROCEXEC')).toContainText('CONF_WITH_PROCESS_EXEC_TEST');
+  await expect(ptos('S_PROCEXEC')).toContainText('CONF_WITH_MULTITHREADING');
+  await expect(ptos('S_PROCEXEC').getByRole('link', { name: 'Configuration source' })).toHaveAttribute('href',
+    `https://github.com/${revisions.ptos.repo}/blob/${revisions.ptos.revision}/bdos/Kconfig`);
   await expect(ptos('S_DESKINFO')).toContainText('16-byte struct desk_info');
   await expect(ptos('S_DESKSET')).toContainText('item 2 sets the AES background');
   await expect(ptos('S_DESKSET')).toContainText('User processes on address-space builds receive EACCDN');
@@ -599,14 +608,16 @@ test('original German content and UDO aliases remain navigable', async ({ page }
   await expect(page.getByText('Verfügbar', { exact: true })).toBeVisible();
 });
 
-test('the PR #903 notes distinguish native staged execution, fork and PROCESS services', async ({ page }) => {
+test('the pTOS master notes distinguish native staged execution, fork and PROCESS services', async ({ page }) => {
   await page.goto('/reference/pexec/');
   const select = selectTarget(page);
   await select.selectOption('arm');
   await expect(page.getByText('On MMU ARM, modes 3, 4, 5, 6, 7, 104 and 106 are unsupported.', { exact: false })).toBeVisible();
-  await expect(page.getByRole('row', { name: /200 .*same PROCESS/ })).toBeVisible();
+  await expect(page.getByRole('row', { name: /200 .*same PROCESS/ })).toContainText('CONF_WITH_EXEC_REPLACE');
+  await select.selectOption('68k');
+  await expect(page.getByText(/including PRG-only builds/)).toBeVisible();
   await page.goto('/reference/pclone/');
-  await expect(page.getByRole('link', { name: 'pTOS PR #903' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'master snapshot' })).toHaveAttribute('href', ptosSourceTree);
   await expect(page.getByRole('link', { name: 'ParaTOS PR #27' })).toBeVisible();
   await expect(page.getByRole('row', { name: /child_pid/ })).toContainText('+28');
   await expect(page.getByText(/pTOS 1\.4/)).toHaveCount(0);

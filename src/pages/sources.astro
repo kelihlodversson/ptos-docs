@@ -30,7 +30,8 @@ import { upstreamTosHyp } from '../data/manual-structure';
   <ul class="source-revisions">
     {Object.values(revisions).map(({ repo, revision }) => <li><a href={`https://github.com/${repo}/tree/${revision}`}>{repo}</a> <code>{revision}</code></li>)}
   </ul>
-  <p><a href={`https://github.com/${revisions.ptos.repo}/pull/${revisions.ptos.pullRequest}`}>pTOS PR #903</a> ·
+  <p>pTOS implementation notes use the pinned commit above from the <code>{revisions.ptos.branch}</code> branch.
+    <a href={`https://github.com/${revisions.ptos.repo}/tree/${revisions.ptos.branch}`}>pTOS master on GitHub</a> ·
     <a href={`https://github.com/${revisions.paratos.repo}/pull/${revisions.paratos.pullRequest}`}>ParaTOS PR #27</a></p>
   <p> <a href="https://github.com/kelihlodversson/ptos-docs">Manual source and revision history</a></p>
 </Layout>
