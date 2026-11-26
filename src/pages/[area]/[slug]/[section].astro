@@ -8,7 +8,7 @@ import GemdosProgramFormat from '../../../components/GemdosProgramFormat.astro';
 import GemdosProgramLaunch from '../../../components/GemdosProgramLaunch.astro';
 import GemdosSignals from '../../../components/GemdosSignals.astro';
 import { catalog } from '../../../data/catalog';
-import { chapters, cookieJarPath, historicalPath, historicalSectionBody, manualBreadcrumbs, systemVariablesPath } from '../../../data/manual-structure';
+import { chapters, cookieJarPath, historicalPath, historicalSectionBody, legacyGemdosSectionSlugs, manualBreadcrumbs, systemVariablesPath } from '../../../data/manual-structure';
 
 export function getStaticPaths() {
   return chapters.flatMap(chapter => chapter.sections.filter(section => !section.standalone).map(section => ({
@@ -26,12 +26,25 @@ const programLaunch = chapter.slug === 'gemdos' && section.slug === 'program-lau
 const programTopic = programFormat || programLaunch;
 const cookieJar = section.href === cookieJarPath;
 const signals = chapter.slug === 'gemdos' && section.slug === 'signals';
+const legacyExtensions = chapter.slug === 'gemdos' && section.slug === 'legacy-extensions';
+const legacySection = chapter.slug === 'gemdos' && legacyGemdosSectionSlugs.includes(section.slug);
+const legacyTopics = legacyExtensions ? chapter.sections.filter(topic => legacyGemdosSectionSlugs.includes(topic.slug)) : [];
 const historicalBody = section.historicalSlug ? historicalSectionBody(section.historicalSlug) ?? '' : '';
 const HistoricalBody = section.href === systemVariablesPath ? BiosSystemVariables : signals ? GemdosSignals : undefined;
 ---
 <Layout title={section.name} description={`${section.name} in the ${chapter.name} chapter.`} running={chapter.name}
-  breadcrumbs={manualBreadcrumbs(chapter.slug)}>
+  breadcrumbs={manualBreadcrumbs(chapter.slug, legacySection ? 'legacy-extensions' : undefined)}>
   <header class="directory-head"><h1>{section.name}</h1></header>
+  {legacyExtensions && <>
+    <p>Historical GEMDOS extensions for older network drivers, multitasking libraries and add-on hardware.</p>
+    <ul class="manual-index">
+      {legacyTopics.map(topic => <li><a class="manual-index-symbol" href={topic.href}>{topic.name}</a></li>)}
+    </ul>
+  </>}
+  {chapter.slug === 'gemdos' && section.slug === 'network' &&
+    <p>MiNTnet’s BSD socket calls and vectored I/O under GEMDOS.</p>}
+  {chapter.slug === 'gemdos' && section.slug === 'network-functions' &&
+    <p>File flushing, file locking and driver identification for older TOS network drivers.</p>}
   {programFormat && <GemdosProgramFormat />}
   {programLaunch && <GemdosProgramLaunch />}
   {programTopic && <h2 class="prm-section-heading ruled">{programFormat ? 'Classic GEMDOS PRG format' : 'Classic GEMDOS PRG startup'}</h2>}

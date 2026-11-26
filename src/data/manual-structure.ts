@@ -7,6 +7,7 @@ export const elfEntryPath = '/os-variants/ptos/elf-entry/';
 export const systemVariablesPath = '/subsystems/bios/the-system-variables/';
 export const cookieJarPath = '/subsystems/bios/cookie-jar/';
 export const cookieKeysPath = historicalPath('en', 'cookie-and-xbra-list');
+export const argvProcedurePath = '/conventions/protocols/argv-procedure/';
 
 const areas = [
   {
@@ -32,6 +33,30 @@ export type ManualTopic = {
   standalone?: boolean;
 };
 export type ManualChapter = ManualTopic & { area: Area; sections: ManualTopic[] };
+
+const legacyGemdosExtensions: ManualTopic = {
+  slug: 'legacy-extensions', name: 'Legacy extensions', href: '/subsystems/gemdos/legacy-extensions/',
+};
+export const legacyGemdosSectionSlugs = ['network-functions', 'c-task-royal', 'nap-bionet100', 'powerdos', 'tekbios'];
+export const gemdosOverviewGroups = [
+  { name: 'System calls', slugs: [
+    'file-functions', 'directory-functions', 'character-input-output', 'date-and-time',
+    'process-functions', 'memory-management', 'system-functions', 'network',
+  ] },
+  { name: 'Program formats and notes', slugs: [
+    'the-program-format', 'program-launch-and-tpa', 'signals', 'support-for-alternative-file-systems',
+    'pipes-test-for', 'gemdos-trap',
+  ] },
+  { name: 'Legacy compatibility', slugs: [legacyGemdosExtensions.slug] },
+  { name: 'Reference indexes', slugs: ['gemdos-function-list', 'gemdos-structures', 'gemdos-error-messages'] },
+];
+
+const gemdosSectionNames: Record<string, string> = {
+  network: 'MiNTnet socket functions',
+  'network-functions': 'Legacy network functions',
+  'gemdos-trap': '68k GEMDOS trap',
+  'gemdos-error-messages': 'GEMDOS error messages',
+};
 
 const english = pages('en');
 const englishBySlug = new Map(english.map(page => [page.slug, page]));
@@ -65,6 +90,7 @@ const renamedChapters: Record<string, { name: string; historicalSlug: string }> 
 
 const sectionAdditions: Record<string, ManualTopic[]> = {
   aes: [{ slug: 'cuis', name: 'CUIS ABI', href: '/abi/cuis/', standalone: true }],
+  gemdos: [legacyGemdosExtensions],
   protocols: [{
     slug: 'xcontrol', name: 'XCONTROL', href: '/conventions/protocols/xcontrol/', historicalSlug: 'about-xcontrol',
   }],
@@ -84,19 +110,20 @@ export const manualAreas = areas.map(({ chapters: slugs, ...metadata }) => {
     const original = historicalSlug ? englishBySlug.get(historicalSlug) : undefined;
     if (historicalSlug && !original) throw new Error(`Missing tos.hyp chapter: ${historicalSlug}`);
     const historicalSections = historicalSlug ? children(historicalSlug).filter(section =>
-      slug !== 'gemdos' || section.slug !== 'about-the-gemdos') : [];
+      slug !== 'gemdos' || !['about-the-gemdos', 'argv-procedure'].includes(section.slug)) : [];
+    const sections: ManualTopic[] = historicalSections.map(section => ({
+      slug: section.slug,
+      name: slug === 'gemdos' ? gemdosSectionNames[section.slug] ?? section.title : section.title,
+      href: section.function ? section.href : `${href}${section.slug}/`,
+      historicalSlug: section.slug,
+      standalone: section.function,
+    }));
+    if (slug === 'protocols') sections.unshift({
+      slug: 'argv-procedure', name: 'ARGV procedure', href: argvProcedurePath, historicalSlug: 'argv-procedure',
+    });
     return {
       slug, href, area, historicalSlug, name: renamedChapters[slug]?.name ?? original?.title ?? 'pTOS',
-      sections: [
-        ...historicalSections.map(section => ({
-          slug: section.slug,
-          name: section.title,
-          href: section.function ? section.href : `${href}${section.slug}/`,
-          historicalSlug: section.slug,
-          standalone: section.function,
-        })),
-        ...(sectionAdditions[slug] ?? []),
-      ],
+      sections: [...sections, ...(sectionAdditions[slug] ?? [])],
     };
   });
   return { ...area, chapters };
@@ -112,6 +139,9 @@ const germanChapterSlugs: Record<string, string> = {
 export function location(slug: string, language: Edition = 'en'): ReturnType<typeof chapterLocation> {
   const [root, sectionSlug] = [...ancestors(language, slug), slug];
   if (root === 'xcontrol') return chapterLocation('protocols', 'xcontrol');
+  if (root === 'gemdos' && (sectionSlug === 'argv-procedure' || sectionSlug === 'argv-verfahren')) {
+    return chapterLocation('protocols', 'argv-procedure');
+  }
 
   const chapterSlug = language === 'de' ? germanChapterSlugs[root] ?? root : root;
   const result = chapterLocation(chapterSlug, sectionSlug);

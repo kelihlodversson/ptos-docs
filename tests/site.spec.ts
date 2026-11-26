@@ -146,7 +146,7 @@ test('mobile x32 diagram shows both selector words and their bit boundaries', as
   expect(await diagram.evaluate(el => el.scrollWidth === el.clientWidth)).toBe(true);
 });
 
-for (const path of ['/reference/fclose/', '/reference/pexec/', '/reference/appl_init/', '/reference/ssystem/', '/abi/cuis/', '/os-variants/ptos/elf-entry/', '/os-variants/ptos/desktop-and-console/', '/search/', '/gfa-basic/']) {
+for (const path of ['/reference/fclose/', '/reference/pexec/', '/reference/appl_init/', '/reference/ssystem/', '/abi/cuis/', '/os-variants/ptos/elf-entry/', '/os-variants/ptos/desktop-and-console/', '/subsystems/gemdos/', '/subsystems/gemdos/legacy-extensions/', '/conventions/protocols/argv-procedure/', '/search/', '/gfa-basic/']) {
   test(`WCAG A/AA smoke audit at ${path}`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(path);
@@ -494,6 +494,61 @@ test('the GEMDOS overview introduces the subsystem and replaces the About subpag
   await expect(page).toHaveURL('/subsystems/gemdos/');
 });
 
+test('GEMDOS groups system calls, programming notes, legacy extensions and indexes in order', async ({ page }) => {
+  await page.goto('/subsystems/gemdos/');
+  const main = page.getByRole('main');
+  await expect(main.getByRole('heading', { level: 2 })).toHaveText([
+    'System calls', 'Program formats and notes', 'Legacy compatibility', 'Reference indexes',
+  ]);
+  const groups = main.getByRole('list');
+  await expect(groups).toHaveCount(4);
+  await expect(groups.nth(0).getByRole('link')).toHaveText([
+    'File functions', 'Directory functions', 'Character input/output', 'Date and Time',
+    'Process functions', 'Memory management', 'System functions', 'MiNTnet socket functions',
+  ]);
+  await expect(groups.nth(1).getByRole('link')).toHaveText([
+    'The program format', 'Program launch and TPA', 'Signals', 'Support for alternative file-systems',
+    'Pipes, Test for', '68k GEMDOS trap',
+  ]);
+  await expect(groups.nth(2).getByRole('link')).toHaveText(['Legacy extensions']);
+  await expect(groups.nth(3).getByRole('link')).toHaveText([
+    'GEMDOS function list', 'GEMDOS structures', 'GEMDOS error messages',
+  ]);
+
+  await main.getByRole('link', { name: 'MiNTnet socket functions' }).click();
+  await expect(page).toHaveURL('/subsystems/gemdos/network/');
+  await expect(main.getByRole('link', { name: 'Fsocket', exact: true })).toBeVisible();
+  await expect(main.getByRole('link', { name: 'F_lock', exact: true })).toHaveCount(0);
+  await page.goBack();
+
+  await main.getByRole('link', { name: 'Legacy extensions' }).click();
+  await expect(main.getByRole('list').getByRole('link')).toHaveText([
+    'Legacy network functions', "C'Task Royal", 'NAP BioNet100', 'PowerDOS', 'TekBios',
+  ]);
+  await main.getByRole('link', { name: 'Legacy network functions' }).click();
+  await expect(page).toHaveURL('/subsystems/gemdos/network-functions/');
+  await expect(main.getByRole('link', { name: 'F_lock', exact: true })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Legacy extensions' })).toBeVisible();
+});
+
+test('Protocols contains ARGV and the old GEMDOS URL preserves deep links', async ({ page }) => {
+  const argv = '/conventions/protocols/argv-procedure/';
+  const anchor = '#ARGV_20at_20the_20caller';
+  const main = page.getByRole('main');
+  await page.goto('/conventions/protocols/');
+  await main.getByRole('link', { name: 'ARGV procedure', exact: true }).click();
+  await expect(page).toHaveURL(argv);
+  await expect(main.getByRole('heading', { name: 'ARGV procedure', exact: true })).toBeVisible();
+  await expect(main.getByText('serves for passing extended command lines', { exact: false })).toBeVisible();
+  await expect(main.getByRole('link', { name: 'Read the original tos.hyp section' })).toHaveAttribute('href', '/historical/en/argv-procedure/');
+
+  await page.goto(`/subsystems/gemdos/argv-procedure/${anchor}`);
+  await expect(page).toHaveURL(`${argv}${anchor}`);
+  await expect(main.locator(anchor)).toBeAttached();
+  await page.goto('/reference/pexec/');
+  await expect(main.getByRole('link', { name: 'ARGV procedure', exact: true })).toHaveAttribute('href', argv);
+});
+
 test('the GEMDOS signal table has distinct number and name columns with no spacer row', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/subsystems/gemdos/signals/#SIGVTALRM');
@@ -630,7 +685,8 @@ test('the pTOS master notes distinguish native staged execution, fork and PROCES
 test('search covers historical sections outside the function index', async ({ page }) => {
   await page.goto('/search/');
   await page.getByRole('searchbox').fill('argv procedure');
-  await expect(page.getByRole('link', { name: 'ARGV procedure', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'ARGV procedure', exact: true }))
+    .toHaveAttribute('href', '/conventions/protocols/argv-procedure/');
 });
 
 test('GFA BASIC shows compendium provenance, direct traps and runtime wrappers', async ({ page }) => {

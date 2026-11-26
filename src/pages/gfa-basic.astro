@@ -3,6 +3,7 @@ import TableScroll from '../components/TableScroll.astro';
 import Layout from '../components/Layout.astro';
 import { historicalReference } from '../data/catalog';
 import { gfaBuiltins, gfaCustomExamples, gfaSource } from '../data/gfa-reference';
+import { argvProcedurePath } from '../data/manual-structure';
 
 const groups = ['AES', 'VDI'].map(name => ({
   name,
@@ -44,7 +45,7 @@ const historicalHref = (name: string) => name === 'APPL_INIT'
     <p>The <a href="/reference/pexec/">raw Pexec trap</a> uses a mode word and three longword slots, whose meaning varies by mode.
       For mode 0, pass pointers to the path and counted tail. A zero environment pointer requests inheritance in the historical ABI.</p>
     <pre class="prm-code"><code>ExitStatus%=GEMDOS(&amp;H4B,W:0,L:PathAddress%,L:TailAddress%,L:0)</code></pre>
-    <p class="revision-note">Compendium PDF page 30 · <a href="/historical/en/argv-procedure/">Historical ARGV procedure</a></p>
+    <p class="revision-note">Compendium PDF page 30 · <a href={argvProcedurePath}>ARGV procedure</a></p>
   </section>
 
   <section aria-labelledby="gemsys">

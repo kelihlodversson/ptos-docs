@@ -5,7 +5,7 @@ import { ssystemDescription } from './ssystem-modes';
 import { records } from './historical';
 import type { HistoricalFunction } from './historical';
 import historicalMerges from './historical-merges.json';
-import { chapterLocation, elfEntryPath, location, nativeSection } from './manual-structure';
+import { argvProcedurePath, chapterLocation, elfEntryPath, location, nativeSection } from './manual-structure';
 
 export { targets } from './targets';
 export type { Target, CPU } from './targets';
@@ -59,8 +59,8 @@ export const catalog = [
 export const referenceLocation = (name: string) => catalog.find(entry => entry.name === name && entry.href.startsWith('/reference/'));
 
 export function historicalReference(label: string, href: string) {
-  const section = { 'ARGV procedure': 'argv-procedure', 'Program flags': 'the-program-flags' }[label];
-  if (section) return `/historical/en/${section}/`;
+  if (label === 'ARGV procedure') return argvProcedurePath;
+  if (label === 'Program flags') return '/historical/en/the-program-flags/';
   const merged = (historicalMerges as Record<string, string>)[label.toLowerCase()];
   if (merged) return merged;
   return importedFunctions.find(entry => entry.name === label)?.historicalHref ?? href;
