@@ -496,8 +496,9 @@ test('the main sections contain only the assigned chapters', async ({ page }) =>
   await expect(main.locator('p').first()).toContainText('pTOS organizes its system interfaces');
   await expect(main.getByText('Atari introduced TOS in 1985', { exact: false })).toBeVisible();
   await expect(main.locator('.manual-index a')).toHaveText([
-    'BIOS', 'XBIOS', 'GEMDOS', 'AES', 'VDI', 'Line-A', 'The PMMU functions-handler', 'XHDI',
+    'BIOS', 'XBIOS', 'GEMDOS', 'AES', 'VDI', 'Line-A', 'XHDI',
   ]);
+  expect((await page.request.get('/subsystems/the-pmmu-functions-handler/')).status()).toBe(404);
   await main.getByRole('link', { name: 'AES', exact: true }).click();
   await expect(main.getByText('Digital Research developed GEM', { exact: false })).toBeVisible();
   await main.getByRole('link', { name: 'Virtual Device Interface', exact: true }).click();
@@ -574,6 +575,52 @@ test('XBIOS platform extensions have their own directory and breadcrumb', async 
   await expect(page).toHaveURL('/subsystems/xbios/pci-bios/');
   await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Platform extensions' }))
     .toHaveAttribute('href', '/subsystems/xbios/platform-extensions/');
+});
+
+test('AES and VDI fold their About material into grouped chapter overviews', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const main = page.getByRole('main');
+  for (const [slug, introduction, firstGroup, notes, extension, indexes] of [
+    ['aes', 'AES 4.0 expanded the library interfaces', 'Application library', ['AES fundamentals', 'CUIS ABI'],
+      'AES extensions', ['AES function list', 'AES structures']],
+    ['vdi', 'additional fonts and output devices could require a disk-loaded GDOS', 'Control functions',
+      ['VDI fundamentals', 'VDI bindings'], 'TC-VDI functions', ['VDI functions list', 'VDI structures']],
+  ] as const) {
+    const overview = `/subsystems/${slug}/`;
+    await page.goto(overview);
+    await expect(main.locator('p').first()).toContainText('pTOS');
+    await expect(main).toContainText(introduction);
+    await expect(main.getByRole('heading', { level: 2 })).toHaveText([
+      'Function groups', 'Programming notes', 'Extensions', 'Reference indexes',
+    ]);
+    const lists = main.locator('.manual-index');
+    await expect(lists.nth(0).getByRole('link').first()).toHaveText(firstGroup);
+    await expect(lists.nth(1).getByRole('link')).toHaveText([...notes]);
+    await expect(lists.nth(2).getByRole('link')).toHaveText([extension]);
+    await expect(lists.nth(3).getByRole('link')).toHaveText([...indexes]);
+    await expect(main.locator(`a[href$="/about-the-${slug}/"]`)).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+    await page.goto(`${overview}about-the-${slug}/`);
+    await expect(page).toHaveURL(overview);
+  }
+
+  const origin = '#AES_2C_20Origin_20of_20the';
+  await page.goto(`/subsystems/aes/about-the-aes/${origin}`);
+  await expect(page).toHaveURL(`/subsystems/aes/${origin}`);
+  await expect(main.locator(origin)).toBeInViewport();
+});
+
+test('AES extension libraries have their own directory and breadcrumb', async ({ page }) => {
+  await page.goto('/subsystems/aes/');
+  const main = page.getByRole('main');
+  await expect(main.getByRole('link', { name: 'Geneva library', exact: true })).toHaveCount(0);
+  await main.getByRole('link', { name: 'AES extensions', exact: true }).click();
+  await expect(page).toHaveURL('/subsystems/aes/extensions/');
+  await expect(main.locator('.manual-index a')).toHaveCount(12);
+  await main.getByRole('link', { name: 'Geneva library', exact: true }).click();
+  await expect(page).toHaveURL('/subsystems/aes/geneva-library/');
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'AES extensions' }))
+    .toHaveAttribute('href', '/subsystems/aes/extensions/');
 });
 
 test('compatibility sections introduce pTOS before other system behavior', async ({ page }) => {
@@ -784,8 +831,14 @@ test('search covers historical sections outside the function index', async ({ pa
   await search.fill('argv procedure');
   await expect(page.getByRole('link', { name: 'ARGV procedure', exact: true }))
     .toHaveAttribute('href', '/conventions/protocols/argv-procedure/');
-  await search.fill('about the bios');
-  await expect(page.getByRole('link', { name: 'About the BIOS', exact: true })).toHaveCount(0);
+  for (const label of ['About the BIOS', 'About the AES', 'About the VDI']) {
+    await search.fill(label);
+    await expect(page.getByRole('link', { name: label, exact: true })).toHaveCount(0);
+  }
+  await search.fill('PMMU functions-handler');
+  await expect(page.getByRole('link', { name: 'The PMMU functions-handler', exact: true })).toHaveCount(0);
+  await search.fill('pmem_size');
+  await expect(page.getByRole('link', { name: 'pmem_size', exact: true })).toHaveCount(0);
   await search.fill('bios subsystems');
   await expect(page.getByRole('link', { name: 'BIOS', exact: true })).toHaveAttribute('href', '/subsystems/bios/');
 });

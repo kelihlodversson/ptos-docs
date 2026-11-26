@@ -3,16 +3,18 @@ import Layout from '../components/Layout.astro';
 import CatalogList from '../components/CatalogList.astro';
 import { catalog } from '../data/catalog';
 import { pages } from '../data/historical';
-import { chapterIntroductions, chapters } from '../data/manual-structure';
+import { ancestors, chapterIntroductions, chapters } from '../data/manual-structure';
 
 const catalogHrefs = new Set(catalog.map(entry => entry.href));
 const topics = chapters.flatMap(chapter => [chapter, ...chapter.sections].map(topic => ({
   ...topic, subsystem: chapter.name, group: chapter.area.name,
 })));
 const coveredSources = new Set([...topics.map(topic => topic.historicalSlug), ...Object.values(chapterIntroductions)]);
-const sections = pages('en').filter(page => !page.function && !coveredSources.has(page.slug) && page.slug !== 'xcontrol').map(page => ({
-  name: page.title, description: '', subsystem: page.subsystem, group: page.group, href: page.href,
-}));
+const archivedChapter = 'the-pmmu-functions-handler';
+const sections = pages('en').filter(page =>
+  !page.function && !coveredSources.has(page.slug) && page.slug !== 'xcontrol' &&
+  page.slug !== archivedChapter && !ancestors('en', page.slug).includes(archivedChapter))
+  .map(page => ({ name: page.title, description: '', subsystem: page.subsystem, group: page.group, href: page.href }));
 const index = [...catalog, ...topics.filter(topic => !catalogHrefs.has(topic.href)).map(topic => ({
   ...topic, description: '',
 })), ...sections];
