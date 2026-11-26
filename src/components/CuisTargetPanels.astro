@@ -34,7 +34,7 @@ const proposal = 'https://github.com/kelihlodversson/pTOS/issues/898#cuis-archit
   </div>
   <CallingConvention slot="x32" binding={{
     status: 'experimental', scope: 'x32 · CONF_WITH_CUIS',
-    detail: 'Enter the kernel with SYSCALL from ring 3. RCX and R11 are clobbered. The dispatcher returns EINVFN if CUIS is disabled.',
+    detail: 'Enter the kernel with SYSCALL from ring 3. Sign-extend signed scalars and zero-extend unsigned scalars and x32 pointer values into their 64-bit argument registers. Set unused argument registers to zero. RCX and R11 are clobbered. The dispatcher returns EINVFN if CUIS is disabled.',
     registers: [['RAX', '64-bit selector on entry. Sign-extended 32-bit result on return.'], ...registers],
     x32Selector: { trapClass: abi.cuis.class, functionNumber: opcode },
   }}>

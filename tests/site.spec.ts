@@ -499,18 +499,65 @@ test('all CUIS call groups list distinct references with architecture-specific d
   }
   expect(callLinks).toHaveLength(64);
   expect(new Set(callLinks).size).toBe(64);
+  for (const href of callLinks) {
+    const symbol = href.split('/')[2].replaceAll('-', '_');
+    const response = await page.request.get(href);
+    expect(response.ok()).toBe(true);
+    const html = await response.text();
+    const declaration = html.match(/<pre class="prm-prototype"[^>]*><code[^>]*>([\s\S]*?)<\/code>/)?.[1];
+    expect(declaration, href).toMatch(new RegExp(`^LONG ${symbol}\\(`));
+  }
   await page.goto('/reference/cuis-launch-attach/');
   const prototype = page.locator('.prm-prototype');
+  const launchAttach = `LONG cuis_launch_attach(
+    LONG session,
+    ULONG authorization,
+    const char *path,
+    const char *tail,
+    const char *environment,
+    const char *directory
+);`;
   for (const target of ['68k', 'arm', 'x32', 'gfa']) {
     await selectTarget(page).selectOption(target);
     await expect(prototype).toBeVisible();
-    await expect(prototype).toContainText('LONG cuis_call6(ULONG function,');
+    await expect(prototype).toHaveText(launchAttach);
     await expect(page).toHaveURL('/reference/cuis-launch-attach/');
   }
   await selectTarget(page).selectOption('x32');
   const x32 = page.getByRole('tabpanel', { name: 'x32' });
   await expect(x32.getByRole('table', { name: 'Register assignments' }).getByRole('rowheader')).toHaveText(['RAX', 'RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9']);
   await expect(x32.locator('.prm-bit-fields code')).toHaveText(['0x103', '0x5D']);
+});
+
+test('CUIS prototypes retain typed pointers and register order where the ABI requires padding', async ({ page }) => {
+  await page.goto('/reference/cuis-stream-pending/');
+  const prototype = page.locator('.prm-prototype');
+  await expect(prototype).toHaveText('LONG cuis_stream_pending(LONG session);');
+  await selectTarget(page).selectOption('x32');
+  const x32 = page.getByRole('tabpanel', { name: 'x32' });
+  await expect(x32).toContainText('Set unused argument registers to zero.');
+  await expect(x32.getByRole('table', { name: 'Register assignments' }).getByRole('rowheader')).toHaveText(['RAX', 'RDI']);
+
+  await page.goto('/reference/cuis-entry-publish/');
+  await expect(prototype).toHaveText(`LONG cuis_entry_publish(
+    LONG session,
+    ULONG slot,
+    ULONG reserved,
+    const void *address,
+    ULONG bytes
+);`);
+  await expect(x32.getByRole('row', { name: 'RDX reserved' })).toBeVisible();
+  await expect(x32.getByRole('row', { name: 'R10 address' })).toBeVisible();
+
+  await page.goto('/reference/cuis-stream-batch/');
+  await expect(prototype).toHaveText(`LONG cuis_stream_batch(
+    LONG session,
+    UQUAD command,
+    UQUAD a,
+    UQUAD b,
+    UQUAD c,
+    UQUAD d
+);`);
 });
 
 test('imported function breadcrumbs return to the manual chapters', async ({ page }) => {

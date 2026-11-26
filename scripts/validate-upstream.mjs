@@ -79,7 +79,7 @@ for (const { name, number } of documentedModes) {
   assert.equal(Number(selector), number & 0xffff, name);
 }
 console.log(`Verified all ${documentedModes.length} documented Ssystem selectors against the dispatcher and header`);
-const { cuisGroups, cuisImplementation, cuisPrototype, cuisTransport } = await import('../src/data/cuis-calls.ts');
+const { cuisArguments, cuisGroups, cuisImplementation } = await import('../src/data/cuis-calls.ts');
 const cuisCalls = cuisGroups.flatMap(group => group.calls);
 const cuisTrap = x32Trap.split('case CUIS_SERVICE_CLASS:')[1].split('case VDI_SERVICE_CLASS:')[0];
 const dispatchedCuisCalls = new Set([...cuisTrap.matchAll(/fn == (CUIS_\w+)/g)].map(match => match[1]));
@@ -91,14 +91,19 @@ for (const handler of ['cuis_service', 'cuis_window_service', 'cuis_input_config
 }
 assert.deepEqual(cuisCalls.map(call => call.name).sort(), [...dispatchedCuisCalls].sort());
 assert.equal(new Set(cuisCalls.map(call => call.opcode)).size, cuisCalls.length);
+const cuisDispatch = new Map(Array.from(cuisTrap.matchAll(/(\w+)\((fn,\s*)?(frame->\w+(?:,\s*frame->\w+)*)\)/g),
+  ([, handler, shared, args]) => [handler, { shared, registers: Array.from(args.matchAll(/frame->(\w+)/g), match => match[1].toUpperCase()) }]));
 const implementationSources = new Map([...new Set(cuisCalls.map(cuisImplementation))].map(path => [path, fromKernel(path)]));
 for (const call of cuisCalls) {
   assert.equal(define(cuis, call.name), call.opcode, call.name);
-  assert.ok(call.parameters.length <= 6, call.name);
+  const dispatch = cuisDispatch.get(call.handler);
+  assert.ok(dispatch, call.handler);
+  assert.deepEqual(dispatch.registers, cuisArguments.slice(0, dispatch.registers.length), call.name);
+  if (dispatch.shared) assert.ok(call.parameters.length <= dispatch.registers.length, call.name);
+  else assert.equal(call.parameters.length, dispatch.registers.length, call.name);
   assert.match(implementationSources.get(cuisImplementation(call)), new RegExp(`^LONG ${call.handler}\\(`, 'm'));
 }
-assert.ok(fromKernel(cuisTransport).includes(cuisPrototype.replace(/\s+/g, ' ').slice(0, -1)));
-console.log(`Verified all ${cuisCalls.length} documented CUIS selectors against the dispatcher and header`);
+console.log(`Verified all ${cuisCalls.length} documented CUIS selectors and register slots against the dispatcher and header`);
 assert.equal(define(cuis, 'CUIS_STREAM_READ_ORIGIN'), 2);
 assert.match(fromKernel('lib/aes/lifecycle.c'), /cuis_call6\(CUIS_STREAM_READ,[^;]+CUIS_STREAM_READ_ORIGIN,[^;]+&own_receipt/);
 assert.match(fromKernel('bdos/ssystem.c'), /#if CONF_WITH_PROCESS_EXEC\s+case S_PROCEXEC/);
