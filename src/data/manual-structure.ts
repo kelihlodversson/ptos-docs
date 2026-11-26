@@ -2,7 +2,6 @@ import { pages, records } from './historical';
 import type { Edition, HistoricalPage } from './historical';
 
 export const historicalPath = (language: Edition, slug: string) => `/historical/${language}/${slug}/`;
-export const upstreamTosHyp = 'https://freemint.github.io/tos.hyp/';
 export const elfEntryPath = '/os-variants/ptos/elf-entry/';
 export const systemVariablesPath = '/subsystems/bios/the-system-variables/';
 export const cookieJarPath = '/subsystems/bios/cookie-jar/';
@@ -16,7 +15,7 @@ const areas = [
   },
   {
     slug: 'os-variants', name: 'OS variants and extensions', description: 'TOS-compatible systems, desktop environments and emulators.',
-    chapters: ['magic', 'n-aes', 'xaaes', 'ptos', 'emulators', 'tos-list'],
+    chapters: ['ptos', 'magic', 'n-aes', 'xaaes', 'emulators', 'tos-list'],
   },
   {
     slug: 'conventions', name: 'Conventions and misc.', description: 'Programming guidelines, protocols, character codes and development tools.',
@@ -197,7 +196,6 @@ export function importedNavigation({ language, slug }: Pick<HistoricalPage, 'lan
   }
   const titles = language === 'en' ? englishBySlug : germanBySlug;
   const breadcrumbs = [
-    { label: 'tos.hyp', href: upstreamTosHyp },
     ...(slug === 'contents' ? [] : [{
       label: language === 'en' ? 'English contents' : 'Deutsche Ausgabe', href: historicalPath(language, 'contents'),
     }]),

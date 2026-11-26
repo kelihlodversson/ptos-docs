@@ -2,7 +2,6 @@
 import Layout from '../components/Layout.astro';
 import revisions from '../data/sources.json';
 import { gfaSource } from '../data/gfa-reference';
-import { upstreamTosHyp } from '../data/manual-structure';
 ---
 <Layout title="Sources and licensing" description="Revision, attribution and license details for the pTOS Programmer’s Reference Manual.">
   <header class="directory-head"><h1>Sources and Licensing</h1></header>
@@ -11,16 +10,16 @@ import { upstreamTosHyp } from '../data/manual-structure';
     maintainers, translators and contributors. See the original foreword by Rolf Kotzian and the notices maintained
     by Michael Bernstein and Gerhard Stoll. The historical text uses the GNU General Public License published with the upstream source.</p>
   <ul>
-    <li><a href={upstreamTosHyp}>Read tos.hyp on FreeMiNT</a></li>
+    <li><a href="https://freemint.github.io/tos.hyp/">Read tos.hyp on FreeMiNT</a></li>
     <li><a href="/source/tos.hyp/anhang/hilfe.u">Upstream foreword and licensing notice</a></li>
     <li><a href="/source/tos.hyp/COPYING.GPL">GNU General Public License, version 2</a></li>
     <li><a href="/source/historical-report.json">Full UDO coverage and translation review</a></li>
     <li><a href="/source/import-report.json">Editorial review and changes for the pilot entries</a></li>
   </ul>
   <p>The <a href="/historical/en/contents/">English</a> and <a href="/historical/de/contents/" hreflang="de">German</a>
-    imports are built directly from the upstream UDO.
-    Each page links to its original source file. The report identifies images linked upstream for license review and pages with automated English translation findings.
-    The two reviewed GFA BASIC variable renames are applied to the English output.</p>
+    editions are built from the pinned UDO source. The pTOS team edits, organizes and extends the material for this manual.
+    The coverage report records figures linked upstream for license review and flags English translations that need review.
+    The editorial report records the two GFA BASIC example variable renames and review status for the pilot entries.</p>
   <p><a href={`https://github.com/${revisions.tos.repo}/archive/${revisions.tos.revision}.tar.gz`}>Download the complete pinned UDO source</a></p>
   <h2 class="prm-section-heading ruled">GFA BASIC</h2>
   <p>The <a href="/gfa-basic/">GFA BASIC reference</a> cites <cite>{gfaSource.title}</cite>,
