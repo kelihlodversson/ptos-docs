@@ -11,10 +11,9 @@ import CallingConvention from './CallingConvention.astro';
 import GfaBinding from './GfaBinding.astro';
 import SourceList from './SourceList.astro';
 import { historicalReference, referenceLocation, referencePath } from '../data/catalog';
-import type { Historical, Source } from '../data/catalog';
+import type { Historical } from '../data/catalog';
 import { elfEntryPath, manualBreadcrumbs } from '../data/manual-structure';
 import { overlays, pexecModes } from '../data/overlays';
-import translation from '../data/translation-review.json';
 
 interface Props { name: string; record: Historical }
 const { name, record } = Astro.props;
@@ -23,10 +22,6 @@ const location = referenceLocation(name);
 const subsystem = location?.chapter?.name ?? 'GEMDOS';
 const group = location?.group ?? subsystem;
 const { title, operation } = record;
-const sources: Source[] = [
-  ['tos', record.path, 'Historical function and bindings'],
-  ...overlay.sources,
-];
 ---
 <Layout title={name} description={operation} running={`${subsystem} — ${group}`}
   breadcrumbs={manualBreadcrumbs(location?.chapter?.slug ?? 'gemdos', location?.section?.slug)}>
@@ -46,7 +41,7 @@ const sources: Source[] = [
       </Fact>
       <Fact label="Return Value">
         <div set:html={formatHistoricalTables(record.returns)} />
-        {name === 'Fclose' && <p class="revision-note">The pTOS libcmini binding returns <code>long</code>. Native GEMDOS uses <code>EIHNDL</code> for an invalid handle. The historical listing uses <code>EBADF</code>.</p>}
+        {name === 'Fclose' && <p class="revision-note">The pTOS libcmini binding returns <code>long</code>. Native GEMDOS uses <code>EIHNDL</code> for an invalid handle.</p>}
       </Fact>
       <Fact label="Availability">
         <Availability history={record.availability} support={overlay.targets} paraTos={overlay.paraTos}>
@@ -87,7 +82,7 @@ const sources: Source[] = [
           Mode 100 needs <code>CONF_WITH_MULTITHREADING</code> and mode 200 needs <code>CONF_WITH_EXEC_REPLACE</code> with ELF loading.</p>}
         {name === 'appl_init' && <p><a href="/abi/cuis/">CUIS service ABI</a> describes the private transport used by the library.</p>}
       </CallingConvention>
-      <GfaBinding slot="gfa" code={record.gfa} original={record.originalGfa} symbol={name} {subsystem}
+      <GfaBinding slot="gfa" code={record.gfa} symbol={name} {subsystem}
         raw={name === 'Pexec' ? {
           routine: 'GEMDOS', opcode: 75,
           args: [{ width: 'W', operand: 'mode' }, { width: 'L', operand: 'prog' },
@@ -110,11 +105,6 @@ const sources: Source[] = [
       </ul>
     </section>
 
-    <SourceList {sources} />
-    <p class="revision-note"><a href={`/source/tos.hyp/${record.path}`}>Original English and German UDO</a> ·
-      <a href={historicalReference(record.name, '#source-heading')}>Full tos.hyp entry</a> ·
-      Translation {record.translation === 'verified' ? 'reviewed' : 'needs review'}.
-      {name === 'Pexec' && ` ${translation.Pexec.note}`}
-    </p>
+    <SourceList sources={overlay.sources} />
   </article>
 </Layout>

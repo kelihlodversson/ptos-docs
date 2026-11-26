@@ -4,6 +4,7 @@ import { join } from 'node:path';
 
 const host = 'https://docs.ptos.dev';
 const dist = new URL('../dist/', import.meta.url);
+const upstreamSource = /^(?:\/(?:source\/tos\.hyp|freemint\/tos\.hyp|tos\.hyp|th-otto\/udo)(?:\/|$)|\/source\/(?:historical|import)-report\.json$)/i;
 const pages = new Map();
 for (const path of readdirSync(dist, { recursive: true }).filter(path => path.endsWith('.html'))) {
   const html = readFileSync(new URL(path, dist), 'utf8');
@@ -22,6 +23,9 @@ let links = 0;
 for (const { html, route } of pages.values()) {
   for (const [, attribute] of html.matchAll(/\s(?:href|src)="([^"]+)"/g)) {
     const { origin, pathname, hash } = new URL(attribute.replaceAll('&amp;', '&'), host + route);
+    if (route !== '/sources/' && upstreamSource.test(pathname)) {
+      assert.match(pathname, /\/bilder\/gif\/[\w.-]+\.gif$/i, `${route} links to upstream material ${pathname} outside Sources and licensing`);
+    }
     if (origin !== host) continue;
     const decoded = decodeURIComponent(pathname);
     const file = decoded.endsWith('/') ? join(decoded, 'index.html') : decoded;

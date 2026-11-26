@@ -3,7 +3,7 @@ import { formatHistoricalTables } from '../../data/format-historical-tables';
 import Layout from '../../components/Layout.astro';
 import ManualIntroduction from '../../components/ManualIntroduction.astro';
 import { catalog } from '../../data/catalog';
-import { chapters, gemdosOverviewGroups, historicalPath, historicalSectionBody } from '../../data/manual-structure';
+import { chapters, gemdosOverviewGroups, historicalSectionBody } from '../../data/manual-structure';
 
 export function getStaticPaths() {
   return chapters.map(chapter => ({ params: { area: chapter.area.slug, slug: chapter.slug }, props: { chapter } }));
@@ -33,5 +33,4 @@ const groups: { name?: string; links: { name: string; href: string; description?
         {link.description && <span>{link.description}</span>}</li>)}
     </ul>
   </>)}
-  {chapter.historicalSlug && <p><a href={historicalPath('en', chapter.historicalSlug)}>Read the original tos.hyp chapter</a></p>}
 </Layout>

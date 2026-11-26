@@ -4,14 +4,13 @@ import type { GfaTrap } from '../data/gfa-reference';
 
 interface Props {
   code?: string | null;
-  original?: string | null;
   symbol?: string;
   subsystem?: string;
   raw?: GfaTrap;
   discardResult?: boolean;
   language?: 'en' | 'de';
 }
-const { code, original, symbol, subsystem, raw, discardResult, language = 'en' } = Astro.props;
+const { code, symbol, subsystem, raw, discardResult, language = 'en' } = Astro.props;
 const name = symbol?.toUpperCase() ?? '';
 const builtin = gfaBuiltins[name];
 const custom = gfaCustomExamples[name];
@@ -20,10 +19,7 @@ const example = raw && (!code || symbol === 'Pexec') ? trapExample(raw, discardR
 const namedOperands = raw?.args.flatMap(({ operand }, index) => operand.startsWith('#') ? [] : [[`Arg${index + 1}%`, operand]]);
 const method = subsystem === 'AES' ? 'GEMSYS' : subsystem === 'VDI' ? 'VDISYS' : null;
 ---
-{code && <>
-  <pre class="prm-code"><code>{code}</code></pre>
-  {original && code !== original && <p class="revision-note">The English example renames the local result variable. The original is in the UDO source below.</p>}
-</>}
+{code && <pre class="prm-code"><code>{code}</code></pre>}
 {example && <div>
   <p>{german ? 'Aufrufform aus der dokumentierten 68k-Trap-Belegung.' : 'Raw call form using the documented 68k trap layout.'}</p>
   <pre class="prm-code"><code>{example}</code></pre>

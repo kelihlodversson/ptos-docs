@@ -1,15 +1,16 @@
 ---
 import Layout from '../components/Layout.astro';
-import { manualAreas } from '../data/manual-structure';
-const subsystems = manualAreas.find(area => area.slug === 'subsystems')!;
 ---
-<Layout title="Programmer’s Reference Manual" description="The pTOS and ParaTOS programmer’s reference for GEMDOS, AES and native ABI.">
+<Layout title="Programmer’s Reference Manual" description="A reference for pTOS development covering system interfaces, calling conventions and compatibility.">
   <header class="directory-head">
-    <h1>Programmer’s<br />Reference Manual</h1>
-    <p>API and ABI reference for pTOS and ParaTOS, with historical TOS documentation from <em>tos.hyp</em>.</p>
+    <h1>pTOS Programmer’s<br />Reference Manual</h1>
   </header>
-  <section aria-labelledby="subsystem-heading">
-    <h2 class="ruled prm-section-heading" id="subsystem-heading">Subsystems</h2>
-    <ul class="manual-index">{subsystems.chapters.map(({ name, href }) => <li><a class="manual-index-symbol" href={href}>{name}</a></li>)}</ul>
-  </section>
+  <p>This manual is a reference for pTOS development. It documents operating system calls, GEM interfaces,
+    executable formats and calling conventions for 68k, ARM and x32. It covers pTOS extensions and build
+    requirements, compatibility with TOS and ParaTOS, and GFA BASIC bindings.</p>
+  <p>Many pTOS extensions build on interfaces from FreeMiNT and MagiC. pTOS aims for compatibility with those
+    systems where practical. The reference describes differences in supported calls, modes and behavior.</p>
+  <p>The manual draws on external references that the pTOS team has edited and extended for this site.
+    The pTOS team is responsible for any errors or omissions here. See <a href="/sources/">Sources and licensing</a>
+    for attribution, revisions and license details.</p>
 </Layout>
