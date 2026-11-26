@@ -1,6 +1,7 @@
 import imported from './toshyp.generated.json';
 import revisions from './sources.json';
 import { nativeCalls, nativePath } from './native-calls';
+import { cuisCallPath, cuisGroups, cuisPath } from './cuis-calls';
 import { ssystemDescription } from './ssystem-modes';
 import { records } from './historical';
 import type { HistoricalFunction } from './historical';
@@ -49,8 +50,12 @@ export const catalog = [
   })),
   { name: 'Ssystem', description: ssystemDescription, subsystem: 'GEMDOS',
     ...nativeLocation('Ssystem'), href: referencePath('Ssystem') },
-  { name: 'CUIS ABI', description: 'Private x32 syscall selector and session query', subsystem: 'AES',
-    ...chapterLocation('aes', 'cuis'), href: '/abi/cuis/', kind: 'abi' as const },
+  { name: 'CUIS', description: 'Core User Interface Services used by userspace libaes', subsystem: 'AES',
+    ...chapterLocation('aes', 'cuis'), href: cuisPath, kind: 'abi' as const },
+  ...cuisGroups.flatMap(group => group.calls.map(call => ({
+    name: call.name, description: call.title, subsystem: 'CUIS', ...chapterLocation('aes', 'cuis'),
+    href: cuisCallPath(call.name),
+  }))),
   { name: 'ELF32 process entry', description: 'Initial stack for dynamically interpreted ELF programs',
     subsystem: 'pTOS', ...chapterLocation('ptos', 'elf-entry'), href: elfEntryPath, kind: 'abi' as const },
 ].map(entry => ({ ...entry, group: entry.section?.name ?? entry.chapter?.name ?? entry.subsystem }))

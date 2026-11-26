@@ -109,7 +109,7 @@ export const overlays: Record<string, Overlay> = {
       arm: { ...legacyAES, detail: legacyAES.detail + ' The traditional ARM binding uses SVC #2.',
         registers: [['R0', 'AES selector 0xC8'], ['R1', 'AESPB pointer'], ['int_out[0]', 'Application ID or failure']] },
       x32: { status: 'experimental', scope: 'Native x32 GEMlib and CONF_WITH_LIBAES',
-        detail: 'GEMlib appl_init() calls the userspace libaes mt_appl_init(AESGLOBAL *). libaes manages caller-owned initialization state and uses private CUIS calls internally. The returned application ID identifies the GUI client. It is distinct from the PROCESS identity, MiNT PID and private CUIS session handle. Ring-3 generic GEM class 2 is unsupported.' },
+        detail: 'GEMlib appl_init() calls the userspace libaes mt_appl_init(AESGLOBAL *). libaes manages caller-owned initialization state and invokes kernel services through the CUIS syscall ABI. The returned application ID identifies the GUI client. It is distinct from the PROCESS identity, MiNT PID and CUIS session handle. Ring-3 generic GEM class 2 is unsupported.' },
     },
     sources: [
       ['ptos', 'aes/Kconfig', 'Kernel AES and experimental libaes configuration'],

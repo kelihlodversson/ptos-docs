@@ -1,0 +1,27 @@
+---
+import CatalogList from '../../../../components/CatalogList.astro';
+import Layout from '../../../../components/Layout.astro';
+import { cuisCallPath, cuisGroups } from '../../../../data/cuis-calls';
+import type { CuisGroup } from '../../../../data/cuis-calls';
+import { manualBreadcrumbs } from '../../../../data/manual-structure';
+
+export function getStaticPaths() {
+  return cuisGroups.map(group => ({ params: { group: group.slug }, props: { group } }));
+}
+
+interface Props { group: CuisGroup }
+const { group } = Astro.props;
+const records = group.calls.map(call => ({
+  name: call.name, description: call.title, href: cuisCallPath(call.name), subsystem: 'CUIS', group: group.title,
+}));
+---
+<Layout title={group.title} description={group.description} running="AES — CUIS" breadcrumbs={manualBreadcrumbs('aes', 'cuis')}>
+  <header class="directory-head"><h1>{group.title}</h1><p>{group.description}</p></header>
+  <div class="cuis-index"><CatalogList {records} showSubsystem={false} /></div>
+</Layout>
+
+<style>
+  @media (min-width: 761px) {
+    .cuis-index :global(.manual-index li) { grid-template-columns: minmax(14rem, 17rem) minmax(0, 1fr); }
+  }
+</style>

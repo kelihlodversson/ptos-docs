@@ -14,6 +14,7 @@ import { historicalReference, referenceLocation, referencePath } from '../data/c
 import type { Historical } from '../data/catalog';
 import { elfEntryPath, manualBreadcrumbs } from '../data/manual-structure';
 import { overlays, pexecModes } from '../data/overlays';
+import { cuisPath } from '../data/cuis-calls';
 
 interface Props { name: string; record: Historical }
 const { name, record } = Astro.props;
@@ -80,7 +81,8 @@ const { title, operation } = record;
       <CallingConvention slot="x32" binding={overlay.targets.x32}>
         {name === 'Pexec' && <p>On x32, modes 3, 4, 5, 6, 7, 104 and 106 are unsupported.
           Mode 100 needs <code>CONF_WITH_MULTITHREADING</code> and mode 200 needs <code>CONF_WITH_EXEC_REPLACE</code> with ELF loading.</p>}
-        {name === 'appl_init' && <p><a href="/abi/cuis/">CUIS service ABI</a> describes the private transport used by the library.</p>}
+        {name === 'appl_init' && <p><a href={`${cuisPath}#calling-convention`}>CUIS calling conventions</a> describe
+          the syscall ABI that userspace <code>libaes.so</code> uses to invoke the kernel.</p>}
       </CallingConvention>
       <GfaBinding slot="gfa" code={record.gfa} symbol={name} {subsystem}
         raw={name === 'Pexec' ? {
@@ -101,7 +103,7 @@ const { title, operation } = record;
           <li><a href="/reference/pvfork/">Pvfork</a></li>
           <li><a href="/reference/pwaitpid/">Pwaitpid</a></li>
         </>}
-        {name === 'appl_init' && <li><a href="/abi/cuis/">CUIS ABI</a></li>}
+        {name === 'appl_init' && <li><a href={cuisPath}>CUIS</a></li>}
       </ul>
     </section>
 

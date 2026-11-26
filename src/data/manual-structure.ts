@@ -1,5 +1,6 @@
 import { pages, records } from './historical';
 import type { Edition, HistoricalPage } from './historical';
+import { cuisPath } from './cuis-calls';
 
 export const historicalPath = (language: Edition, slug: string) => `/historical/${language}/${slug}/`;
 export const elfEntryPath = '/os-variants/ptos/elf-entry/';
@@ -155,7 +156,7 @@ export const chapterIntroductions: Record<string, string> = {
 };
 
 const sectionAdditions: Record<string, ManualTopic[]> = {
-  aes: [{ slug: 'cuis', name: 'CUIS ABI', href: '/abi/cuis/', standalone: true }, extensionDirectories.aes.topic],
+  aes: [{ slug: 'cuis', name: 'CUIS', href: cuisPath, standalone: true }, extensionDirectories.aes.topic],
   gemdos: [extensionDirectories.gemdos.topic],
   xbios: [extensionDirectories.xbios.topic],
   protocols: [{

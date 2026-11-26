@@ -258,7 +258,8 @@ figure figcaption { margin-top: .4rem; color: var(--prm-muted); font-size: .8rem
 @media screen {
   .prm-target-tabs:not([hidden]) + .target-caption { display: none; }
 }
-.prm-unsupported { border-left: 2px solid var(--prm-rust); padding: .55rem .95rem; }
+.prm-unsupported, .prm-notice { border-left: 2px solid var(--prm-rust); padding: .55rem .95rem; }
+.prm-notice { margin-block: 1rem; }
 .binding-scope { margin: .65rem 0 .8rem; }
 .abi-intro { margin-top: 1rem; }
 .related-links { display: flex; flex-wrap: wrap; gap: .35rem 1.2rem; list-style: none; padding: 0; }
@@ -287,7 +288,7 @@ figure figcaption { margin-top: .4rem; color: var(--prm-muted); font-size: .8rem
   padding: .65rem 0;
   border-top: 1px solid var(--prm-line);
 }
-.manual-index-symbol { font-weight: 700; }
+.manual-index-symbol { font-weight: 700; overflow-wrap: anywhere; }
 .manual-index li > a:only-child { grid-column: 1 / -1; }
 .manual-index small { color: var(--prm-muted); }
 .site-search { margin-bottom: .75rem; }

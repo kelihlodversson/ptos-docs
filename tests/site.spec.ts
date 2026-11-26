@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs';
 const selectTarget = (page: import('@playwright/test').Page) => page.getByRole('combobox', { name: 'Target / Language' });
 const revisions = JSON.parse(readFileSync(new URL('../src/data/sources.json', import.meta.url), 'utf8'));
 const ptosSourceTree = `https://github.com/${revisions.ptos.repo}/tree/${revisions.ptos.revision}`;
+const cuisOverview = '/subsystems/aes/cuis/';
+const cuisExample = '/reference/cuis-session-query/';
 
 test('target changes in place and persists without moving or hiding the prototype', async ({ page }) => {
   await page.goto('/reference/fclose/');
@@ -63,10 +65,18 @@ test('the calling convention tabs switch the same persisted target as the header
 
 test('unsupported, planned and unverified scopes remain distinct from absent language bindings', async ({ page }) => {
   await page.goto('/abi/cuis/');
+  await expect(page).toHaveURL(cuisOverview);
   const select = selectTarget(page);
+  const m68k = page.getByRole('tabpanel', { name: '68k' });
+  await expect(m68k).toContainText('Planned');
+  await expect(m68k).toContainText('TRAP #2');
+  await expect(m68k.getByRole('rowheader')).toHaveText(['D0', 'D1']);
   await select.selectOption('arm');
-  await expect(page.getByText('The CUIS class is compiled only', { exact: false }).filter({ visible: true })).toBeVisible();
-  await expect(page.getByRole('table')).toHaveCount(0);
+  const arm = page.getByRole('tabpanel', { name: 'ARM' });
+  await expect(arm).toContainText('CUIS is currently implemented only on x32');
+  await expect(arm).toContainText('SVC #21');
+  await expect(arm.getByRole('rowheader')).toHaveText('R0');
+  await expect(arm.getByRole('link', { name: /pTOS #898/ })).toHaveAttribute('href', /\/pTOS\/issues\/898/);
   await select.selectOption('x32');
   const selector = page.locator('.prm-bit-fields');
   await expect(selector.locator('code')).toHaveText(['0x103', '0x1']);
@@ -77,7 +87,7 @@ test('unsupported, planned and unverified scopes remain distinct from absent lan
   await select.selectOption('gfa');
   await expect(page.locator('[data-target-panel="gfa"] code').filter({ hasText: /^APPL_INIT\(\)$/ })).toBeVisible();
   await expect(page.getByText('All AES versions.')).toBeVisible();
-  await page.goto('/abi/cuis/');
+  await page.goto(cuisOverview);
   await expect(page.getByText('No documented GFA BASIC binding.')).toBeVisible();
   await page.goto('/reference/appl_init/');
   await expect(page.locator('.prm-prototype')).toBeVisible();
@@ -121,13 +131,15 @@ test('search filters the static index by symbol, subsystem and operation', async
   await search.fill('fclose');
   await expect(page.getByRole('status')).toContainText('entr');
   await expect(page.getByRole('link', { name: 'Fclose', exact: true })).toBeVisible();
+  await search.fill('cuis_session_query');
+  await expect(page.getByRole('link', { name: 'CUIS_SESSION_QUERY', exact: true })).toHaveAttribute('href', cuisExample);
   await search.fill('no such symbol');
   await expect(page.getByRole('status')).toHaveText('0 entries');
 });
 
 test('mobile x32 diagram shows both selector words and their bit boundaries', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/abi/cuis/');
+  await page.goto(cuisExample);
   await selectTarget(page).selectOption('x32');
   const diagram = page.getByRole('region', { name: 'Syscall selector in RAX, most significant bit at left' });
   await diagram.focus();
@@ -146,11 +158,11 @@ test('mobile x32 diagram shows both selector words and their bit boundaries', as
   expect(await diagram.evaluate(el => el.scrollWidth === el.clientWidth)).toBe(true);
 });
 
-for (const path of ['/', '/reference/fclose/', '/reference/pexec/', '/reference/appl_init/', '/reference/ssystem/', '/abi/cuis/', '/os-variants/ptos/elf-entry/', '/os-variants/ptos/desktop-and-console/', '/subsystems/gemdos/', '/subsystems/gemdos/legacy-extensions/', '/conventions/protocols/argv-procedure/', '/search/', '/gfa-basic/']) {
+for (const path of ['/', '/reference/fclose/', '/reference/pexec/', '/reference/appl_init/', '/reference/ssystem/', cuisOverview, '/reference/cuis-endpoint-barrier/', '/os-variants/ptos/elf-entry/', '/os-variants/ptos/desktop-and-console/', '/subsystems/gemdos/', '/subsystems/gemdos/legacy-extensions/', '/conventions/protocols/argv-procedure/', '/search/', '/gfa-basic/']) {
   test(`WCAG A/AA smoke audit at ${path}`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(path);
-    if (path === '/abi/cuis/') await selectTarget(page).selectOption('x32');
+    if (path === cuisOverview || path.startsWith('/reference/cuis-')) await selectTarget(page).selectOption('x32');
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
     expect(results.violations).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
@@ -440,8 +452,42 @@ test('chapter navigation follows tos.hyp and places extensions with related call
   await expect(page.getByRole('link', { name: 'Mmap', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Pclone', exact: true })).toHaveCount(0);
   await page.goto('/subsystems/aes/');
-  await page.getByRole('link', { name: 'CUIS ABI', exact: true }).click();
+  await page.getByRole('main').locator('p').first().getByRole('link', { name: 'CUIS', exact: true }).click();
+  await expect(page).toHaveURL(cuisOverview);
+  await expect(page.getByRole('main')).toContainText('Core User Interface Services');
+  await expect(page.getByRole('complementary', { name: 'CUIS development status' })).toContainText('Its API and syscall ABI may change.');
   await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'AES', exact: true })).toHaveAttribute('href', '/subsystems/aes/');
+  await page.getByRole('link', { name: 'Sessions and discovery' }).click();
+  await page.getByRole('link', { name: 'CUIS_SESSION_QUERY', exact: true }).click();
+  await expect(page).toHaveURL(cuisExample);
+  await expect(breadcrumb.getByRole('listitem')).toHaveText(['Subsystems', 'AES', 'CUIS', 'Sessions and discovery', 'CUIS_SESSION_QUERY']);
+});
+
+test('all CUIS call groups list distinct references with architecture-specific details', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(cuisOverview);
+  const groupLinks = await page.getByRole('main').locator('.manual-index a').evaluateAll(links => links.map(link => link.getAttribute('href')!));
+  expect(groupLinks).toHaveLength(7);
+  const callLinks: string[] = [];
+  for (const group of groupLinks) {
+    await page.goto(group);
+    callLinks.push(...await page.getByRole('main').locator('.manual-index a').evaluateAll(links => links.map(link => link.getAttribute('href')!)));
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  }
+  expect(callLinks).toHaveLength(64);
+  expect(new Set(callLinks).size).toBe(64);
+  await page.goto('/reference/cuis-launch-attach/');
+  const prototype = page.locator('.prm-prototype');
+  for (const target of ['68k', 'arm', 'x32', 'gfa']) {
+    await selectTarget(page).selectOption(target);
+    await expect(prototype).toBeVisible();
+    await expect(prototype).toContainText('LONG cuis_call6(ULONG function,');
+    await expect(page).toHaveURL('/reference/cuis-launch-attach/');
+  }
+  await selectTarget(page).selectOption('x32');
+  const x32 = page.getByRole('tabpanel', { name: 'x32' });
+  await expect(x32.getByRole('table', { name: 'Register assignments' }).getByRole('rowheader')).toHaveText(['RAX', 'RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9']);
+  await expect(x32.locator('.prm-bit-fields code')).toHaveText(['0x103', '0x5D']);
 });
 
 test('imported function breadcrumbs return to the manual chapters', async ({ page }) => {
@@ -581,7 +627,7 @@ test('AES and VDI fold their About material into grouped chapter overviews', asy
   await page.setViewportSize({ width: 390, height: 844 });
   const main = page.getByRole('main');
   for (const [slug, introduction, firstGroup, notes, extension, indexes] of [
-    ['aes', 'AES 4.0 expanded the library interfaces', 'Application library', ['AES fundamentals', 'CUIS ABI'],
+    ['aes', 'AES 4.0 expanded the library interfaces', 'Application library', ['AES fundamentals', 'CUIS'],
       'AES extensions', ['AES function list', 'AES structures']],
     ['vdi', 'additional fonts and output devices could require a disk-loaded GDOS', 'Control functions',
       ['VDI fundamentals', 'VDI bindings'], 'TC-VDI functions', ['VDI functions list', 'VDI structures']],
@@ -731,24 +777,12 @@ test('imported tables use separate reference fields and keep links and anchors',
   await expect(md.locator(':scope > td').nth(1).getByRole('link', { name: 'MD', exact: true })).toBeVisible();
 });
 
-test('wide ASCII and ABI tables retain readable fields at mobile width', async ({ page }) => {
+test('the ASCII tables retain readable fields at mobile width', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/conventions/ascii-table/');
   await expect(page.locator('.ascii-table-groups table')).toHaveCount(4);
   await expect(page.locator('.ascii-table-groups tbody tr')).toHaveCount(128);
   await expect(page.locator('.ascii-table-groups table').first().getByRole('columnheader')).toHaveText(['Hex', 'Dec', 'ASCII']);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
-
-  await page.goto('/abi/cuis/');
-  await selectTarget(page).selectOption('x32');
-  const transport = page.getByRole('region', { name: 'Private CUIS transport calls' });
-  const symbol = transport.getByRole('rowheader', { name: 'CUIS_LAUNCH_ATTACH' }).locator('code');
-  const lines = await symbol.evaluate(code => {
-    const range = document.createRange();
-    range.selectNodeContents(code);
-    return new Set([...range.getClientRects()].map(box => box.top)).size;
-  });
-  expect(lines).toBe(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 

@@ -1,0 +1,69 @@
+---
+import CuisTargetPanels from './CuisTargetPanels.astro';
+import Fact from './Fact.astro';
+import Layout from './Layout.astro';
+import Masthead from './Masthead.astro';
+import ParameterList from './ParameterList.astro';
+import SourceList from './SourceList.astro';
+import { cuisArguments, cuisCallPath, cuisGroupPath, cuisImplementation, cuisPath, cuisPrototype, cuisTransport } from '../data/cuis-calls';
+import type { CuisCall, CuisGroup } from '../data/cuis-calls';
+import type { Source } from '../data/catalog';
+import { manualBreadcrumbs } from '../data/manual-structure';
+import abi from '../data/abi.json';
+
+interface Props {
+  call: CuisCall;
+  group: Pick<CuisGroup, 'title' | 'slug'>;
+}
+const { call, group } = Astro.props;
+const registers = call.parameters.map(([name], index): [string, string] => [cuisArguments[index], name]);
+const breadcrumbs = [...manualBreadcrumbs('aes', 'cuis'), { label: group.title, href: cuisGroupPath(group.slug) }];
+const hex = (value: number) => `0x${value.toString(16).toUpperCase()}`;
+const sources: Source[] = [
+  ['ptos', cuisImplementation(call), `Kernel handler ${call.handler}`],
+  ['ptos', 'include/cuis.h', 'CUIS selectors and constants'],
+  ['ptos', cuisTransport, 'Userspace x32 transport'],
+];
+if (call.name === 'CUIS_STREAM_RECEIPT') sources.push(['ptos', 'include/cuis_receipt.h', 'Receipt fields, offsets and alignment']);
+if (call.name === 'CUIS_STREAM_READ') sources.push(['ptos', 'lib/aes/lifecycle.c', 'CH_EXIT delivery and receipt origin']);
+---
+<Layout title={call.name} description={call.title} running="AES — CUIS" {breadcrumbs}>
+  <article class="cuis-reference">
+    <Masthead name={call.name} title={call.title} subsystem="CUIS" />
+    <section aria-labelledby="prm-prototype-heading">
+      <h2 id="prm-prototype-heading" class="prm-section-heading">C Prototype</h2>
+      <pre class="prm-prototype"><code>{cuisPrototype}</code></pre>
+      <p class="revision-note">libaes x32 transport helper. Pass <code>{call.name}</code> as <code>function</code>,
+        followed by the arguments below in order. Fill unused slots with zero.</p>
+    </section>
+    <dl class="prm-facts">
+      <Fact label="Operation">{call.title}.</Fact>
+      <Fact label="Opcode"><code>{hex(call.opcode)}</code> ({call.opcode}) · CUIS class <code>{hex(abi.cuis.class)}</code></Fact>
+      <Fact label="Parameters"><ParameterList entries={call.parameters} /></Fact>
+      {call.detail && <Fact label="Description">{call.detail}</Fact>}
+      {call.modes && <Fact label="Modes"><ParameterList entries={call.modes} /></Fact>}
+      <Fact label="Return Value">{call.result}</Fact>
+      <Fact label="Availability">pTOS x32 user address spaces with <code>CONF_WITH_CUIS</code>.
+        The port to ARM and 68k is planned.</Fact>
+    </dl>
+    <CuisTargetPanels opcode={call.opcode} {registers} />
+    <section aria-labelledby="related-heading">
+      <h2 id="related-heading" class="prm-section-heading ruled">See Also</h2>
+      <ul class="related-links">
+        {call.related?.map(name => <li><a href={cuisCallPath(name)}>{name}</a></li>)}
+        <li><a href={cuisGroupPath(group.slug)}>{group.title}</a></li>
+        <li><a href={`${cuisPath}#calling-convention`}>CUIS calling conventions</a></li>
+      </ul>
+    </section>
+    <SourceList {sources} />
+  </article>
+</Layout>
+
+<style>
+  @media (min-width: 761px), print {
+    .cuis-reference :global(.prm-masthead) { grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); }
+  }
+  @media print {
+    .cuis-reference :global(.prm-key-table) { break-inside: avoid; }
+  }
+</style>

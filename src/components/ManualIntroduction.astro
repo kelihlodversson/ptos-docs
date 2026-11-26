@@ -1,5 +1,6 @@
 ---
 import { elfEntryPath, systemVariablesPath } from '../data/manual-structure';
+import { cuisPath } from '../data/cuis-calls';
 
 interface Props { subject: string }
 const { subject } = Astro.props;
@@ -51,7 +52,8 @@ const { subject } = Astro.props;
 </>}
 {['aes', 'aes-fundamentals'].includes(subject) && <>
   <p>pTOS provides the classic kernel AES on supported flat-memory 68k and ARM builds. On x32 the experimental
-    <code>libaes</code> runs in userspace and uses <a href="/abi/cuis/">CUIS</a> for shared window, input and session services.
+    <code>libaes.so</code> runs in userspace and invokes <a href={cuisPath}>CUIS</a> system calls for shared window,
+    input and session services.
     It supports multiple concurrent GEM applications and desk accessories. The available AES calls and extensions depend on the build.</p>
   {subject === 'aes-fundamentals' && <p>The application and accessory conventions below give the classic TOS,
     MiNT and MagiC context for these interfaces.</p>}

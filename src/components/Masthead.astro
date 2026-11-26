@@ -3,6 +3,6 @@ interface Props { name: string; title: string; subsystem: string }
 const { name, title, subsystem } = Astro.props;
 ---
 <div class="prm-masthead">
-  <h1 class="prm-function">{name}</h1>
+  <h1 class="prm-function">{name.split(/(?<=_)/).map((part, index) => <Fragment>{index > 0 && <wbr />}{part}</Fragment>)}</h1>
   <div class="prm-operation-title">{title} <small>({subsystem})</small></div>
 </div>
