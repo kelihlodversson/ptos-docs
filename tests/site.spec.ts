@@ -237,7 +237,19 @@ test('Pfork and Pvfork combine the historical and native reference', async ({ pa
 
 test('GEMDOS format and launch topics document ELF and render the TPA layout as a table', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/subsystems/gemdos/the-program-format/');
+  const format = '/subsystems/gemdos/the-program-format/';
+  const launch = '/subsystems/gemdos/program-launch-and-tpa/';
+  const main = page.getByRole('main');
+  await page.goto(format);
+  await expect(main.locator('p').first()).toContainText('On m68k, pTOS supports ELF executables and legacy GEMDOS PRG programs');
+  await expect(main.locator('p').first()).toContainText('ARM and x32, pTOS can run compatible 68k PRG binaries through ParaTOS');
+  const formats = main.getByRole('navigation', { name: 'Program formats' });
+  await formats.getByRole('link', { name: 'ELF executables' }).click();
+  await expect(page).toHaveURL(`${format}#elf-executables`);
+  await expect(main.getByRole('heading', { name: 'ELF executables in pTOS' })).toBeInViewport();
+  await formats.getByRole('link', { name: 'Classic GEMDOS PRG format' }).click();
+  await expect(page).toHaveURL(`${format}#prg-format`);
+  await expect(main.getByRole('heading', { name: 'Classic GEMDOS PRG format' })).toBeInViewport();
   const machines = page.getByRole('table', { name: 'ELF32 class and machine by target' });
   for (const [cpu, machine] of [['68k', 'EM_68K'], ['ARM', 'EM_ARM'], ['x32', 'EM_X86_64']]) {
     await expect(machines.getByRole('row').filter({ hasText: cpu })).toContainText(machine);
@@ -246,7 +258,16 @@ test('GEMDOS format and launch topics document ELF and render the TPA layout as 
   await expect(page.getByRole('table', { name: 'Digital Research symbol types' }).getByRole('columnheader', { name: 'Value' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.getByRole('link', { name: 'Program launch and TPA', exact: true }).click();
-  await expect(page).toHaveURL('/subsystems/gemdos/program-launch-and-tpa/#elf-startup');
+  await expect(page).toHaveURL(`${launch}#elf-startup`);
+  await expect(main.locator('p').first()).toContainText('pTOS uses Pexec to load and start programs');
+  await expect(main.locator('p').first()).toContainText('ARM and x32, pTOS can launch compatible 68k PRG binaries through ParaTOS');
+  const startup = main.getByRole('navigation', { name: 'Program startup' });
+  await startup.getByRole('link', { name: 'Classic GEMDOS PRG startup' }).click();
+  await expect(page).toHaveURL(`${launch}#prg-startup`);
+  await expect(main.getByRole('heading', { name: 'Classic GEMDOS PRG startup' })).toBeInViewport();
+  await startup.getByRole('link', { name: 'ELF startup and memory' }).click();
+  await expect(page).toHaveURL(`${launch}#elf-startup`);
+  await expect(main.getByRole('heading', { name: 'ELF startup and memory in pTOS' })).toBeInViewport();
   await expect(page.getByRole('row', { name: /Static ELF, private address space/ })).toContainText('private pages');
   await expect(page.getByRole('row', { name: /ELF with PT_INTERP/ })).toContainText('auxiliary vector');
   const tpa = page.getByRole('table', { name: 'Classic PRG TPA after Mshrink' });
@@ -512,22 +533,47 @@ test('the GEMDOS overview introduces the subsystem and replaces the About subpag
 });
 
 test('the BIOS and XBIOS overviews replace their About subpages', async ({ page }) => {
-  for (const [subsystem, opening, entry] of [
-    ['bios', 'pTOS uses the Basic Input/Output System (BIOS)', 'Getmpb'],
-    ['xbios', 'pTOS uses the Extended BIOS (XBIOS)', 'Drive functions'],
-  ]) {
+  for (const [subsystem, opening, entry, extensionHeading, extension] of [
+    ['bios', 'pTOS uses the Basic Input/Output System (BIOS)', 'Getmpb', 'Legacy extensions', 'BSIM-BIOS-Extension'],
+    ['xbios', 'pTOS uses the Extended BIOS (XBIOS)', 'Drive functions', 'Platform compatibility', 'Platform extensions'],
+  ] as const) {
     const overview = `/subsystems/${subsystem}/`;
     await page.goto(overview);
     const main = page.getByRole('main');
     await expect(main.locator('p').first()).toContainText(opening);
     await expect(main.getByRole('link', { name: 'MagiC', exact: true })).toBeVisible();
-    const index = main.locator('.manual-index');
-    await expect(index.getByRole('link', { name: entry, exact: true })).toBeVisible();
-    await expect(index.getByRole('link', { name: `About the ${subsystem.toUpperCase()}`, exact: true })).toHaveCount(0);
+    await expect(main.getByRole('heading', { level: 2 })).toHaveText([
+      'System calls', 'Programming notes', extensionHeading, 'Reference indexes',
+    ]);
+    const indexes = main.locator('.manual-index');
+    await expect(indexes.first().getByRole('link', { name: entry, exact: true })).toBeVisible();
+    await expect(indexes.nth(2).getByRole('link')).toHaveText([extension]);
+    const name = subsystem.toUpperCase();
+    await expect(indexes.last().getByRole('link')).toHaveText([
+      `${name} function list`, `${name} Structures`, `${name} error-messages`,
+    ]);
+    await expect(main.getByRole('link', { name: `About the ${subsystem.toUpperCase()}`, exact: true })).toHaveCount(0);
+    await expect(main.locator(`a[href$="/about-the-${subsystem}/"]`)).toHaveCount(0);
     await expect(main.getByText(/parameters from the stack|processor register d0|680x0.trap #1[34]/i)).toHaveCount(0);
     await page.goto(`${overview}about-the-${subsystem}/`);
     await expect(page).toHaveURL(overview);
   }
+});
+
+test('XBIOS platform extensions have their own directory and breadcrumb', async ({ page }) => {
+  await page.goto('/subsystems/xbios/');
+  const main = page.getByRole('main');
+  await expect(main.getByRole('link', { name: 'PCI-BIOS', exact: true })).toHaveCount(0);
+  await main.getByRole('link', { name: 'Platform extensions', exact: true }).click();
+  await expect(page).toHaveURL('/subsystems/xbios/platform-extensions/');
+  await expect(main.locator('.manual-index a')).toHaveText([
+    'MetaDOS', 'CENTScreen XBIOS extension', 'Crazy-Dots XBIOS extension', 'CT60 XBIOS extension',
+    'Hatari DHS XBIOS extension', 'MATRIX XBIOS extension', 'OverScan XBIOS extension', 'PCI-BIOS', 'VIDIX XBIOS extension',
+  ]);
+  await main.getByRole('link', { name: 'PCI-BIOS', exact: true }).click();
+  await expect(page).toHaveURL('/subsystems/xbios/pci-bios/');
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Platform extensions' }))
+    .toHaveAttribute('href', '/subsystems/xbios/platform-extensions/');
 });
 
 test('compatibility sections introduce pTOS before other system behavior', async ({ page }) => {
@@ -734,9 +780,14 @@ test('the pTOS master notes distinguish native staged execution, fork and PROCES
 
 test('search covers historical sections outside the function index', async ({ page }) => {
   await page.goto('/search/');
-  await page.getByRole('searchbox').fill('argv procedure');
+  const search = page.getByRole('searchbox');
+  await search.fill('argv procedure');
   await expect(page.getByRole('link', { name: 'ARGV procedure', exact: true }))
     .toHaveAttribute('href', '/conventions/protocols/argv-procedure/');
+  await search.fill('about the bios');
+  await expect(page.getByRole('link', { name: 'About the BIOS', exact: true })).toHaveCount(0);
+  await search.fill('bios subsystems');
+  await expect(page.getByRole('link', { name: 'BIOS', exact: true })).toHaveAttribute('href', '/subsystems/bios/');
 });
 
 test('GFA BASIC shows compendium provenance, direct traps and runtime wrappers', async ({ page }) => {

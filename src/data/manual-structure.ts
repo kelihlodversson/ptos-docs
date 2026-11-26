@@ -33,22 +33,54 @@ export type ManualTopic = {
 };
 export type ManualChapter = ManualTopic & { area: Area; sections: ManualTopic[] };
 
-const legacyGemdosExtensions: ManualTopic = {
-  slug: 'legacy-extensions', name: 'Legacy extensions', href: '/subsystems/gemdos/legacy-extensions/',
+export const extensionDirectories: Record<string, { topic: ManualTopic; description: string; slugs: string[] }> = {
+  gemdos: {
+    topic: { slug: 'legacy-extensions', name: 'Legacy extensions', href: '/subsystems/gemdos/legacy-extensions/' },
+    description: 'Historical GEMDOS extensions for older network drivers, multitasking libraries and add-on hardware.',
+    slugs: ['network-functions', 'c-task-royal', 'nap-bionet100', 'powerdos', 'tekbios'],
+  },
+  xbios: {
+    topic: { slug: 'platform-extensions', name: 'Platform extensions', href: '/subsystems/xbios/platform-extensions/' },
+    description: 'Additional XBIOS functions provided by drivers, hardware expansions and emulator builds.',
+    slugs: [
+      'metados', 'centscreen-xbios-extension', 'crazy-dots-xbios-extension', 'ct60-xbios-extension',
+      'hatari-dhs-xbios-extension', 'matrix-xbios-extension', 'overscan-xbios-extension', 'pci-bios', 'vidix-xbios-extension',
+    ],
+  },
 };
-export const legacyGemdosSectionSlugs = ['network-functions', 'c-task-royal', 'nap-bionet100', 'powerdos', 'tekbios'];
-export const gemdosOverviewGroups = [
-  { name: 'System calls', slugs: [
-    'file-functions', 'directory-functions', 'character-input-output', 'date-and-time',
-    'process-functions', 'memory-management', 'system-functions', 'network',
-  ] },
-  { name: 'Program formats and notes', slugs: [
-    'the-program-format', 'program-launch-and-tpa', 'signals', 'support-for-alternative-file-systems',
-    'pipes-test-for', 'gemdos-trap',
-  ] },
-  { name: 'Legacy compatibility', slugs: [legacyGemdosExtensions.slug] },
-  { name: 'Reference indexes', slugs: ['gemdos-function-list', 'gemdos-structures', 'gemdos-error-messages'] },
-];
+
+export const chapterOverviewGroups: Record<string, { name: string; slugs: string[] }[]> = {
+  bios: [
+    { name: 'System calls', slugs: [] },
+    { name: 'Programming notes', slugs: [
+      'the-input-output-channels-of-the-bios', 'the-system-variables', 'the-system-vectors', 'cookie-jar',
+      'vt-52-terminal', 'xbra-procedure', 'hooking-into-the-reset-vector',
+    ] },
+    { name: 'Legacy extensions', slugs: ['bsim-bios-extension'] },
+    { name: 'Reference indexes', slugs: ['bios-function-list', 'bios-structures', 'bios-error-messages'] },
+  ],
+  xbios: [
+    { name: 'System calls', slugs: [
+      'screen-functions', 'sound-routines', 'keyboard-functions', 'drive-functions', 'date-time-and-timer',
+      'interrupt-functions', 'interface-programming', 'printer-functions', 'dsp-programming', 'special-commands',
+    ] },
+    { name: 'Programming notes', slugs: ['xbios-trap'] },
+    { name: 'Platform compatibility', slugs: [extensionDirectories.xbios.topic.slug] },
+    { name: 'Reference indexes', slugs: ['xbios-function-list', 'xbios-structures', 'xbios-error-messages'] },
+  ],
+  gemdos: [
+    { name: 'System calls', slugs: [
+      'file-functions', 'directory-functions', 'character-input-output', 'date-and-time',
+      'process-functions', 'memory-management', 'system-functions', 'network',
+    ] },
+    { name: 'Program formats and notes', slugs: [
+      'the-program-format', 'program-launch-and-tpa', 'signals', 'support-for-alternative-file-systems',
+      'pipes-test-for', 'gemdos-trap',
+    ] },
+    { name: 'Legacy compatibility', slugs: [extensionDirectories.gemdos.topic.slug] },
+    { name: 'Reference indexes', slugs: ['gemdos-function-list', 'gemdos-structures', 'gemdos-error-messages'] },
+  ],
+};
 
 const gemdosSectionNames: Record<string, string> = {
   network: 'MiNTnet socket functions',
@@ -87,7 +119,7 @@ const renamedChapters: Record<string, { name: string; historicalSlug: string }> 
   'keyboard-scancodes': { name: 'Keyboard Scancodes', historicalSlug: 'the-scancode' },
 };
 
-const chapterIntroductions: Record<string, string> = {
+export const chapterIntroductions: Record<string, string> = {
   bios: 'about-the-bios',
   gemdos: 'about-the-gemdos',
   xbios: 'about-the-xbios',
@@ -95,7 +127,8 @@ const chapterIntroductions: Record<string, string> = {
 
 const sectionAdditions: Record<string, ManualTopic[]> = {
   aes: [{ slug: 'cuis', name: 'CUIS ABI', href: '/abi/cuis/', standalone: true }],
-  gemdos: [legacyGemdosExtensions],
+  gemdos: [extensionDirectories.gemdos.topic],
+  xbios: [extensionDirectories.xbios.topic],
   protocols: [{
     slug: 'xcontrol', name: 'XCONTROL', href: '/conventions/protocols/xcontrol/', historicalSlug: 'about-xcontrol',
   }],
