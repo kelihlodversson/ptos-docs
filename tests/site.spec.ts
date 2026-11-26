@@ -237,7 +237,19 @@ test('Pfork and Pvfork combine the historical and native reference', async ({ pa
 
 test('GEMDOS format and launch topics document ELF and render the TPA layout as a table', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/subsystems/gemdos/the-program-format/');
+  const format = '/subsystems/gemdos/the-program-format/';
+  const launch = '/subsystems/gemdos/program-launch-and-tpa/';
+  const main = page.getByRole('main');
+  await page.goto(format);
+  await expect(main.locator('p').first()).toContainText('On m68k, pTOS supports ELF executables and legacy GEMDOS PRG programs');
+  await expect(main.locator('p').first()).toContainText('ARM and x32, pTOS can run compatible 68k PRG binaries through ParaTOS');
+  const formats = main.getByRole('navigation', { name: 'Program formats' });
+  await formats.getByRole('link', { name: 'ELF executables' }).click();
+  await expect(page).toHaveURL(`${format}#elf-executables`);
+  await expect(main.getByRole('heading', { name: 'ELF executables in pTOS' })).toBeInViewport();
+  await formats.getByRole('link', { name: 'Classic GEMDOS PRG format' }).click();
+  await expect(page).toHaveURL(`${format}#prg-format`);
+  await expect(main.getByRole('heading', { name: 'Classic GEMDOS PRG format' })).toBeInViewport();
   const machines = page.getByRole('table', { name: 'ELF32 class and machine by target' });
   for (const [cpu, machine] of [['68k', 'EM_68K'], ['ARM', 'EM_ARM'], ['x32', 'EM_X86_64']]) {
     await expect(machines.getByRole('row').filter({ hasText: cpu })).toContainText(machine);
@@ -246,7 +258,16 @@ test('GEMDOS format and launch topics document ELF and render the TPA layout as 
   await expect(page.getByRole('table', { name: 'Digital Research symbol types' }).getByRole('columnheader', { name: 'Value' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.getByRole('link', { name: 'Program launch and TPA', exact: true }).click();
-  await expect(page).toHaveURL('/subsystems/gemdos/program-launch-and-tpa/#elf-startup');
+  await expect(page).toHaveURL(`${launch}#elf-startup`);
+  await expect(main.locator('p').first()).toContainText('pTOS uses Pexec to load and start programs');
+  await expect(main.locator('p').first()).toContainText('ARM and x32, pTOS can launch compatible 68k PRG binaries through ParaTOS');
+  const startup = main.getByRole('navigation', { name: 'Program startup' });
+  await startup.getByRole('link', { name: 'Classic GEMDOS PRG startup' }).click();
+  await expect(page).toHaveURL(`${launch}#prg-startup`);
+  await expect(main.getByRole('heading', { name: 'Classic GEMDOS PRG startup' })).toBeInViewport();
+  await startup.getByRole('link', { name: 'ELF startup and memory' }).click();
+  await expect(page).toHaveURL(`${launch}#elf-startup`);
+  await expect(main.getByRole('heading', { name: 'ELF startup and memory in pTOS' })).toBeInViewport();
   await expect(page.getByRole('row', { name: /Static ELF, private address space/ })).toContainText('private pages');
   await expect(page.getByRole('row', { name: /ELF with PT_INTERP/ })).toContainText('auxiliary vector');
   const tpa = page.getByRole('table', { name: 'Classic PRG TPA after Mshrink' });

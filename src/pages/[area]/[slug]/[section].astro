@@ -25,6 +25,8 @@ const entries = catalog.filter(entry => entry.chapter?.slug === chapter.slug && 
 const programFormat = chapter.slug === 'gemdos' && section.slug === 'the-program-format';
 const programLaunch = chapter.slug === 'gemdos' && section.slug === 'program-launch-and-tpa';
 const programTopic = programFormat || programLaunch;
+const prgSectionId = programFormat ? 'prg-format' : 'prg-startup';
+const prgSectionTitle = programFormat ? 'Classic GEMDOS PRG format' : 'Classic GEMDOS PRG startup';
 const cookieJar = section.href === cookieJarPath;
 const signals = chapter.slug === 'gemdos' && section.slug === 'signals';
 const legacyExtensions = chapter.slug === 'gemdos' && section.slug === 'legacy-extensions';
@@ -45,9 +47,20 @@ const HistoricalBody = section.href === systemVariablesPath ? BiosSystemVariable
   </>}
   {chapter.slug === 'gemdos' && section.slug === 'network-functions' &&
     <p>File flushing, file locking and driver identification for older TOS network drivers.</p>}
+  {programFormat && <p>On m68k, pTOS supports ELF executables and legacy GEMDOS PRG programs when their loaders are enabled.
+    On ARM and x32, pTOS can run compatible 68k PRG binaries through ParaTOS when configured as an executable handler.</p>}
+  {programLaunch && <p>pTOS uses <a href="/reference/pexec/">Pexec</a> to load and start programs. On m68k, it can launch ELF
+    and classic GEMDOS PRG programs when their loaders are enabled. Classic PRG startup places a basepage in the program’s
+    Transient Program Area (TPA). On ARM and x32, pTOS can launch compatible 68k PRG binaries through ParaTOS.</p>}
+  {programTopic && <nav aria-label={programFormat ? 'Program formats' : 'Program startup'}>
+    <ul class="related-links">
+      <li><a href={programFormat ? '#elf-executables' : '#elf-startup'}>{programFormat ? 'ELF executables' : 'ELF startup and memory'}</a></li>
+      <li><a href={`#${prgSectionId}`}>{prgSectionTitle}</a></li>
+    </ul>
+  </nav>}
   {programFormat && <GemdosProgramFormat />}
   {programLaunch && <GemdosProgramLaunch />}
-  {programTopic && <h2 class="prm-section-heading ruled">{programFormat ? 'Classic GEMDOS PRG format' : 'Classic GEMDOS PRG startup'}</h2>}
+  {programTopic && <h2 id={prgSectionId} class="prm-section-heading ruled">{prgSectionTitle}</h2>}
   {cookieJar && <BiosCookieJar />}
   {cookieJar && <h2 class="prm-section-heading ruled">Classic TOS cookie jar</h2>}
   {section.historicalSlug && (entries.length === 0 || section.slug === 'xcontrol') &&
