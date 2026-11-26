@@ -544,7 +544,8 @@ test('the BIOS and XBIOS overviews replace their About subpages', async ({ page 
     await expect(main.getByRole('link', { name: 'MagiC', exact: true })).toBeVisible();
     const index = main.locator('.manual-index');
     await expect(index.getByRole('link', { name: entry, exact: true })).toBeVisible();
-    await expect(index.getByRole('link', { name: `About the ${subsystem.toUpperCase()}`, exact: true })).toHaveCount(0);
+    await expect(main.getByRole('link', { name: `About the ${subsystem.toUpperCase()}`, exact: true })).toHaveCount(0);
+    await expect(main.locator(`a[href$="/about-the-${subsystem}/"]`)).toHaveCount(0);
     await expect(main.getByText(/parameters from the stack|processor register d0|680x0.trap #1[34]/i)).toHaveCount(0);
     await page.goto(`${overview}about-the-${subsystem}/`);
     await expect(page).toHaveURL(overview);
@@ -755,9 +756,14 @@ test('the pTOS master notes distinguish native staged execution, fork and PROCES
 
 test('search covers historical sections outside the function index', async ({ page }) => {
   await page.goto('/search/');
-  await page.getByRole('searchbox').fill('argv procedure');
+  const search = page.getByRole('searchbox');
+  await search.fill('argv procedure');
   await expect(page.getByRole('link', { name: 'ARGV procedure', exact: true }))
     .toHaveAttribute('href', '/conventions/protocols/argv-procedure/');
+  await search.fill('about the bios');
+  await expect(page.getByRole('link', { name: 'About the BIOS', exact: true })).toHaveCount(0);
+  await search.fill('bios subsystems');
+  await expect(page.getByRole('link', { name: 'BIOS', exact: true })).toHaveAttribute('href', '/subsystems/bios/');
 });
 
 test('GFA BASIC shows compendium provenance, direct traps and runtime wrappers', async ({ page }) => {

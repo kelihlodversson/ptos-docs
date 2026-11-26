@@ -87,7 +87,7 @@ const renamedChapters: Record<string, { name: string; historicalSlug: string }> 
   'keyboard-scancodes': { name: 'Keyboard Scancodes', historicalSlug: 'the-scancode' },
 };
 
-const chapterIntroductions: Record<string, string> = {
+export const chapterIntroductions: Record<string, string> = {
   bios: 'about-the-bios',
   gemdos: 'about-the-gemdos',
   xbios: 'about-the-xbios',
