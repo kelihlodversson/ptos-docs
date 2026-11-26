@@ -24,7 +24,7 @@ const groups: { name?: string; links: { name: string; href: string; description?
   breadcrumbs={[{ label: chapter.area.name, href: chapter.area.href }]}>
   <header class="directory-head"><h1>{chapter.name}</h1></header>
   <ManualIntroduction subject={chapter.slug} />
-  {chapter.historicalSlug && (['xhdi', 'the-pmmu-functions-handler'].includes(chapter.slug) ||
+  {chapter.historicalSlug && (chapter.slug === 'xhdi' ||
     chapter.sections.length === 0 && entries.length === 0) &&
     <div class="historical-body" set:html={formatHistoricalTables(historicalSectionBody(chapter.historicalSlug))} />}
   {groups.map(({ name, links }) => links.length > 0 && <>

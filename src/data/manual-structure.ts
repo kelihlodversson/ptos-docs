@@ -11,7 +11,7 @@ export const argvProcedurePath = '/conventions/protocols/argv-procedure/';
 const areas = [
   {
     slug: 'subsystems', name: 'Subsystems', description: 'TOS interfaces for programs, graphics, devices and storage.',
-    chapters: ['bios', 'xbios', 'gemdos', 'aes', 'vdi', 'line-a', 'the-pmmu-functions-handler', 'xhdi'],
+    chapters: ['bios', 'xbios', 'gemdos', 'aes', 'vdi', 'line-a', 'xhdi'],
   },
   {
     slug: 'os-variants', name: 'OS variants and extensions', description: 'TOS-compatible systems, desktop environments and emulators.',
@@ -34,6 +34,15 @@ export type ManualTopic = {
 export type ManualChapter = ManualTopic & { area: Area; sections: ManualTopic[] };
 
 export const extensionDirectories: Record<string, { topic: ManualTopic; description: string; slugs: string[] }> = {
+  aes: {
+    topic: { slug: 'extensions', name: 'AES extensions', href: '/subsystems/aes/extensions/' },
+    description: 'Additional AES libraries for MagiC, Geneva, FreeGEM, GEM XM and other implementations. Check each function’s availability for the target system.',
+    slugs: [
+      'print-dialogs', 'editable-object-functions', 'window-dialogs', 'extended-file-selectors', 'geneva-library',
+      'list-boxes', 'magic-library', 'process-library', 'property-library', 'extended-graphics-library',
+      'extended-shell-library', 'font-selection-fnts',
+    ],
+  },
   gemdos: {
     topic: { slug: 'legacy-extensions', name: 'Legacy extensions', href: '/subsystems/gemdos/legacy-extensions/' },
     description: 'Historical GEMDOS extensions for older network drivers, multitasking libraries and add-on hardware.',
@@ -80,6 +89,24 @@ export const chapterOverviewGroups: Record<string, { name: string; slugs: string
     { name: 'Legacy compatibility', slugs: [extensionDirectories.gemdos.topic.slug] },
     { name: 'Reference indexes', slugs: ['gemdos-function-list', 'gemdos-structures', 'gemdos-error-messages'] },
   ],
+  aes: [
+    { name: 'Function groups', slugs: [
+      'application-library', 'event-library', 'window-library', 'menu-library', 'object-library',
+      'form-library', 'graphics-library', 'file-selector-library', 'resource-library', 'scrap-library', 'shell-library',
+    ] },
+    { name: 'Programming notes', slugs: ['aes-fundamentals', 'cuis'] },
+    { name: 'Extensions', slugs: [extensionDirectories.aes.topic.slug] },
+    { name: 'Reference indexes', slugs: ['aes-function-list', 'aes-structures'] },
+  ],
+  vdi: [
+    { name: 'Function groups', slugs: [
+      'control-functions', 'attribute-functions', 'output-functions', 'raster-functions',
+      'colour-table-functions', 'input-functions', 'inquire-functions', 'escape-functions',
+    ] },
+    { name: 'Programming notes', slugs: ['vdi-fundamentals', 'vdi-bindings'] },
+    { name: 'Extensions', slugs: ['tc-vdi-functions'] },
+    { name: 'Reference indexes', slugs: ['vdi-functions-list', 'vdi-structures'] },
+  ],
 };
 
 const gemdosSectionNames: Record<string, string> = {
@@ -123,10 +150,12 @@ export const chapterIntroductions: Record<string, string> = {
   bios: 'about-the-bios',
   gemdos: 'about-the-gemdos',
   xbios: 'about-the-xbios',
+  aes: 'about-the-aes',
+  vdi: 'about-the-vdi',
 };
 
 const sectionAdditions: Record<string, ManualTopic[]> = {
-  aes: [{ slug: 'cuis', name: 'CUIS ABI', href: '/abi/cuis/', standalone: true }],
+  aes: [{ slug: 'cuis', name: 'CUIS ABI', href: '/abi/cuis/', standalone: true }, extensionDirectories.aes.topic],
   gemdos: [extensionDirectories.gemdos.topic],
   xbios: [extensionDirectories.xbios.topic],
   protocols: [{
@@ -171,7 +200,6 @@ export const chapters = manualAreas.flatMap(area => area.chapters);
 
 const germanChapterSlugs: Record<string, string> = {
   protokolle: 'protocols',
-  'der-pmmu-funktionshandler': 'the-pmmu-functions-handler',
 };
 
 export function location(slug: string, language: Edition = 'en'): ReturnType<typeof chapterLocation> {
