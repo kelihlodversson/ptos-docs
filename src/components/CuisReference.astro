@@ -17,7 +17,7 @@ interface Props {
 }
 const { call, group } = Astro.props;
 const registers = call.parameters.map(([name], index): [string, string] => [cuisArguments[index], name]);
-const breadcrumbs = [...manualBreadcrumbs('aes', 'cuis'), { label: group.title, href: cuisGroupPath(group.slug) }];
+const breadcrumbs = manualBreadcrumbs('cuis', group.slug);
 const hex = (value: number) => `0x${value.toString(16).toUpperCase()}`;
 const sources: Source[] = [
   ['ptos', cuisImplementation(call), `Kernel handler ${call.handler}`],
@@ -27,7 +27,7 @@ const sources: Source[] = [
 if (call.name === 'CUIS_STREAM_RECEIPT') sources.push(['ptos', 'include/cuis_receipt.h', 'Receipt fields, offsets and alignment']);
 if (call.name === 'CUIS_STREAM_READ') sources.push(['ptos', 'lib/aes/lifecycle.c', 'CH_EXIT delivery and receipt origin']);
 ---
-<Layout title={call.name} description={call.title} running="AES — CUIS" {breadcrumbs}>
+<Layout title={call.name} description={call.title} running="CUIS" {breadcrumbs}>
   <article class="cuis-reference">
     <Masthead name={call.name} title={call.title} subsystem="CUIS" />
     <section aria-labelledby="prm-prototype-heading">
