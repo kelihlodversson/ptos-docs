@@ -964,3 +964,21 @@ test('GFA BASIC shows compendium provenance, direct traps and runtime wrappers',
   await page.goto('/historical/en/appl-getinfo/');
   await expect(page.getByText('The Compendium documents a custom GFA BASIC helper', { exact: false })).toBeVisible();
 });
+
+test('appl_getinfo keeps constant names intact and preserves function links', async ({ page }) => {
+  for (const language of ['en', 'de']) {
+    await page.goto(`/historical/${language}/appl-getinfo/`);
+    const constants = page.locator('b').filter({ hasText: /^AES_\w+ \(\d+\)/ });
+    expect(await constants.count()).toBeGreaterThan(0);
+    await expect(constants.filter({ hasText: /^AES_MOUSE \(8\)/ })).toBeVisible();
+    const shell = constants.filter({ hasText: /^AES_SHELL \(10\)/ });
+    await expect(shell.getByRole('link', { name: 'shel_write', exact: true }))
+      .toHaveAttribute('href', `/historical/${language}/shel-write/`);
+    const splitNames = await constants.evaluateAll(headings => headings.flatMap(heading => {
+      const [name] = heading.textContent!.split(/\s+/);
+      const first = heading.firstChild;
+      return first?.nodeType === Node.TEXT_NODE && first.textContent?.startsWith(`${name} (`) ? [] : [name];
+    }));
+    expect(splitNames).toEqual([]);
+  }
+});

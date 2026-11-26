@@ -205,6 +205,15 @@ function buildLanguage(language) {
     if (id) attrs.push({ name: 'id', value: id });
     if (tag === 'a') {
       const href = attr(node, 'href');
+      // UDO can auto-link words on either side of an underscore in an identifier.
+      if (href && !id && records.get(file).slug === 'appl-getinfo' && /^[A-Z][A-Z0-9_]*$/.test(content(node))) {
+        const siblings = children(node.parentNode);
+        const index = siblings.indexOf(node);
+        if (content(siblings[index - 1]).endsWith('_') || content(siblings[index + 1]).startsWith('_')) {
+          for (const child of children(node)) renderNode(child, parent, file);
+          return;
+        }
+      }
       const target = href && link(href, file);
       if (target) attrs.push({ name: 'href', value: target });
       if (href && !target) attrs.push({ name: 'title', value: `Unresolved upstream link: ${href}` });
