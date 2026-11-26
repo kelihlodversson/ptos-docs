@@ -17,6 +17,7 @@ interface Props {
 }
 const { call, group } = Astro.props;
 const registers = call.parameters.map(([name], index): [string, string] => [cuisArguments[index], name]);
+const parameters = call.parameters.map(([name, , detail]): [string, string] => [name, detail]);
 const breadcrumbs = manualBreadcrumbs('cuis', group.slug);
 const hex = (value: number) => `0x${value.toString(16).toUpperCase()}`;
 const sources: Source[] = [
@@ -32,14 +33,13 @@ if (call.name === 'CUIS_STREAM_READ') sources.push(['ptos', 'lib/aes/lifecycle.c
     <Masthead name={call.name} title={call.title} subsystem="CUIS" />
     <section aria-labelledby="prm-prototype-heading">
       <h2 id="prm-prototype-heading" class="prm-section-heading">C Prototype</h2>
-      <pre class="prm-prototype"><code>{cuisPrototype}</code></pre>
-      <p class="revision-note">libaes x32 transport helper. Pass <code>{call.name}</code> as <code>function</code>,
-        followed by the arguments below in order. Fill unused slots with zero.</p>
+      <pre class="prm-prototype"><code>{cuisPrototype(call)}</code></pre>
+      <p class="revision-note">This declaration describes the syscall arguments. Invoke the operation using the calling convention below.</p>
     </section>
     <dl class="prm-facts">
       <Fact label="Operation">{call.title}.</Fact>
       <Fact label="Opcode"><code>{hex(call.opcode)}</code> ({call.opcode}) · CUIS class <code>{hex(abi.cuis.class)}</code></Fact>
-      <Fact label="Parameters"><ParameterList entries={call.parameters} /></Fact>
+      <Fact label="Parameters"><ParameterList entries={parameters} /></Fact>
       {call.detail && <Fact label="Description">{call.detail}</Fact>}
       {call.modes && <Fact label="Modes"><ParameterList entries={call.modes} /></Fact>}
       <Fact label="Return Value">{call.result}</Fact>
