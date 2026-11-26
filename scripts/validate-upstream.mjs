@@ -67,6 +67,8 @@ const documentedModes = ssystemModeGroups.flatMap(group => group.modes);
 const ssystem = fromKernel('bdos/ssystem.c');
 assert.match(ssystem, /wval_table\[\] = \{[^}]*SVAR_ENTRY\(0x446, bootdev\)/);
 assert.match(ssystem, /bval_table\[\] = \{[^}]*SVAR_ENTRY\(0x484, conterm\)/);
+assert.match(ssystem, /lval_table\[\] = \{[^}]*SVAR_ENTRY\(0x4ba, hz_200\)/);
+assert.match(ssystem, /if \(p == &hz_200\)\s+return hz_200;/);
 const ssystemDispatch = ssystem.split('\nLONG xssystem(')[1];
 assert.ok(ssystemDispatch);
 const dispatchModes = [...ssystemDispatch.matchAll(/^\s*case (S_[A-Z_]+):/gm)].map(match => match[1]);
@@ -80,10 +82,27 @@ console.log(`Verified all ${documentedModes.length} documented Ssystem selectors
 for (const [name, fn] of Object.entries({ LAUNCH_ATTACH: 93, STREAM_RECEIPT: 94, ENDPOINT_BARRIER: 95, STREAM_BATCH: 96 })) {
   assert.equal(define(cuis, `CUIS_${name}`), fn);
 }
+assert.equal(define(cuis, 'CUIS_STREAM_READ_ORIGIN'), 2);
+assert.match(fromKernel('lib/aes/lifecycle.c'), /cuis_call6\(CUIS_STREAM_READ,[^;]+CUIS_STREAM_READ_ORIGIN,[^;]+&own_receipt/);
 assert.match(fromKernel('bdos/ssystem.c'), /#if CONF_WITH_PROCESS_EXEC\s+case S_PROCEXEC/);
 assert.match(fromKernel('bdos/ssystem.c'), /#if CONF_WITH_PROCESS_EXEC_DISPATCH\s+case S_PROCEXEC/);
 assert.match(fromKernel('include/bdosdefs.h'), /PE_EXEC_REPLACE\s+200/);
-assert.match(fromKernel('bdos/Kconfig'), /CONF_WITH_STAGED_PEXEC\s+def_bool CONF_WITH_LEGACY_PEXEC \|\| !CONF_WITH_USER_ASPACE/);
+const bdosConfig = fromKernel('bdos/Kconfig');
+function configBody(name) {
+  const definition = bdosConfig.split(`\nconfig ${name}\n`)[1];
+  assert.ok(definition, name);
+  return definition.split('\nconfig ')[0].split('\n    help')[0];
+}
+assert.match(configBody('CONF_WITH_STAGED_PEXEC'), /def_bool CONF_WITH_LEGACY_PEXEC \|\| !CONF_WITH_USER_ASPACE/);
+assert.match(configBody('CONF_WITH_MULTITHREADING'), /depends on CONF_WITH_USER_ASPACE && \(!ARCH_ARM \|\| CPU_ARMV7\)\s+default y/);
+assert.match(configBody('CONF_WITH_PREEMPTION'), /depends on CONF_WITH_MULTITHREADING[\s\S]+default y/);
+assert.match(configBody('CONF_WITH_EXEC_REPLACE'), /depends on CONF_WITH_MULTITHREADING\s+depends on CONF_WITH_ELF_LOADER \|\| \(ARCH_M68K_CLASSIC && CONF_WITH_PRG_LOADER\)\s+default y/);
+const fork = configBody('CONF_WITH_FORK');
+assert.match(fork, /depends on CONF_WITH_EXEC_REPLACE[\s\S]+!CONF_M68K_ROM_WINDOW && !CONF_WITH_MFASTCALL[\s\S]+default y/);
+assert.doesNotMatch(fork, /CONF_WITH_DEMAND_PAGING/);
+assert.match(configBody('CONF_WITH_MMAP'), /depends on CONF_WITH_USER_ASPACE && CONF_WITH_DEMAND_PAGING/);
+assert.match(configBody('CONF_WITH_PROCESS_EXEC'), /depends on CONF_WITH_USER_ASPACE && CONF_WITH_MULTITHREADING && CONF_WITH_SSYSTEM/);
+assert.match(fromKernel('bdos/proc.c'), /#if CONF_WITH_EXEC_REPLACE\s+if \(flag == PE_EXEC_REPLACE\) return proc_exec_replace/);
 assert.match(fromKernel('lib/aes/application.c'), /global->ap_id = \(short\)identity.client_id/);
 assert.match(fromSdk('include/mint/mintbind.h'), /#define Ptermgrp\(status\).*0x192/);
 assert.match(show(guest, paratos, 'host/posix/README.md'), /The first staged launch copies the accessible RAM/);
@@ -92,7 +111,7 @@ assert.match(show(guest, paratos, 'host/posix/proc.c'), /NOT_IMPLEMENTED\(GEMDOS
 assert.match(show(guest, paratos, 'host/posix/proc.c'), /int16_t Pvfork \( void \).*?return Pfork\(\);/s);
 assert.match(show(guest, paratos, 'host/ptos/dispatch.c'), /case GEMDOS_OP_SYIELD: ptos_task_yield/);
 assert.doesNotMatch(show(guest, paratos, 'host/ptos/dispatch.c'), /case GEMDOS_OP_P(?:CLONE|THJOIN|TERMGRP):/);
-console.log('Verified PR #903 native opcodes, discovery and configuration and PR #27 guest paths');
+console.log('Verified pTOS master native opcodes, discovery and configuration and ParaTOS PR #27 guest paths');
 
 const bootConfig = fromKernel('bdos/binfmt.c');
 assert.ok(bootConfig.includes(String.raw`"A:\\PTOS.INI"`));

@@ -5,7 +5,7 @@ import { ssystemDescription } from './ssystem-modes';
 import { records } from './historical';
 import type { HistoricalFunction } from './historical';
 import historicalMerges from './historical-merges.json';
-import { chapterLocation, elfEntryPath, location, nativeSection } from './manual-structure';
+import { argvProcedurePath, chapterLocation, elfEntryPath, location, nativeSection } from './manual-structure';
 
 export { targets } from './targets';
 export type { Target, CPU } from './targets';
@@ -20,6 +20,8 @@ export const statusLabels: Record<Status, string> = {
 };
 
 export type Source = [keyof typeof revisions, string, string];
+export const ptosSourceTree = `https://github.com/${revisions.ptos.repo}/tree/${revisions.ptos.revision}`;
+
 export function sourceLink([key, path, label]: Source) {
   const { repo, revision } = revisions[key];
   return { href: `https://github.com/${repo}/blob/${revision}/${path}`, label, revision, path };
@@ -57,8 +59,8 @@ export const catalog = [
 export const referenceLocation = (name: string) => catalog.find(entry => entry.name === name && entry.href.startsWith('/reference/'));
 
 export function historicalReference(label: string, href: string) {
-  const section = { 'ARGV procedure': 'argv-procedure', 'Program flags': 'the-program-flags' }[label];
-  if (section) return `/historical/en/${section}/`;
+  if (label === 'ARGV procedure') return argvProcedurePath;
+  if (label === 'Program flags') return '/historical/en/the-program-flags/';
   const merged = (historicalMerges as Record<string, string>)[label.toLowerCase()];
   if (merged) return merged;
   return importedFunctions.find(entry => entry.name === label)?.historicalHref ?? href;

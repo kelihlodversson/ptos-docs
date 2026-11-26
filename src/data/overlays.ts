@@ -75,9 +75,9 @@ export const overlays: Record<string, Overlay> = {
   Pexec: {
     params: [
       ['mode', 'Execution mode word. The mode selects the interpretation and ownership of the following three arguments.'],
-      ['prog', 'Path for modes 0 and 3, zero for 4, 5 and 6, PRG flags for 7.'],
-      ['tail', 'Command tail or a basepage pointer for modes 4 and 6.'],
-      ['env', 'Environment argument for modes 0, 3, 5 and 7. Pass zero in modes 4 and 6.'],
+      ['prog', 'Path for modes 0, 3, 100 and 200. Pass zero for 4, 5, 6, 104 and 106. Mode 7 takes PRG flags.'],
+      ['tail', 'Basepage pointer for modes 4, 6, 104 and 106. The other listed modes take a counted command tail.'],
+      ['env', 'Environment argument for modes 0, 3, 5, 7, 100 and 200. Pass zero for 4, 6, 104 and 106.'],
     ],
     targets: {
       '68k': { status: 'implemented', scope: 'Native pTOS GEMDOS, with staged PRG modes on applicable builds',
@@ -89,7 +89,8 @@ export const overlays: Record<string, Overlay> = {
       ...gemdosSources, ['ptos', 'bdos/proc.c', 'Native Pexec mode dispatch and ownership'],
       ['ptos', 'doc/pexec-legacy-modes.txt', 'Staged PRG rules and native restrictions'],
       ['ptos', 'doc/freemint-compatibility.txt', 'Managed mode 0 and fork interaction'],
-      ['ptos', 'bdos/Kconfig', 'Mode 200 configuration and replacement guarantees'],
+      ['ptos', 'bdos/Kconfig', 'Native scheduling and mode 200 build gates'],
+      ['ptos', 'doc/exec-replacement.txt', 'Replacement contracts and supported loaders'],
       ['ptos', 'tests/pclone/exec200_native.c', 'Mode 200 native acceptance probe'],
       ['ptos', 'bdos/uaccess.c', 'Address-space argument checks'],
       ['ptos', 'include/bdosdefs.h', 'Mode constants'],
@@ -162,8 +163,8 @@ export const pexecModes: [mode: string, args: string, meaning: string][] = [
   ['5', '0L, cmdline, env', 'Create and return a classic 68k basepage.'],
   ['6', '0L, basepage, 0L', 'Run a staged 68k image and transfer ownership.'],
   ['7', 'prgflags, cmdline, env', 'Create a classic 68k basepage with program flags.'],
-  ['100', 'path, cmdline, env', 'Load and schedule a child with CONF_WITH_NATIVE_SCHED. Returns the child PID.'],
+  ['100', 'path, cmdline, env', 'Load and schedule a child with CONF_WITH_MULTITHREADING. Returns the child PID.'],
   ['104', '0L, basepage, 0L', 'Start a staged PRG in a new PROCESS sharing the caller’s ASPACE. Requires CONF_WITH_SHARED_VM_PEXEC and returns its PID.'],
   ['106', '0L, basepage, 0L', 'Start a staged 68k PRG asynchronously, transferring the image. Requires the scheduler and legacy path.'],
-  ['200', 'path, cmdline, env', 'Replace the executable in the same PROCESS with CONF_WITH_PEXEC200. Success preserves PID and does not return. A failed load leaves the caller intact.'],
+  ['200', 'path, cmdline, env', 'Replace the executable in the same PROCESS with CONF_WITH_EXEC_REPLACE. Success preserves PID and does not return. A failed load leaves the caller intact.'],
 ];

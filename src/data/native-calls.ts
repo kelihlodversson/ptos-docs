@@ -27,7 +27,7 @@ export interface NativeCall {
   };
 }
 
-const processConfig = 'Managed user process with CONF_WITH_KPROC and CONF_WITH_NATIVE_SCHED on a supported MMU build.';
+const processConfig = 'Requires a managed user process with CONF_WITH_MULTITHREADING. This option defaults on for eligible x32, ARMv7 and 68k builds with user address spaces.';
 const paraPosix: Source = ['paratos', 'host/posix/README.md', 'ParaTOS POSIX backend contract'];
 const paraTests: Source = ['paratos', 'tests/posix/pexec.py', 'ParaTOS PR #27 execution and fork tests'];
 const paraDispatch: Source = ['paratos', 'host/ptos/dispatch.c', 'pTOS-hosted guest GEMDOS dispatcher'];
@@ -41,14 +41,15 @@ const mintDispatcher: Source = ['ptos', 'bdos/mintproc.c', 'GEMDOS process dispa
 const procConfig: Source = ['ptos', 'bdos/Kconfig', 'Configuration gates'];
 const processTests: Source = ['ptos', 'tests/pclone/process_wait.h', 'Native wait regression'];
 const historical = (name: string) => `/historical/en/${name.toLowerCase()}/`;
-const forkConfig = 'CONF_WITH_PFORK on supported demand-paging MMU builds. The saved-return path requires x32 without FS/GS bases, ARMv7 A32 with idle VFP, or a non-fastcall 68040 format-0 trap frame with idle FPU. Other contexts return EINVFN.';
+const forkConfig = 'CONF_WITH_FORK defaults on for eligible MMU builds with eager allocation or demand paging and requires CONF_WITH_EXEC_REPLACE. The saved-return path admits x32 with default segments and no FS/GS bases, ARMv7 A32 with idle VFP, or a 68040 format-0 trap frame with idle FPU on a stack-ABI build. Classic 68k ROM-window builds, fastcall builds and unsupported CPU return contexts return EINVFN.';
 const forkCommon = [
   'Creates a distinct PROCESS and PID with a private copy-on-write address space and user stack. It inherits open file bindings with shared file positions, current directories, DTA and search state, environment and limits.',
-  'A shared-root or multithreaded caller is refused. The native caller needs a managed scheduler anchor and an admitted user-return context.',
+  'A shared-root or multithreaded caller receives EACCDN. The native caller needs a managed scheduler anchor and an admitted user-return context.',
 ];
 const forkSources: Source[] = [
   ['ptos', 'bdos/mintproc.h', 'MiNT opcode constants'],
   ['ptos', 'doc/freemint-compatibility.txt', 'Native fork compatibility and admitted CPU state'],
+  ['ptos', 'tools/test-native-process-config.py', 'Eager MMU, loader and ROM-window configuration tests'],
   ['ptos', 'tests/pclone/fork_parent_native.c', 'Native fork and exact-child synchronization tests'],
   procConfig, sdk, paraPosix, paraTests, paraPosixProcess, paraDispatch,
 ];
@@ -77,7 +78,7 @@ export const nativeCalls: NativeCall[] = [
       'Each field occupies four bytes, including pointer values on x32. Structure alignment is two on 68k and four on ARM/x32. Entry address and startup stack have additional architecture constraints. The configured stack alignment/minimum is 2/16 bytes on 68k, 8/16 on ARM and 16/256 on x32. Entry address alignment is 2, 4 and 1 bytes respectively.',
     ],
     result: 'Returns a positive TID. Optional child_tid and child_pid stores publish initial identities only. Invalid flags, size, alignment or TLS return EINVAL. Bad ranges return EIMBA. Allocation and backing failures can return ENSMEM or EREADF. An exhausted identity or task limit can return EAGAIN. Unsupported policies return EINVFN without publication.',
-    config: processConfig + ' Requires CONF_WITH_PCLONE and usable architecture startup. The function signature describes the GEMDOS wrapper ABI.',
+    config: processConfig + ' The caller also needs usable architecture startup. The function signature describes the GEMDOS wrapper ABI.',
     paraTos: 'The pTOS-hosted ParaTOS backend uses this native call internally to run a staged 68k guest in a distinct PROCESS sharing guest mappings. The guest GEMDOS dispatchers do not expose the opcode.',
     sources: [['ptos', 'include/pclone.h', 'Structure, flags and opcode'],
       ['ptos', 'doc/clone-public-integration.txt', 'Publication and public startup contract'],
@@ -106,7 +107,7 @@ export const nativeCalls: NativeCall[] = [
       'A failed output copy leaves the completion available to a subsequent join. Joining a THREAD leaves PROCESS child status and GUI notifications independent.',
     ],
     result: 'Zero on success. The optional output zero-extends the raw 16-bit THREAD status, including 0xFFFF for a fault. ESRCH covers unknown or foreign TIDs, EDEADLK covers self or cyclic joins, EACCDN covers a competing claim, and EIMBA covers invalid output.',
-    config: processConfig + ' Requires CONF_WITH_PCLONE and CONF_WITH_PTHJOIN. Unmanaged or disabled calls return EINVFN.',
+    config: processConfig + ' Unmanaged or disabled calls return EINVFN.',
     paraTos: noGuestOpcode,
     sources: [['ptos', 'include/threadcalls.h', 'Join opcode and result ABI'],
       ['ptos', 'doc/thread-joining.txt', 'Join behavior and error contract'],
@@ -119,10 +120,10 @@ export const nativeCalls: NativeCall[] = [
     args: [['status', 2, 'Raw 16-bit PROCESS termination status.']],
     description: [
       'The first accepted request latches the status. Siblings terminate at safe kernel boundaries. Syield, Pthjoin and PROCESS waits can reach cancellation checkpoints. Nested synchronous children and separate PROCESSes sharing the ASPACE retain their own lifetimes.',
-      'Cancellation is cooperative. A sibling that never reaches a safe boundary can delay final completion. PROCESS resources and public wait status settle only after the last THREAD retires.',
+      'Final completion waits for every sibling to reach a cancellation checkpoint. PROCESS resources and public wait status settle after the last THREAD retires.',
     ],
     result: 'Success does not return. Disabled or unmanaged requests return EINVFN. A reentrant termination-hook request can return EACCDN.',
-    config: processConfig + ' Requires CONF_WITH_PCLONE and CONF_WITH_PTERMGRP.',
+    config: processConfig,
     paraTos: noGuestOpcode,
     sources: [['ptos', 'include/threadcalls.h', 'Public opcode'], ['ptos', 'doc/group-exit.txt', 'Cancellation and PROCESS completion'],
       ['ptos', 'tests/pclone/group_child.c', 'Nested child cancellation fixture'], mintDispatcher, procConfig, sdk, paraDispatch, paraPosixDispatch],
@@ -173,10 +174,10 @@ export const nativeCalls: NativeCall[] = [
   })),
   {
     name: 'Syield', title: 'Yield the managed execution slot', opcode: 0xff, prototype: 'int Syield(void);', args: [], historical: historical('Syield'),
-    description: ['Gives runnable managed peers an opportunity to run and checks pending group cancellation at a safe boundary. The independent timer-preemption capability is configuration-gated.'],
+    description: ['Gives runnable managed peers an opportunity to run and checks pending group cancellation at a safe boundary. CONF_WITH_PREEMPTION defaults on for eligible x32, ARMv7 and 68040 stack-ABI configurations. Cooperative scheduling is available with preemption disabled.'],
     result: 'Returns the scheduler result as an int in the SDK. A THREAD cancelled at the boundary does not resume.',
     config: processConfig, paraTos: 'The pTOS-hosted guest dispatcher yields its guest task. The POSIX backend leaves Syield unimplemented.',
-    sources: [mintDispatcher, ['ptos', 'bdos/native_sched.c', 'Native yield implementation'], sdk, paraDispatch, paraSsystem],
+    sources: [mintDispatcher, ['ptos', 'bdos/native_sched.c', 'Native yield implementation'], procConfig, sdk, paraDispatch, paraSsystem],
     related: ['Ptermgrp', 'Pthjoin', 'Pause', 'Fselect'],
   },
   {
@@ -222,7 +223,7 @@ export const nativeCalls: NativeCall[] = [
       'PREPARE accepts policy 0 for asynchronous launch or 1 for deferred replacement. DEFER and START use zero policy and handle. Other unused or reserved values must be zero. SNAPSHOT is the only operation that copies out. A failed SNAPSHOT leaves completion available for retry.',
     ],
     result: 'A scalar status, handle or PID according to operation. Unsupported builds return EINVFN. Invalid requests or unreadable input return a negative GEMDOS error. A SNAPSHOT copy fault can modify part of the output without consuming it.',
-    config: 'CONF_WITH_PROCESS_EXEC requires CONF_WITH_USER_ASPACE, CONF_WITH_SSYSTEM and native scheduling. S_INQUIRE reports availability. The separate CONF_WITH_PROCESS_EXEC_TEST profile keeps dispatch enabled while suppressing discovery.',
+    config: 'CONF_WITH_PROCESS_EXEC requires CONF_WITH_USER_ASPACE, CONF_WITH_SSYSTEM and CONF_WITH_MULTITHREADING. S_INQUIRE reports availability. The separate CONF_WITH_PROCESS_EXEC_TEST profile keeps dispatch enabled while suppressing discovery.',
     status: 'experimental', paraTos: noGuestMode,
     sources: [ssystemSource, procConfig, ['ptos', 'include/process_exec.h', 'Transport operations and fixed-size argument'],
       ['ptos', 'include/process_completion.h', 'Completion fields'], ['ptos', 'doc/process-exec.txt', 'Source-level transport contract'],

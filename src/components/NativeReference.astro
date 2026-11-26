@@ -8,7 +8,7 @@ import TargetPanels from './TargetPanels.astro';
 import GfaBinding from './GfaBinding.astro';
 import SourceList from './SourceList.astro';
 import NativeTarget from './NativeTarget.astro';
-import { catalog } from '../data/catalog';
+import { catalog, ptosSourceTree } from '../data/catalog';
 import { nativePath } from '../data/native-calls';
 import type { NativeCall } from '../data/native-calls';
 import { manualBreadcrumbs, nativeSection } from '../data/manual-structure';
@@ -20,12 +20,11 @@ interface Props { call: NativeCall }
 const { call } = Astro.props;
 const params: [string, string][] = call.args.map(([name, , info]) => [name, info]);
 const relatedPath = (name: string) => catalog.find(entry => entry.name === name)?.href ?? nativePath(name);
-const pr = (source: typeof revisions.ptos | typeof revisions.paratos) =>
-  `https://github.com/${source.repo}/pull/${source.pullRequest}`;
-const merged = call.historical && Object.values(historicalMerges).includes(nativePath(call.name))
-  ? pages('en').find(page => page.href === call.historical)
-  : undefined;
-const historicalFact = (label: string) => merged?.facts.find(fact => fact.label === label)?.value;
+const paraTosPr = `https://github.com/${revisions.paratos.repo}/pull/${revisions.paratos.pullRequest}`;
+const historical = call.historical ? pages('en').find(page => page.href === call.historical) : undefined;
+const merged = Object.values(historicalMerges).includes(nativePath(call.name)) ? historical : undefined;
+const historicalFact = (label: string) => historical?.facts.find(fact => fact.label === label)?.value;
+const historicalAvailability = historicalFact('Availability:');
 ---
 <Layout title={call.name} description={call.title} running="GEMDOS"
   breadcrumbs={manualBreadcrumbs('gemdos', nativeSection(call.name))}>
@@ -45,13 +44,12 @@ const historicalFact = (label: string) => merged?.facts.find(fact => fact.label 
       <Fact label="Description">{call.description.map(text => <p>{text}</p>)}</Fact>
       <Fact label="Return Value">{call.result}</Fact>
       <Fact label="Availability">
-        {merged && <div class="historical-availability">
+        <p><strong>pTOS</strong> · {call.config} <a href={ptosSourceTree}>master snapshot</a></p>
+        <p><strong>ParaTOS</strong> · {call.paraTos} <a href={paraTosPr}>ParaTOS PR #27</a></p>
+        {historicalAvailability && <div class="historical-availability">
           <p><strong>Historical</strong></p>
-          <div set:html={formatHistoricalTables(historicalFact('Availability:'))} />
+          <div set:html={formatHistoricalTables(historicalAvailability)} />
         </div>}
-        <p><strong>pTOS</strong> · {call.config} <a href={pr(revisions.ptos)}>pTOS PR #903</a></p>
-        <p><strong>ParaTOS</strong> · {call.paraTos} <a href={pr(revisions.paratos)}>ParaTOS PR #27</a></p>
-        {call.historical && !merged && <p><strong>Historical</strong> · <a href={call.historical}>Original tos.hyp availability and bindings</a></p>}
       </Fact>
     </dl>
     <TargetPanels>
@@ -84,6 +82,6 @@ const historicalFact = (label: string) => merged?.facts.find(fact => fact.label 
       <h2 id="related-heading" class="prm-section-heading ruled">See Also</h2>
       <ul class="related-links">{call.related.map(name => <li><a href={relatedPath(name)}>{name}</a></li>)}</ul>
     </section>
-    <SourceList sources={merged ? [['tos', merged.path, 'Original tos.hyp MiNT description and binding'], ...call.sources] : call.sources} />
+    <SourceList sources={call.sources} />
   </article>
 </Layout>

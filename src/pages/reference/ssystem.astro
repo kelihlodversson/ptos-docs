@@ -10,6 +10,7 @@ import CallingConvention from '../../components/CallingConvention.astro';
 import GfaBinding from '../../components/GfaBinding.astro';
 import MemoryLayout from '../../components/MemoryLayout.astro';
 import SourceList from '../../components/SourceList.astro';
+import { sourceLink } from '../../data/catalog';
 import { cookieJarPath, cookieKeysPath, manualBreadcrumbs, systemVariablesPath } from '../../data/manual-structure';
 import { pages } from '../../data/historical';
 import { overlays } from '../../data/overlays';
@@ -22,7 +23,7 @@ if (!historical) throw new Error('Missing historical Ssystem entry');
 const fact = (label: string) => historical.facts.find(item => item.label === label)?.value;
 const { params, targets, paraTos, sources } = overlays.Ssystem;
 const hex = (mode: number) => '0x' + (mode & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
-const processConfig = 'https://github.com/kelihlodversson/pTOS/blob/32aaf698875f13d25c252b8e3f00d33da4f0a62d/bdos/Kconfig';
+const processConfig = sourceLink(['ptos', 'bdos/Kconfig', 'Configuration source']);
 const history = readSsystemHistory(fact('Description:') ?? '');
 const nativeModes = ssystemModeGroups.flatMap(group => group.modes);
 const nativeByName = new Map(nativeModes.map(mode => [mode.name, mode]));
@@ -90,10 +91,7 @@ const modeSections = [
                 {ptos ? <>
                   <code>arg1 = {ptos.args[0]}</code><br /><code>arg2 = {ptos.args[1]}</code><br />
                   {ptos.result}{ptos.condition && <> {ptos.condition}</>}
-                  {name === 'S_PROCEXEC' && <>
-                    {' '}The current PR #903 configuration uses <code>CONF_WITH_MULTITHREADING</code> as its scheduling gate.
-                    {' '}<a href={processConfig}>Configuration source</a>.
-                  </>}
+                  {name === 'S_PROCEXEC' && <> <a href={processConfig.href}>{processConfig.label}</a>.</>}
                   {ptos.description?.map(detail => <p class="mode-detail">{detail}</p>)}
                   {name === 'S_GETCOOKIE' && <p class="mode-detail">
                     <a href={cookieJarPath + '#ssystem-access'}>Cookie jar access guide</a> ·
@@ -113,6 +111,8 @@ const modeSections = [
       <h3 class="prm-section-heading">pTOS mode notes</h3>
       <p>The system-variable modes accept only addresses present in the kernel’s table for the requested width.
         Unknown addresses return <code>EINVFN</code>. See the linked dispatcher source for the accepted addresses.</p>
+      <p><code>S_GETLVAL</code> reads the 200 Hz system tick at <code>0x04BA</code> in one native load to keep the value
+        coherent across timer interrupts.</p>
       <p><code>S_CONSOLE_DIM</code>, <code>S_MEMINFO</code>, <code>S_DESKINFO</code> and <code>S_MMUPROBE</code> use
         the smaller of the supplied length and the kernel structure size. Check the returned byte count before using a field.
         A size of <code>-1</code> queries the structure size and ignores the buffer. A null buffer or a nonpositive size
@@ -143,7 +143,7 @@ const modeSections = [
         <li><a href="/historical/en/tsettimeofday/">Tsettimeofday</a></li>
       </ul>
     </section>
-    <SourceList sources={[[ 'tos', historical.path, 'Original tos.hyp Ssystem description and binding' ], ...sources]} />
+    <SourceList {sources} />
   </article>
 </Layout>
 

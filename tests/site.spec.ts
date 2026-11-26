@@ -1,7 +1,10 @@
 import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 const selectTarget = (page: import('@playwright/test').Page) => page.getByRole('combobox', { name: 'Target / Language' });
+const revisions = JSON.parse(readFileSync(new URL('../src/data/sources.json', import.meta.url), 'utf8'));
+const ptosSourceTree = `https://github.com/${revisions.ptos.repo}/tree/${revisions.ptos.revision}`;
 
 test('target changes in place and persists without moving or hiding the prototype', async ({ page }) => {
   await page.goto('/reference/fclose/');
@@ -143,7 +146,7 @@ test('mobile x32 diagram shows both selector words and their bit boundaries', as
   expect(await diagram.evaluate(el => el.scrollWidth === el.clientWidth)).toBe(true);
 });
 
-for (const path of ['/reference/fclose/', '/reference/pexec/', '/reference/appl_init/', '/reference/ssystem/', '/abi/cuis/', '/os-variants/ptos/elf-entry/', '/os-variants/ptos/desktop-and-console/', '/search/', '/gfa-basic/']) {
+for (const path of ['/', '/reference/fclose/', '/reference/pexec/', '/reference/appl_init/', '/reference/ssystem/', '/abi/cuis/', '/os-variants/ptos/elf-entry/', '/os-variants/ptos/desktop-and-console/', '/subsystems/gemdos/', '/subsystems/gemdos/legacy-extensions/', '/conventions/protocols/argv-procedure/', '/search/', '/gfa-basic/']) {
   test(`WCAG A/AA smoke audit at ${path}`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(path);
@@ -154,14 +157,14 @@ for (const path of ['/reference/fclose/', '/reference/pexec/', '/reference/appl_
   });
 }
 
-test('historical entries retain their availability, source and switchable bindings', async ({ page }) => {
+test('imported entries retain their availability and switchable bindings', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/historical/en/fopen/');
   await expect(page.getByRole('heading', { name: 'Fopen', exact: true })).toBeVisible();
   await expect(page.locator('.prm-prototype')).toContainText('Fopen');
   await expect(page.getByText('All GEMDOS versions.')).toBeVisible();
   await expect(page.locator('.ptos-availability')).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'gemdos/file/fopen.ui' })).toHaveAttribute('href', /freemint\/tos.hyp\/blob\/20a9cfb4/);
+  await expect(page.getByRole('contentinfo').getByRole('link', { name: 'Sources and licensing' })).toHaveAttribute('href', '/sources/');
   const select = selectTarget(page);
   await select.selectOption('arm');
   await expect(page.locator('[data-target-panel="arm"]')).toContainText('SVC #1');
@@ -184,7 +187,7 @@ test('historical availability reports pTOS exceptions and build requirements acr
   await expect(availability.getByRole('listitem').filter({ hasText: 'ARM, x32' })).toContainText('Not implemented');
   await selectTarget(page).selectOption('gfa');
   await expect(availability).toBeVisible();
-  await expect(availability.getByRole('link', { name: 'PR #903' })).toHaveAttribute('href', /pTOS\/pull\/903$/);
+  await expect(availability.getByRole('link', { name: 'master snapshot' })).toHaveAttribute('href', ptosSourceTree);
 
   const expected = [
     ['/historical/en/dgetcwd/', '68k, ARM, x32', 'Implemented', 'CONF_WITH_KPROC'],
@@ -214,7 +217,9 @@ test('Pfork and Pvfork combine the historical and native reference', async ({ pa
     }
     const availability = page.locator('.prm-fact-row').filter({ has: page.getByText('Availability', { exact: true }) });
     await expect(availability).toContainText('MultiTOS integrated MiNT version 1.04.');
-    await expect(availability).toContainText('CONF_WITH_PFORK');
+    await expect(availability).toContainText('CONF_WITH_FORK');
+    await expect(availability).toContainText('eager allocation or demand paging');
+    await expect(availability).toContainText('ROM-window');
     await expect(availability).toContainText('ParaTOS');
     const history = page.getByRole('region', { name: 'Historical MiNT reference' });
     await expect(history).toContainText(`The function ${name} creates a copy of the current process.`);
@@ -263,7 +268,8 @@ test('Syield combines pTOS and historical documentation under GEMDOS system func
   }
   const availability = page.locator('.prm-fact-row').filter({ has: page.getByText('Availability', { exact: true }) });
   await expect(availability).toContainText('In MagiC as of Version 3.0, and when the MiNT cookie is present.');
-  await expect(availability).toContainText('CONF_WITH_NATIVE_SCHED');
+  await expect(availability).toContainText('CONF_WITH_MULTITHREADING');
+  await expect(page.getByText(/CONF_WITH_PREEMPTION defaults on/)).toBeVisible();
   await expect(availability).toContainText('The POSIX backend leaves Syield unimplemented.');
   await expect(page.locator('.prm-prototype')).toHaveText('int Syield(void);');
 
@@ -279,7 +285,7 @@ test('Syield combines pTOS and historical documentation under GEMDOS system func
   await expect(page.locator('[data-target-panel="gfa"]')).toContainText('Result%=GEMDOS(&HFF)');
   await expect(page.getByRole('link', { name: 'Pause', exact: true })).toHaveAttribute('href', '/historical/en/pause/');
   await expect(page.getByRole('link', { name: 'Fselect', exact: true })).toHaveAttribute('href', '/historical/en/fselect/');
-  await expect(page.getByRole('link', { name: 'Original tos.hyp MiNT description and binding' })).toHaveAttribute('href', /gemdos\/system\/syield\.ui$/);
+  await expect(page.getByRole('link', { name: 'Native yield implementation' })).toHaveAttribute('href', /bdos\/native_sched\.c$/);
 
   await page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'System functions' }).click();
   await expect(page).toHaveURL('/subsystems/gemdos/system-functions/');
@@ -308,6 +314,9 @@ test('Ssystem keeps the MiNT modes and pTOS differences in one table', async ({ 
   await expect(ptos('S_GETCOOKIE')).toContainText('one-based slot');
   await expect(ptos('S_SETLVAL')).toContainText('EACCDN');
   await expect(ptos('S_PROCEXEC')).toContainText('CONF_WITH_PROCESS_EXEC_TEST');
+  await expect(ptos('S_PROCEXEC')).toContainText('CONF_WITH_MULTITHREADING');
+  await expect(ptos('S_PROCEXEC').getByRole('link', { name: 'Configuration source' })).toHaveAttribute('href',
+    `https://github.com/${revisions.ptos.repo}/blob/${revisions.ptos.revision}/bdos/Kconfig`);
   await expect(ptos('S_DESKINFO')).toContainText('16-byte struct desk_info');
   await expect(ptos('S_DESKSET')).toContainText('item 2 sets the AES background');
   await expect(ptos('S_DESKSET')).toContainText('User processes on address-space builds receive EACCDN');
@@ -440,14 +449,30 @@ test('imported function breadcrumbs return to the manual chapters', async ({ pag
   }
 });
 
+test('the homepage introduces the pTOS manual and directs readers to its attribution', async ({ page }) => {
+  await page.goto('/');
+  const main = page.getByRole('main');
+  await expect(main.getByRole('heading', { level: 1 })).toHaveText(/pTOS Programmer’s\s*Reference Manual/);
+  await expect(main).toContainText('reference for pTOS development');
+  await expect(main).toContainText('interfaces from FreeMiNT and MagiC');
+  await expect(main).toContainText('external references that the pTOS team has edited and extended');
+  await expect(main).toContainText('The pTOS team is responsible for any errors or omissions');
+  await expect(main.locator('.manual-index')).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: 'Manual' }).getByRole('link')).toHaveText([
+    'Subsystems', 'OS variants and extensions', 'Conventions and misc.', 'GFA BASIC', 'Search',
+  ]);
+  await main.getByRole('link', { name: 'Sources and licensing', exact: true }).click();
+  await expect(page).toHaveURL('/sources/');
+  await expect(main.getByRole('link', { name: 'Upstream foreword and licensing notice' })).toHaveAttribute('href', '/source/tos.hyp/anhang/hilfe.u');
+  await expect(main.getByRole('link', { name: 'Download the complete pinned UDO source' })).toHaveAttribute('href', /freemint\/tos\.hyp\/archive\//);
+});
+
 test('the main sections contain only the assigned chapters', async ({ page }) => {
   await page.goto('/');
   const main = page.getByRole('main');
   const navigation = page.getByRole('navigation', { name: 'Manual' });
-  await expect(main.getByRole('heading', { name: 'Reference Entries' })).toHaveCount(0);
-  await expect(navigation.locator('a[href="https://freemint.github.io/tos.hyp/"]')).toHaveCount(0);
-  await expect(navigation.getByRole('link', { name: 'Historical TOS' })).toHaveCount(0);
   await navigation.getByRole('link', { name: 'Subsystems', exact: true }).click();
+  await expect(main.locator('p').first()).toContainText('pTOS organizes its system interfaces');
   await expect(main.getByText('Atari introduced TOS in 1985', { exact: false })).toBeVisible();
   await expect(main.locator('.manual-index a')).toHaveText([
     'BIOS', 'XBIOS', 'GEMDOS', 'AES', 'VDI', 'Line-A', 'The PMMU functions-handler', 'XHDI',
@@ -457,7 +482,7 @@ test('the main sections contain only the assigned chapters', async ({ page }) =>
   await main.getByRole('link', { name: 'Virtual Device Interface', exact: true }).click();
   await expect(main.getByText('standardized graphics system', { exact: false })).toBeVisible();
   await navigation.getByRole('link', { name: 'OS variants and extensions' }).click();
-  await expect(main.locator('.manual-index a')).toHaveText(['MagiC', 'N.AES', 'XaAES', 'pTOS', 'Emulators', 'TOS list']);
+  await expect(main.locator('.manual-index a')).toHaveText(['pTOS', 'MagiC', 'N.AES', 'XaAES', 'Emulators', 'TOS list']);
   await navigation.getByRole('link', { name: 'Conventions and misc.', exact: true }).click();
   await expect(main.locator('.manual-index a')).toHaveText([
     'Programming guidelines', 'Protocols', 'ASCII Table', 'Keyboard Scancodes', 'Development systems',
@@ -477,8 +502,8 @@ test('the main sections contain only the assigned chapters', async ({ page }) =>
 test('the GEMDOS overview introduces the subsystem and replaces the About subpage', async ({ page }) => {
   await page.goto('/subsystems/gemdos/');
   const main = page.getByRole('main');
-  await expect(main.getByText('GEMDOS provides the highest-level operating system functions', { exact: false })).toBeVisible();
-  await expect(main.locator('#MiNT-compatible_20functions')).toContainText('MiNT added many GEMDOS functions');
+  await expect(main.locator('p').first()).toContainText('GEMDOS provides the highest-level operating system functions in pTOS');
+  await expect(main.locator('#MiNT-compatible_20functions')).toContainText('FreeMiNT and MagiC');
   await expect(main.locator('.manual-index').getByRole('link', { name: 'Process functions' })).toBeVisible();
   await expect(main.getByRole('link', { name: 'About the GEMDOS', exact: true })).toHaveCount(0);
   await expect(main.getByText(/parameters on the stack|processor register d0|680x0 trap #1/i)).toHaveCount(0);
@@ -488,13 +513,14 @@ test('the GEMDOS overview introduces the subsystem and replaces the About subpag
 
 test('the BIOS and XBIOS overviews replace their About subpages', async ({ page }) => {
   for (const [subsystem, opening, entry] of [
-    ['bios', 'The Basic Input/Output System (BIOS)', 'Getmpb'],
-    ['xbios', 'The Extended BIOS (XBIOS)', 'Drive functions'],
+    ['bios', 'pTOS uses the Basic Input/Output System (BIOS)', 'Getmpb'],
+    ['xbios', 'pTOS uses the Extended BIOS (XBIOS)', 'Drive functions'],
   ]) {
     const overview = `/subsystems/${subsystem}/`;
     await page.goto(overview);
     const main = page.getByRole('main');
-    await expect(main.getByText(opening, { exact: false })).toBeVisible();
+    await expect(main.locator('p').first()).toContainText(opening);
+    await expect(main.getByRole('link', { name: 'MagiC', exact: true })).toBeVisible();
     const index = main.locator('.manual-index');
     await expect(index.getByRole('link', { name: entry, exact: true })).toBeVisible();
     await expect(index.getByRole('link', { name: `About the ${subsystem.toUpperCase()}`, exact: true })).toHaveCount(0);
@@ -502,6 +528,75 @@ test('the BIOS and XBIOS overviews replace their About subpages', async ({ page 
     await page.goto(`${overview}about-the-${subsystem}/`);
     await expect(page).toHaveURL(overview);
   }
+});
+
+test('compatibility sections introduce pTOS before other system behavior', async ({ page }) => {
+  const main = page.getByRole('main');
+  await page.goto('/subsystems/aes/aes-fundamentals/');
+  await expect(main.locator('p').first()).toContainText('pTOS provides the classic kernel AES');
+  await expect(main).toContainText('MagiC, MiNT or MultiTOS');
+  await page.goto('/subsystems/gemdos/support-for-alternative-file-systems/');
+  await expect(main.locator('p').first()).toContainText('built-in FAT filesystem');
+  await expect(main).toContainText('MagiC as of Version 3.0');
+  await page.goto('/subsystems/gemdos/signals/');
+  await expect(main.locator('p').first()).toContainText('currently unimplemented in pTOS');
+  await expect(main.getByRole('table', { name: 'GEMDOS signal numbers and names' })).toBeVisible();
+  await page.goto('/reference/pwaitpid/');
+  await expect(main.locator('.historical-availability')).toContainText('MagiC as of Version 5.04');
+});
+
+test('GEMDOS groups system calls, programming notes, legacy extensions and indexes in order', async ({ page }) => {
+  await page.goto('/subsystems/gemdos/');
+  const main = page.getByRole('main');
+  await expect(main.getByRole('heading', { level: 2 })).toHaveText([
+    'System calls', 'Program formats and notes', 'Legacy compatibility', 'Reference indexes',
+  ]);
+  const groups = main.getByRole('list');
+  await expect(groups).toHaveCount(4);
+  await expect(groups.nth(0).getByRole('link')).toHaveText([
+    'File functions', 'Directory functions', 'Character input/output', 'Date and Time',
+    'Process functions', 'Memory management', 'System functions', 'MiNTnet socket functions',
+  ]);
+  await expect(groups.nth(1).getByRole('link')).toHaveText([
+    'The program format', 'Program launch and TPA', 'Signals', 'Support for alternative file-systems',
+    'Pipes, Test for', '68k GEMDOS trap',
+  ]);
+  await expect(groups.nth(2).getByRole('link')).toHaveText(['Legacy extensions']);
+  await expect(groups.nth(3).getByRole('link')).toHaveText([
+    'GEMDOS function list', 'GEMDOS structures', 'GEMDOS error messages',
+  ]);
+
+  await main.getByRole('link', { name: 'MiNTnet socket functions' }).click();
+  await expect(page).toHaveURL('/subsystems/gemdos/network/');
+  await expect(main.getByRole('link', { name: 'Fsocket', exact: true })).toBeVisible();
+  await expect(main.getByRole('link', { name: 'F_lock', exact: true })).toHaveCount(0);
+  await page.goBack();
+
+  await main.getByRole('link', { name: 'Legacy extensions' }).click();
+  await expect(main.getByRole('list').getByRole('link')).toHaveText([
+    'Legacy network functions', "C'Task Royal", 'NAP BioNet100', 'PowerDOS', 'TekBios',
+  ]);
+  await main.getByRole('link', { name: 'Legacy network functions' }).click();
+  await expect(page).toHaveURL('/subsystems/gemdos/network-functions/');
+  await expect(main.getByRole('link', { name: 'F_lock', exact: true })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Legacy extensions' })).toBeVisible();
+});
+
+test('Protocols contains ARGV and the old GEMDOS URL preserves deep links', async ({ page }) => {
+  const argv = '/conventions/protocols/argv-procedure/';
+  const anchor = '#ARGV_20at_20the_20caller';
+  const main = page.getByRole('main');
+  await page.goto('/conventions/protocols/');
+  await main.getByRole('link', { name: 'ARGV procedure', exact: true }).click();
+  await expect(page).toHaveURL(argv);
+  await expect(main.getByRole('heading', { name: 'ARGV procedure', exact: true })).toBeVisible();
+  await expect(main.getByText('serves for passing extended command lines', { exact: false })).toBeVisible();
+
+  await page.goto(`/subsystems/gemdos/argv-procedure/${anchor}`);
+  await expect(page).toHaveURL(`${argv}${anchor}`);
+  await expect(main.locator(anchor)).toBeAttached();
+  await page.goto('/reference/pexec/');
+  await expect(main.getByRole('link', { name: 'ARGV procedure', exact: true })).toHaveAttribute('href', argv);
 });
 
 test('the GEMDOS signal table has distinct number and name columns with no spacer row', async ({ page }) => {
@@ -618,14 +713,16 @@ test('original German content and UDO aliases remain navigable', async ({ page }
   await expect(page.getByText('Verfügbar', { exact: true })).toBeVisible();
 });
 
-test('the PR #903 notes distinguish native staged execution, fork and PROCESS services', async ({ page }) => {
+test('the pTOS master notes distinguish native staged execution, fork and PROCESS services', async ({ page }) => {
   await page.goto('/reference/pexec/');
   const select = selectTarget(page);
   await select.selectOption('arm');
   await expect(page.getByText('On MMU ARM, modes 3, 4, 5, 6, 7, 104 and 106 are unsupported.', { exact: false })).toBeVisible();
-  await expect(page.getByRole('row', { name: /200 .*same PROCESS/ })).toBeVisible();
+  await expect(page.getByRole('row', { name: /200 .*same PROCESS/ })).toContainText('CONF_WITH_EXEC_REPLACE');
+  await select.selectOption('68k');
+  await expect(page.getByText(/including PRG-only builds/)).toBeVisible();
   await page.goto('/reference/pclone/');
-  await expect(page.getByRole('link', { name: 'pTOS PR #903' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'master snapshot' })).toHaveAttribute('href', ptosSourceTree);
   await expect(page.getByRole('link', { name: 'ParaTOS PR #27' })).toBeVisible();
   await expect(page.getByRole('row', { name: /child_pid/ })).toContainText('+28');
   await expect(page.getByText(/pTOS 1\.4/)).toHaveCount(0);
@@ -638,7 +735,8 @@ test('the PR #903 notes distinguish native staged execution, fork and PROCESS se
 test('search covers historical sections outside the function index', async ({ page }) => {
   await page.goto('/search/');
   await page.getByRole('searchbox').fill('argv procedure');
-  await expect(page.getByRole('link', { name: 'ARGV procedure', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'ARGV procedure', exact: true }))
+    .toHaveAttribute('href', '/conventions/protocols/argv-procedure/');
 });
 
 test('GFA BASIC shows compendium provenance, direct traps and runtime wrappers', async ({ page }) => {

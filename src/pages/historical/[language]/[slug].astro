@@ -8,7 +8,6 @@ import GfaBinding from '../../../components/GfaBinding.astro';
 import HistoricalNativeTarget from '../../../components/HistoricalNativeTarget.astro';
 import HistoricalPtosAvailability from '../../../components/HistoricalPtosAvailability.astro';
 import HistoricalRedirect from '../../../components/HistoricalRedirect.astro';
-import { sourceLink } from '../../../data/catalog';
 import { pages } from '../../../data/historical';
 import { importedNavigation } from '../../../data/manual-structure';
 import type { HistoricalPage } from '../../../data/historical';
@@ -24,14 +23,13 @@ export function getStaticPaths() {
 interface Props { page: HistoricalPage }
 const { page } = Astro.props;
 const english = page.language === 'en';
-const source = sourceLink(['tos', page.path, 'Original UDO source']);
 const description = page.description || page.title;
 const { chapter, breadcrumbs } = importedNavigation(page);
 const availability = page.function ? page.facts.findIndex(({ label }) => /^(Availability|Verfügbar):?$/.test(label)) : -1;
 const destination = (historicalMerges as Record<string, string>)[page.slug];
 ---
 {destination ? <HistoricalRedirect name={page.title} {destination} /> :
-<Layout title={page.title} {description} running={chapter?.name ?? `tos.hyp — ${page.subsystem}`} {breadcrumbs}>
+<Layout title={page.title} {description} running={chapter?.name ?? page.subsystem} {breadcrumbs}>
   <article class="historical-entry" lang={page.language}>
     {page.function ? <div id={page.id}><Masthead name={page.title} title={page.operation} subsystem={chapter?.name ?? page.subsystem} /></div>
       : <header class="directory-head"><h1 id={page.id}>{page.title}</h1></header>}
@@ -53,19 +51,14 @@ const destination = (historicalMerges as Record<string, string>)[page.slug];
     {page.function && <TargetPanels heading={english ? 'Calling Convention' : 'Aufrufkonvention'}>
       <div slot="68k">
         {page.bindings?.assembly ? <div set:html={formatHistoricalTables(page.bindings.assembly, page.language)} /> : <p>{english ? 'See the historical entry for available bindings.' : 'Siehe den historischen Eintrag für vorhandene Bindungen.'}</p>}
-        {page.bindings && <a href={page.bindings.href}>{english ? 'Original binding reference' : 'Originalbindung'}</a>}
+        {page.bindings && <a href={page.bindings.href}>{english ? 'Binding details' : 'Aufrufdetails'}</a>}
       </div>
       <HistoricalNativeTarget slot="arm" {page} cpu="arm" />
       <HistoricalNativeTarget slot="x32" {page} cpu="x32" />
       <GfaBinding slot="gfa" code={page.bindings?.gfa} raw={page.bindings?.raw} symbol={page.title}
         subsystem={page.subsystem} discardResult={/^void\s/.test(page.prototype)} language={page.language} />
     </TargetPanels>}
-    <section aria-labelledby="historical-source">
-      <h2 id="historical-source" class="prm-section-heading ruled">{english ? 'Source' : 'Quelle'}</h2>
-      <p><a href={source.href}><code>{source.path}</code></a> · <code>{source.revision.slice(0, 12)}</code></p>
-      {page.findings > 0 && <p class="revision-note">English translation needs review. <a href="/source/historical-report.json">Translation findings</a></p>}
-    </section>
-    <nav class="historical-nav" aria-label={english ? 'Historical reference navigation' : 'Navigation im historischen Handbuch'}>
+    <nav class="historical-nav" aria-label={english ? 'Reference navigation' : 'Navigation im Handbuch'}>
       {page.nav.map(item => <a href={item.href}>{item.label}</a>)}
     </nav>
   </article>

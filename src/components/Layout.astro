@@ -36,9 +36,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         </label>
       </header>
       <nav class="site-nav" aria-label="Manual">
-        <a href="/functions/">Function index</a>
         {manualAreas.map(({ name, href }) => <a href={href}>{name}</a>)}
-        <a href="/topics/">Topics</a>
         <a href="/gfa-basic/">GFA BASIC</a>
         <a href="/search/">Search</a>
       </nav>

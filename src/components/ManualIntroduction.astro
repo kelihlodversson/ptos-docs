@@ -1,69 +1,123 @@
 ---
-import { sourceLink } from '../data/catalog';
+import { elfEntryPath, systemVariablesPath } from '../data/manual-structure';
 
 interface Props { subject: string }
 const { subject } = Astro.props;
-const introduction = sourceLink(['tos', 'tos/tos_en.ui', 'TOS and GEM in the original UDO source']);
-const bios = sourceLink(['tos', 'bios/bios_en.ui', 'About the BIOS in the original UDO source']);
-const gemdos = sourceLink(['tos', 'gemdos/gemdos.u', 'About the GEMDOS in the original UDO source']);
-const xbios = sourceLink(['tos', 'xbios/xbios.u', 'About the XBIOS in the original UDO source']);
 ---
 {subject === 'subsystems' && <>
-  <p>Atari introduced TOS in 1985 with the ST and developed it further for the STE, Mega ST, TT and Falcon.
-    Its programming interfaces are grouped by responsibility. GEMDOS provides file, memory and process services.
-    BIOS handles basic device I/O and system vectors, and XBIOS provides extended hardware services.</p>
+  <p>pTOS organizes its system interfaces around the TOS subsystems. GEMDOS provides file, memory and process services.
+    BIOS handles basic device I/O and system vectors, and XBIOS provides extended hardware services.
+    Each call’s reference describes the available targets and calling conventions.</p>
   <p>The graphical environment, GEM, uses AES for interaction with the user and VDI for drawing.
     Line-A provides low-level 68k graphics operations. The PMMU functions-handler covers 68k memory management,
-    and XHDI defines a common interface to block storage drivers. For other TOS-compatible systems, see
-    <a href="/os-variants/">OS variants and extensions</a>.</p>
+    and XHDI defines a common interface to block storage drivers.</p>
+  <p>Atari introduced TOS in 1985 with the ST and developed it further for the STE, Mega ST, TT and Falcon.
+    Many pTOS extensions draw on later interfaces from FreeMiNT and MagiC. See
+    <a href="/os-variants/">OS variants and extensions</a> for compatibility context.</p>
 </>}
 {subject === 'bios' && <>
-  <p id="BIOS_2C_20The">The Basic Input/Output System (BIOS) provides low-level access to devices and system vectors.
-    Its functions transfer characters, report device status, access disk sectors and inspect or replace interrupt vectors.
-    <a href="/subsystems/gemdos/">GEMDOS</a> provides higher-level file and device I/O for applications.</p>
+  <p id="BIOS_2C_20The">pTOS uses the Basic Input/Output System (BIOS) for low-level character I/O, device status,
+    disk sectors and system vectors. The target selector on each function page shows the calling convention.
+    Device availability depends on the hardware and build.
+    <a href="/subsystems/gemdos/">GEMDOS</a> provides higher-level file and device I/O.</p>
+  <p>On protected builds, use the documented <a href={systemVariablesPath}>system variable access modes</a>.</p>
   <p>Under <a href="/os-variants/magic/">MagiC</a>, the BIOS is reentrant. An interrupt handler can call these functions
-    when the supervisor stack has room. Custom BIOS hooks should be reentrant and work independently of the contents
+    when the supervisor stack has room. MagiC BIOS hooks should be reentrant and work independently of the contents
     of the legacy <code>saveptr_area</code>.</p>
-  <p class="revision-note">Adapted from <a href={bios.href}>{bios.label}</a>.</p>
 </>}
 {subject === 'xbios' && <>
-  <p>The Extended BIOS (XBIOS) provides access to machine-specific hardware and firmware. Its function groups cover
-    video, sound, storage and DMA, clocks and interrupts, and devices such as keyboards, printers and DSPs.
-    Use the <a href="/subsystems/gemdos/">GEMDOS</a> or <a href="/subsystems/bios/">BIOS</a> services where they cover the operation.</p>
+  <p>pTOS uses the Extended BIOS (XBIOS) for hardware and firmware services such as video, audio, clocks and device control.
+    Availability depends on the target and attached hardware. The function references describe the native bindings and
+    calling requirements. Use <a href="/subsystems/gemdos/">GEMDOS</a> or <a href="/subsystems/bios/">BIOS</a>
+    services where they cover the operation.</p>
   <p>Under <a href="/os-variants/magic/">MagiC</a>, the XBIOS is reentrant. An interrupt handler can call an XBIOS function
     when the supervisor stack has room.</p>
-  <p class="revision-note">Adapted from <a href={xbios.href}>{xbios.label}</a>.</p>
 </>}
 {subject === 'gemdos' && <>
-  <p>GEMDOS provides the highest-level operating system functions in TOS. It manages files, directories,
-    memory and processes. The <a href="/subsystems/bios/">BIOS</a> and <a href="/subsystems/xbios/">XBIOS</a>
+  <p>GEMDOS provides the highest-level operating system functions in pTOS. It manages files, directories,
+    memory and processes. On supported builds pTOS extends GEMDOS with native threads, process scheduling and
+    per-process address spaces. The <a href="/subsystems/bios/">BIOS</a> and <a href="/subsystems/xbios/">XBIOS</a>
     provide the hardware-dependent services.</p>
   <p>GEMDOS function names usually start with a letter that identifies their category. <code>F</code> covers
     files and network calls, <code>D</code> directories, <code>P</code> processes, <code>M</code> memory,
     <code>S</code> system functions, <code>T</code> date and time, and <code>C</code> character input and output.</p>
-  <p>GEMDOS is reentrant under <a href="/os-variants/magic/">MagiC</a>, including its file system from MagiC 3.0.
+  <p id="MiNT-compatible_20functions">pTOS implements a subset of the GEMDOS extensions introduced by FreeMiNT and
+    <a href="/os-variants/magic/">MagiC</a>, adapting them for its native targets and memory model. For example,
+    <a href="/reference/ssystem/">Ssystem</a> provides several FreeMiNT-compatible modes alongside pTOS-specific ones.
+    Availability and behavior depend on the call, mode and build. MagiC 3.0 and some
+    <a href="/historical/en/metados/">MetaDOS</a> drivers also implement some MiNT-compatible functions.</p>
+  <p>GEMDOS is reentrant under MagiC, including its file system from MagiC 3.0.
     For example, moving a disk error alert may require allocating memory while a file operation is still in progress.
     MagiC can service that allocation during the file operation.</p>
-  <p id="MiNT-compatible_20functions">MiNT added many GEMDOS functions. MagiC 3.0 and some
-    <a href="/historical/en/metados/">MetaDOS</a> drivers also implement some MiNT-compatible functions.</p>
-  <p class="revision-note">Adapted from <a href={gemdos.href}>{gemdos.label}</a>.</p>
+</>}
+{['aes', 'aes-fundamentals'].includes(subject) && <>
+  <p>pTOS provides the classic kernel AES on supported flat-memory 68k and ARM builds. On x32 the experimental
+    <code>libaes</code> runs in userspace and uses <a href="/abi/cuis/">CUIS</a> for shared window, input and session services.
+    It supports multiple concurrent GEM applications and desk accessories. The available AES calls and extensions depend on the build.</p>
+  {subject === 'aes-fundamentals' && <p>The application and accessory conventions below give the classic TOS,
+    MiNT and MagiC context for these interfaces.</p>}
 </>}
 {subject === 'aes' && <>
-  <p>GEM, the Graphics Environment Manager, is the graphical interface through which users interact with TOS.
-    Digital Research developed GEM for Intel-based PCs in 1984. The Atari ST brought it to a wider audience.
-    Other versions included GEM on X for Unix and X/GEM for FlexOS.</p>
   <p>Application Environment Services (AES) organizes the user environment through applications, windows,
     menus, dialogs and events. The <a href="/subsystems/vdi/">Virtual Device Interface</a> provides the graphics
     used to draw that environment. Follow the <a href="/conventions/programming-guidelines/style-guidelines/">GEM style guidelines</a>
     when designing user-facing programs.</p>
+  <p>Digital Research developed GEM for Intel-based PCs in 1984. The Atari ST brought it to a wider audience.
+    Other versions included GEM on X for Unix and X/GEM for FlexOS.</p>
 </>}
-{subject === 'vdi' && <>
-  <p>The Virtual Device Interface (VDI) is GEM’s standardized graphics system. It gives programs a common
+{['vdi', 'about-the-vdi'].includes(subject) && <>
+  <p>pTOS provides GEM drawing services through VDI. 68k and ARM use their existing interfaces. On x32,
+    builds with <code>CONF_WITH_X32_VDI</code> use a typed userspace client with operation-specific kernel services.
+    The operation references describe coverage for each target.</p>
+</>}
+{subject === 'vdi' && <p>The Virtual Device Interface (VDI) is GEM’s standardized graphics system. It gives programs a common
     vocabulary for drawing lines, filled shapes, text and raster images through device workstations.
-    <a href="/subsystems/aes/">AES</a> manages the application environment and uses VDI to draw its interface.</p>
-</>}
-{['subsystems', 'aes', 'vdi'].includes(subject) &&
-  <p class="revision-note">Adapted from <a href={introduction.href}>{introduction.label}</a>.</p>}
+    <a href="/subsystems/aes/">AES</a> manages the application environment and uses VDI to draw its interface.</p>}
+{subject === 'line-a' && <p>On pTOS, the classic Line-A interface is available on 68k builds that enable
+  <code>CONF_WITH_LINEA</code>. For graphics across architectures, see <a href="/subsystems/vdi/">VDI</a>.</p>}
+{subject === 'the-pmmu-functions-handler' && <p>pTOS configures supported 68k MMUs in the kernel and exposes native
+  mapping calls such as <a href="/reference/mmap/">Mmap</a> on eligible builds. This chapter covers the classic
+  PMMU cookie interface provided by external 68k memory managers.</p>}
+{subject === 'xhdi' && <p>pTOS builds with <code>CONF_WITH_XHDI</code> expose the XHDI cookie and entry point for
+  block devices. The function references describe the built-in operations and the limits of the classic interface.</p>}
+{subject === 'process-functions' && <p>pTOS builds with native scheduling support process and thread creation
+  through <code>Pclone</code>, plus process waits and executable replacement. On eligible MMU
+  builds, <code>Pfork</code> and <code>Pvfork</code> create private copy-on-write
+  children. FreeMiNT’s <code>Pvfork</code> allows the child to share ordinary memory with the parent.</p>}
+{subject === 'support-for-alternative-file-systems' && <p>pTOS provides GEMDOS file and directory services on its
+  built-in FAT filesystem. The FreeMiNT <code>XFS</code> driver interface and calls such as <code>Dopendir</code> and
+  <code>Dreaddir</code> are outside the current pTOS implementation. The interfaces below describe the options
+  introduced by MiNT and other TOS variants.</p>}
+{subject === 'gemdos-error-messages' && <p>pTOS GEMDOS reports errors as negative return values. Use each function’s
+  return-value documentation for its pTOS behavior. The table includes codes defined by other TOS variants.</p>}
+{subject === 'signals' && <p>pTOS provides native process and thread control through the
+  <a href="/subsystems/gemdos/process-functions/">GEMDOS process functions</a>. The MiNT signal handling interfaces
+  described below are currently unimplemented in pTOS.</p>}
+{subject === 'pipes-test-for' && <p>pTOS currently leaves <a href="/historical/en/fpipe/">Fpipe</a> unimplemented.
+  The checks below apply to TOS-compatible systems that expose pipes on drive <code>U:</code>.</p>}
+{subject === 'network' && <p>pTOS currently leaves the MiNTnet socket calls unimplemented. This section documents
+  the BSD socket and vectored I/O calls in the MiNTnet ABI.</p>}
+{subject === 'argv-procedure' && <p>The pTOS libcmini startup code can read the classic ARGV environment convention.
+  The x32 <code>libaes</code> shell can also build an ARGV environment when launching programs with
+  <code>CL_PARSE</code>. Dynamically linked pTOS ELF programs receive arguments through the
+  <a href={elfEntryPath}>ELF32 initial stack</a>.</p>}
+{subject === 'os-variants' && <p>The pTOS chapter covers configuration, applications and
+  startup conventions. The other chapters describe TOS variants and environments whose interfaces provide
+  compatibility context for pTOS development.</p>}
+{subject === 'make-up-of-the-magx-inf-file' && <p>pTOS boot settings are documented under
+  <a href="/os-variants/ptos/ptos-ini/">PTOS.INI</a>. <code>MAGX.INF</code> configures MagiC.</p>}
+{subject === 'threads-in-magic' && <p>For native threads in pTOS, see <a href="/reference/pclone/">Pclone</a> and
+  <a href="/reference/pthjoin/">Pthjoin</a>. The conventions below describe the MagiC thread API.</p>}
+{subject === 'shared-libraries' && <p>pTOS uses a userspace linker for <a href={elfEntryPath}>ELF32 shared libraries</a>
+  on supported configurations. The format below describes MagiC’s shared libraries.</p>}
+{subject === 'tos-list' && <p>See <a href="/os-variants/ptos/">pTOS</a> for its current development configuration
+  and startup conventions. This table records releases from the TOS family.</p>}
+{subject === 'three-important-programming-rules' && <p>On pTOS, use the system interface for each service and
+  its documented target binding. In particular, applications on protected builds should read system variables
+  through <a href={systemVariablesPath}>the supported Ssystem modes</a>.</p>}
+{subject === 'olga-protocol' && <p>On pTOS, AES provides application messaging on builds that include an AES.
+  OLGA also requires participating applications and an OLGA manager. Compatibility with those components on
+  current pTOS builds is unverified.</p>}
 {subject === 'ptos' && <p>pTOS is an EmuTOS-derived operating system with native builds for 68k, ARM and x32.
   Its boot files depend on the target and build configuration. These sections cover executable handlers,
   external EmuDesk and EmuCON, fonts, and the startup ABI for dynamically linked ELF programs.</p>}
