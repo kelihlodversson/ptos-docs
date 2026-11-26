@@ -79,9 +79,26 @@ for (const { name, number } of documentedModes) {
   assert.equal(Number(selector), number & 0xffff, name);
 }
 console.log(`Verified all ${documentedModes.length} documented Ssystem selectors against the dispatcher and header`);
-for (const [name, fn] of Object.entries({ LAUNCH_ATTACH: 93, STREAM_RECEIPT: 94, ENDPOINT_BARRIER: 95, STREAM_BATCH: 96 })) {
-  assert.equal(define(cuis, `CUIS_${name}`), fn);
+const { cuisGroups, cuisImplementation, cuisPrototype, cuisTransport } = await import('../src/data/cuis-calls.ts');
+const cuisCalls = cuisGroups.flatMap(group => group.calls);
+const cuisTrap = x32Trap.split('case CUIS_SERVICE_CLASS:')[1].split('case VDI_SERVICE_CLASS:')[0];
+const dispatchedCuisCalls = new Set([...cuisTrap.matchAll(/fn == (CUIS_\w+)/g)].map(match => match[1]));
+const cuisSession = fromKernel('aes/cuis_session.c');
+for (const handler of ['cuis_service', 'cuis_window_service', 'cuis_input_config', 'cuis_peer_service', 'cuis_entry_service']) {
+  const body = new RegExp(`^LONG ${handler}\\([\\s\\S]*?^\\}`, 'm').exec(cuisSession)?.[0];
+  assert.ok(body, handler);
+  for (const [, name] of body.matchAll(/(?:case |function\s*(?:==|!=)\s*)(CUIS_\w+)/g)) dispatchedCuisCalls.add(name);
 }
+assert.deepEqual(cuisCalls.map(call => call.name).sort(), [...dispatchedCuisCalls].sort());
+assert.equal(new Set(cuisCalls.map(call => call.opcode)).size, cuisCalls.length);
+const implementationSources = new Map([...new Set(cuisCalls.map(cuisImplementation))].map(path => [path, fromKernel(path)]));
+for (const call of cuisCalls) {
+  assert.equal(define(cuis, call.name), call.opcode, call.name);
+  assert.ok(call.parameters.length <= 6, call.name);
+  assert.match(implementationSources.get(cuisImplementation(call)), new RegExp(`^LONG ${call.handler}\\(`, 'm'));
+}
+assert.ok(fromKernel(cuisTransport).includes(cuisPrototype.replace(/\s+/g, ' ').slice(0, -1)));
+console.log(`Verified all ${cuisCalls.length} documented CUIS selectors against the dispatcher and header`);
 assert.equal(define(cuis, 'CUIS_STREAM_READ_ORIGIN'), 2);
 assert.match(fromKernel('lib/aes/lifecycle.c'), /cuis_call6\(CUIS_STREAM_READ,[^;]+CUIS_STREAM_READ_ORIGIN,[^;]+&own_receipt/);
 assert.match(fromKernel('bdos/ssystem.c'), /#if CONF_WITH_PROCESS_EXEC\s+case S_PROCEXEC/);

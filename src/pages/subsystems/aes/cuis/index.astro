@@ -1,0 +1,51 @@
+---
+import CuisTargetPanels from '../../../../components/CuisTargetPanels.astro';
+import Layout from '../../../../components/Layout.astro';
+import SourceList from '../../../../components/SourceList.astro';
+import { cuisGroups, cuisGroupPath, cuisTransport } from '../../../../data/cuis-calls';
+import { manualBreadcrumbs } from '../../../../data/manual-structure';
+import abi from '../../../../data/abi.json';
+---
+<Layout title="CUIS" description="Core User Interface Services and the pTOS syscall ABI used by userspace libaes."
+  running="AES" breadcrumbs={manualBreadcrumbs('aes')}>
+  <header class="directory-head"><h1>CUIS</h1><p>Core User Interface Services</p></header>
+  <aside class="prm-notice" aria-label="CUIS development status">
+    <strong>Development warning.</strong> CUIS is under heavy development. Its API and syscall ABI may change.
+  </aside>
+  <p>CUIS is the kernel backend for the experimental userspace <code>libaes.so</code>.
+    The library invokes CUIS through an architecture-specific syscall ABI. CUIS coordinates shared state such as
+    endpoint ownership, window stacking, clipping, focus, input and waits.</p>
+  <p>Applications call the GEM API through GEMlib and libaes, starting with
+    <a href="/reference/appl_init/"><code>appl_init</code></a>. libaes translates those calls into CUIS operations
+    when it needs a kernel service. It handles object trees, resources, dialogs and GEM policy in the application’s
+    address space. <a href="/subsystems/vdi/">VDI</a> provides drawing operations.</p>
+  <p>CUIS currently runs only on x32 builds with <code>CONF_WITH_CUIS</code>. The proposed 68k and ARM conventions
+    are described below.</p>
+  <section aria-labelledby="cuis-groups">
+    <h2 id="cuis-groups" class="prm-section-heading ruled">Call groups</h2>
+    <ul class="manual-index">
+      {cuisGroups.map(group => <li><a class="manual-index-symbol" href={cuisGroupPath(group.slug)}>{group.title}</a>
+        <span>{group.description}</span></li>)}
+    </ul>
+  </section>
+  <CuisTargetPanels opcode={abi.cuis.sessionQuery} registers={[
+    ['RDI, RSI, RDX, R10, R8, R9', 'Argument slots in order. Each call documents the slots it uses.'],
+  ]}>
+    <p>The selector diagram uses <a href="/reference/cuis-session-query/"><code>CUIS_SESSION_QUERY</code></a>
+      as an example. The class occupies the upper 32 bits of RAX, and the operation occupies the lower 32 bits.
+      Sign-extend signed scalar inputs such as coordinates when the call requires it. Use zero-extended x32 user
+      addresses for pointers to buffers. Fixed-width outputs are little-endian.</p>
+    <p>Endpoint handles, GUI client IDs, PROCESS numbers and MiNT PIDs name different objects.
+      See <a href="/reference/cuis-peer-query/"><code>CUIS_PEER_QUERY</code></a> for client and PROCESS identity
+      and <a href="/reference/s-procexec/"><code>S_PROCEXEC</code></a> for process observation.</p>
+  </CuisTargetPanels>
+  <SourceList sources={[
+    ['ptos', 'doc/libaes-compatibility.md', 'GEM API coverage and userspace binding ownership'],
+    ['ptos', 'include/cuis.h', 'CUIS service class and operation selectors'],
+    ['ptos', cuisTransport, 'libaes x32 syscall transport'],
+    ['ptos', 'bios/arch/x86_64/trap.c', 'Native dispatch and privilege checks'],
+    ['ptos', 'aes/Kconfig', 'CUIS configuration and architecture constraints'],
+    ['ptos', 'doc/cuis.txt', 'CUIS and libaes implementation contracts'],
+    ['ptos', 'tests/cuis/program.c', 'Native syscall and invalid-handle probes'],
+  ]} />
+</Layout>

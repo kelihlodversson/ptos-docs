@@ -1,0 +1,44 @@
+---
+import CallingConvention from './CallingConvention.astro';
+import GfaBinding from './GfaBinding.astro';
+import RegisterMap from './RegisterMap.astro';
+import TargetPanels from './TargetPanels.astro';
+import abi from '../data/abi.json';
+
+interface Props {
+  opcode: number;
+  registers: [name: string, detail: string][];
+}
+const { opcode, registers } = Astro.props;
+const proposal = 'https://github.com/kelihlodversson/pTOS/issues/898#cuis-architecture-interfaces';
+---
+<TargetPanels>
+  <div slot="68k">
+    <CallingConvention binding={{ status: 'planned', scope: '68k',
+      detail: 'CUIS is currently implemented only on x32. The proposal uses TRAP #2 with a dedicated CUIS selector in D0.' }} />
+    <RegisterMap caption="Proposed register assignments" rows={[
+      ['D0', 'CUIS service selector. The numeric value is still open.'], ['D1', 'CUIS operation opcode.'],
+    ]} />
+    <p>The remaining argument registers, return convention and register preservation will be specified during the port.
+      The proposal uses the same trap contract for native m68k libaes.so and the ParaTOS libaes.img.
+      <a href={proposal}>68k and ARM ABI proposal in pTOS #898</a></p>
+  </div>
+  <div slot="arm">
+    <CallingConvention binding={{ status: 'planned', scope: 'ARM',
+      detail: 'CUIS is currently implemented only on x32. The proposal reserves SVC #21 as the dedicated A32 entry.' }} />
+    <RegisterMap caption="Proposed register assignments" rows={[
+      ['R0', 'CUIS operation opcode. The SVC immediate selects the service.'],
+    ]} />
+    <p>The remaining argument registers, return convention and register preservation will be specified during the port.
+      <a href={proposal}>68k and ARM ABI proposal in pTOS #898</a></p>
+  </div>
+  <CallingConvention slot="x32" binding={{
+    status: 'experimental', scope: 'x32 · CONF_WITH_CUIS',
+    detail: 'Enter the kernel with SYSCALL from ring 3. RCX and R11 are clobbered. The dispatcher returns EINVFN if CUIS is disabled.',
+    registers: [['RAX', '64-bit selector on entry. Sign-extended 32-bit result on return.'], ...registers],
+    x32Selector: { trapClass: abi.cuis.class, functionNumber: opcode },
+  }}>
+    <slot />
+  </CallingConvention>
+  <GfaBinding slot="gfa" />
+</TargetPanels>

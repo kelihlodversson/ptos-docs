@@ -6,6 +6,7 @@ export default defineConfig({
   output: 'static',
   trailingSlash: 'always',
   redirects: {
+    '/abi/cuis/': '/subsystems/aes/cuis/',
     '/abi/elf-entry/': '/os-variants/ptos/elf-entry/',
     '/historical/': '/sources/',
     '/subsystems/bios/about-the-bios/': '/subsystems/bios/',

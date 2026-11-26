@@ -7,7 +7,8 @@ test.skip(!directory, 'Set MANUAL_SCREENSHOTS to capture review images.');
 for (const { slug, route, target } of [
   { slug: 'fclose', route: '/reference/fclose/', target: '68k' },
   { slug: 'pexec', route: '/reference/pexec/', target: '68k' },
-  { slug: 'cuis', route: '/abi/cuis/', target: 'x32' },
+  { slug: 'cuis', route: '/subsystems/aes/cuis/', target: 'x32' },
+  { slug: 'cuis-call', route: '/reference/cuis-launch-attach/', target: 'x32' },
   { slug: 'fopen', route: '/historical/en/fopen/', target: '68k' },
   { slug: 'pclone', route: '/reference/pclone/', target: 'x32' },
 ]) {
@@ -25,9 +26,10 @@ for (const { slug, route, target } of [
       if (slug === 'pexec' && size === 'desktop') {
         await page.pdf({ path: `${directory}/pexec-print.pdf`, format: 'A4', preferCSSPageSize: true });
       }
-      if (slug === 'cuis' && size === 'desktop') {
-        await page.pdf({ path: `${directory}/cuis-print.pdf`, format: 'A4', preferCSSPageSize: true });
-        for (const [state, value] of [['unsupported', 'arm'], ['undocumented-gfa', 'gfa']]) {
+      if (slug === 'cuis-call' && size === 'desktop') {
+        await page.pdf({ path: `${directory}/cuis-call-print.pdf`, format: 'A4', preferCSSPageSize: true });
+        await page.locator('#calling-convention').evaluate(el => el.scrollIntoView({ block: 'start' }));
+        for (const [state, value] of [['planned-arm', 'arm'], ['undocumented-gfa', 'gfa']]) {
           await page.getByRole('combobox', { name: 'Target / Language' }).selectOption(value);
           await page.screenshot({ path: `${directory}/cuis-${state}.png`, animations: 'disabled' });
         }
