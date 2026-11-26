@@ -3,7 +3,7 @@ import { formatHistoricalTables } from '../../data/format-historical-tables';
 import Layout from '../../components/Layout.astro';
 import ManualIntroduction from '../../components/ManualIntroduction.astro';
 import { catalog } from '../../data/catalog';
-import { chapters, gemdosOverviewGroups, historicalSectionBody } from '../../data/manual-structure';
+import { chapterOverviewGroups, chapters, historicalSectionBody } from '../../data/manual-structure';
 
 export function getStaticPaths() {
   return chapters.map(chapter => ({ params: { area: chapter.area.slug, slug: chapter.slug }, props: { chapter } }));
@@ -12,8 +12,9 @@ interface Props { chapter: typeof chapters[number] }
 const { chapter } = Astro.props;
 const entries = catalog.filter(entry => entry.chapter?.slug === chapter.slug && !entry.section);
 const sectionsBySlug = Object.fromEntries(chapter.sections.map(section => [section.slug, section]));
-const groups: { name?: string; links: { name: string; href: string; description?: string }[] }[] = chapter.slug === 'gemdos'
-  ? gemdosOverviewGroups.map(({ name, slugs }, index) => ({
+const overviewGroups = chapterOverviewGroups[chapter.slug];
+const groups: { name?: string; links: { name: string; href: string; description?: string }[] }[] = overviewGroups
+  ? overviewGroups.map(({ name, slugs }, index) => ({
     name,
     links: [...slugs.map(slug => sectionsBySlug[slug]), ...(index === 0 ? entries : [])],
   }))

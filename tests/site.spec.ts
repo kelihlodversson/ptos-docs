@@ -533,23 +533,47 @@ test('the GEMDOS overview introduces the subsystem and replaces the About subpag
 });
 
 test('the BIOS and XBIOS overviews replace their About subpages', async ({ page }) => {
-  for (const [subsystem, opening, entry] of [
-    ['bios', 'pTOS uses the Basic Input/Output System (BIOS)', 'Getmpb'],
-    ['xbios', 'pTOS uses the Extended BIOS (XBIOS)', 'Drive functions'],
-  ]) {
+  for (const [subsystem, opening, entry, extensionHeading, extension] of [
+    ['bios', 'pTOS uses the Basic Input/Output System (BIOS)', 'Getmpb', 'Legacy extensions', 'BSIM-BIOS-Extension'],
+    ['xbios', 'pTOS uses the Extended BIOS (XBIOS)', 'Drive functions', 'Platform compatibility', 'Platform extensions'],
+  ] as const) {
     const overview = `/subsystems/${subsystem}/`;
     await page.goto(overview);
     const main = page.getByRole('main');
     await expect(main.locator('p').first()).toContainText(opening);
     await expect(main.getByRole('link', { name: 'MagiC', exact: true })).toBeVisible();
-    const index = main.locator('.manual-index');
-    await expect(index.getByRole('link', { name: entry, exact: true })).toBeVisible();
+    await expect(main.getByRole('heading', { level: 2 })).toHaveText([
+      'System calls', 'Programming notes', extensionHeading, 'Reference indexes',
+    ]);
+    const indexes = main.locator('.manual-index');
+    await expect(indexes.first().getByRole('link', { name: entry, exact: true })).toBeVisible();
+    await expect(indexes.nth(2).getByRole('link')).toHaveText([extension]);
+    const name = subsystem.toUpperCase();
+    await expect(indexes.last().getByRole('link')).toHaveText([
+      `${name} function list`, `${name} Structures`, `${name} error-messages`,
+    ]);
     await expect(main.getByRole('link', { name: `About the ${subsystem.toUpperCase()}`, exact: true })).toHaveCount(0);
     await expect(main.locator(`a[href$="/about-the-${subsystem}/"]`)).toHaveCount(0);
     await expect(main.getByText(/parameters from the stack|processor register d0|680x0.trap #1[34]/i)).toHaveCount(0);
     await page.goto(`${overview}about-the-${subsystem}/`);
     await expect(page).toHaveURL(overview);
   }
+});
+
+test('XBIOS platform extensions have their own directory and breadcrumb', async ({ page }) => {
+  await page.goto('/subsystems/xbios/');
+  const main = page.getByRole('main');
+  await expect(main.getByRole('link', { name: 'PCI-BIOS', exact: true })).toHaveCount(0);
+  await main.getByRole('link', { name: 'Platform extensions', exact: true }).click();
+  await expect(page).toHaveURL('/subsystems/xbios/platform-extensions/');
+  await expect(main.locator('.manual-index a')).toHaveText([
+    'MetaDOS', 'CENTScreen XBIOS extension', 'Crazy-Dots XBIOS extension', 'CT60 XBIOS extension',
+    'Hatari DHS XBIOS extension', 'MATRIX XBIOS extension', 'OverScan XBIOS extension', 'PCI-BIOS', 'VIDIX XBIOS extension',
+  ]);
+  await main.getByRole('link', { name: 'PCI-BIOS', exact: true }).click();
+  await expect(page).toHaveURL('/subsystems/xbios/pci-bios/');
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Platform extensions' }))
+    .toHaveAttribute('href', '/subsystems/xbios/platform-extensions/');
 });
 
 test('compatibility sections introduce pTOS before other system behavior', async ({ page }) => {

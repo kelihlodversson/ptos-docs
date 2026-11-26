@@ -9,7 +9,7 @@ import GemdosProgramFormat from '../../../components/GemdosProgramFormat.astro';
 import GemdosProgramLaunch from '../../../components/GemdosProgramLaunch.astro';
 import GemdosSignals from '../../../components/GemdosSignals.astro';
 import { catalog } from '../../../data/catalog';
-import { chapters, cookieJarPath, historicalSectionBody, legacyGemdosSectionSlugs, manualBreadcrumbs, systemVariablesPath } from '../../../data/manual-structure';
+import { chapters, cookieJarPath, extensionDirectories, historicalSectionBody, manualBreadcrumbs, systemVariablesPath } from '../../../data/manual-structure';
 
 export function getStaticPaths() {
   return chapters.flatMap(chapter => chapter.sections.filter(section => !section.standalone).map(section => ({
@@ -29,20 +29,21 @@ const prgSectionId = programFormat ? 'prg-format' : 'prg-startup';
 const prgSectionTitle = programFormat ? 'Classic GEMDOS PRG format' : 'Classic GEMDOS PRG startup';
 const cookieJar = section.href === cookieJarPath;
 const signals = chapter.slug === 'gemdos' && section.slug === 'signals';
-const legacyExtensions = chapter.slug === 'gemdos' && section.slug === 'legacy-extensions';
-const legacySection = chapter.slug === 'gemdos' && legacyGemdosSectionSlugs.includes(section.slug);
-const legacyTopics = legacyExtensions ? chapter.sections.filter(topic => legacyGemdosSectionSlugs.includes(topic.slug)) : [];
+const extensions = extensionDirectories[chapter.slug];
+const extensionDirectory = extensions?.topic.slug === section.slug ? extensions : undefined;
+const extensionParent = extensions?.slugs.includes(section.slug) ? extensions.topic.slug : undefined;
 const historicalBody = section.historicalSlug ? historicalSectionBody(section.historicalSlug) ?? '' : '';
 const HistoricalBody = section.href === systemVariablesPath ? BiosSystemVariables : signals ? GemdosSignals : undefined;
 ---
 <Layout title={section.name} description={`${section.name} in the ${chapter.name} chapter.`} running={chapter.name}
-  breadcrumbs={manualBreadcrumbs(chapter.slug, legacySection ? 'legacy-extensions' : undefined)}>
+  breadcrumbs={manualBreadcrumbs(chapter.slug, extensionParent)}>
   <header class="directory-head"><h1>{section.name}</h1></header>
   <ManualIntroduction subject={section.slug} />
-  {legacyExtensions && <>
-    <p>Historical GEMDOS extensions for older network drivers, multitasking libraries and add-on hardware.</p>
+  {extensionDirectory && <>
+    <p>{extensionDirectory.description}</p>
     <ul class="manual-index">
-      {legacyTopics.map(topic => <li><a class="manual-index-symbol" href={topic.href}>{topic.name}</a></li>)}
+      {chapter.sections.filter(topic => extensionDirectory.slugs.includes(topic.slug)).map(topic =>
+        <li><a class="manual-index-symbol" href={topic.href}>{topic.name}</a></li>)}
     </ul>
   </>}
   {chapter.slug === 'gemdos' && section.slug === 'network-functions' &&
