@@ -87,6 +87,12 @@ const renamedChapters: Record<string, { name: string; historicalSlug: string }> 
   'keyboard-scancodes': { name: 'Keyboard Scancodes', historicalSlug: 'the-scancode' },
 };
 
+const chapterIntroductions: Record<string, string> = {
+  bios: 'about-the-bios',
+  gemdos: 'about-the-gemdos',
+  xbios: 'about-the-xbios',
+};
+
 const sectionAdditions: Record<string, ManualTopic[]> = {
   aes: [{ slug: 'cuis', name: 'CUIS ABI', href: '/abi/cuis/', standalone: true }],
   gemdos: [legacyGemdosExtensions],
@@ -109,7 +115,7 @@ export const manualAreas = areas.map(({ chapters: slugs, ...metadata }) => {
     const original = historicalSlug ? englishBySlug.get(historicalSlug) : undefined;
     if (historicalSlug && !original) throw new Error(`Missing tos.hyp chapter: ${historicalSlug}`);
     const historicalSections = historicalSlug ? children(historicalSlug).filter(section =>
-      slug !== 'gemdos' || !['about-the-gemdos', 'argv-procedure'].includes(section.slug)) : [];
+      section.slug !== chapterIntroductions[slug] && (slug !== 'gemdos' || section.slug !== 'argv-procedure')) : [];
     const sections: ManualTopic[] = historicalSections.map(section => ({
       slug: section.slug,
       name: slug === 'gemdos' ? gemdosSectionNames[section.slug] ?? section.title : section.title,

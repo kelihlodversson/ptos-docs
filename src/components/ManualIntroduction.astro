@@ -15,6 +15,24 @@ const { subject } = Astro.props;
     Many pTOS extensions draw on later interfaces from FreeMiNT and MagiC. See
     <a href="/os-variants/">OS variants and extensions</a> for compatibility context.</p>
 </>}
+{subject === 'bios' && <>
+  <p id="BIOS_2C_20The">pTOS uses the Basic Input/Output System (BIOS) for low-level character I/O, device status,
+    disk sectors and system vectors. The target selector on each function page shows the calling convention.
+    Device availability depends on the hardware and build.
+    <a href="/subsystems/gemdos/">GEMDOS</a> provides higher-level file and device I/O.</p>
+  <p>On protected builds, use the documented <a href={systemVariablesPath}>system variable access modes</a>.</p>
+  <p>Under <a href="/os-variants/magic/">MagiC</a>, the BIOS is reentrant. An interrupt handler can call these functions
+    when the supervisor stack has room. MagiC BIOS hooks should be reentrant and work independently of the contents
+    of the legacy <code>saveptr_area</code>.</p>
+</>}
+{subject === 'xbios' && <>
+  <p>pTOS uses the Extended BIOS (XBIOS) for hardware and firmware services such as video, audio, clocks and device control.
+    Availability depends on the target and attached hardware. The function references describe the native bindings and
+    calling requirements. Use <a href="/subsystems/gemdos/">GEMDOS</a> or <a href="/subsystems/bios/">BIOS</a>
+    services where they cover the operation.</p>
+  <p>Under <a href="/os-variants/magic/">MagiC</a>, the XBIOS is reentrant. An interrupt handler can call an XBIOS function
+    when the supervisor stack has room.</p>
+</>}
 {subject === 'gemdos' && <>
   <p>GEMDOS provides the highest-level operating system functions in pTOS. It manages files, directories,
     memory and processes. On supported builds pTOS extends GEMDOS with native threads, process scheduling and
@@ -32,12 +50,6 @@ const { subject } = Astro.props;
     For example, moving a disk error alert may require allocating memory while a file operation is still in progress.
     MagiC can service that allocation during the file operation.</p>
 </>}
-{['bios', 'about-the-bios'].includes(subject) && <p>On pTOS, BIOS provides basic device I/O, disk services and system vectors. Select the
-  target on a function page to see its binding and check the hardware requirements. On builds with protected
-  memory, use the documented <a href={systemVariablesPath}>system variable access modes</a>.</p>}
-{['xbios', 'about-the-xbios'].includes(subject) && <p>pTOS exposes hardware and firmware services through XBIOS.
-  Availability depends on the target and attached hardware. The function references describe the native bindings
-  and any configuration or calling-context requirements.</p>}
 {['aes', 'aes-fundamentals'].includes(subject) && <>
   <p>pTOS provides the classic kernel AES on supported flat-memory 68k and ARM builds. On x32 the experimental
     <code>libaes</code> runs in userspace and uses <a href="/abi/cuis/">CUIS</a> for shared window, input and session services.
