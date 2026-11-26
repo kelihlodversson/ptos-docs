@@ -6,7 +6,8 @@ import { catalog } from '../../data/catalog';
 import { chapterOverviewGroups, chapters, historicalSectionBody } from '../../data/manual-structure';
 
 export function getStaticPaths() {
-  return chapters.map(chapter => ({ params: { area: chapter.area.slug, slug: chapter.slug }, props: { chapter } }));
+  return chapters.filter(chapter => !chapter.standalone)
+    .map(chapter => ({ params: { area: chapter.area.slug, slug: chapter.slug }, props: { chapter } }));
 }
 interface Props { chapter: typeof chapters[number] }
 const { chapter } = Astro.props;

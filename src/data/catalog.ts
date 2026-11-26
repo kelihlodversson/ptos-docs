@@ -50,10 +50,10 @@ export const catalog = [
   })),
   { name: 'Ssystem', description: ssystemDescription, subsystem: 'GEMDOS',
     ...nativeLocation('Ssystem'), href: referencePath('Ssystem') },
-  { name: 'CUIS', description: 'Core User Interface Services used by userspace libaes', subsystem: 'AES',
-    ...chapterLocation('aes', 'cuis'), href: cuisPath, kind: 'abi' as const },
+  { name: 'CUIS', description: 'Core User Interface Services used by userspace libaes', subsystem: 'CUIS',
+    ...chapterLocation('cuis'), href: cuisPath, kind: 'abi' as const },
   ...cuisGroups.flatMap(group => group.calls.map(call => ({
-    name: call.name, description: call.title, subsystem: 'CUIS', ...chapterLocation('aes', 'cuis'),
+    name: call.name, description: call.title, subsystem: 'CUIS', ...chapterLocation('cuis', group.slug),
     href: cuisCallPath(call.name),
   }))),
   { name: 'ELF32 process entry', description: 'Initial stack for dynamically interpreted ELF programs',

@@ -1,4 +1,5 @@
 import { defineConfig } from 'astro/config';
+import { cuisGroupPath, cuisGroups, cuisPath } from './src/data/cuis-calls.ts';
 
 export default defineConfig({
   site: 'https://docs.ptos.dev',
@@ -6,7 +7,9 @@ export default defineConfig({
   output: 'static',
   trailingSlash: 'always',
   redirects: {
-    '/abi/cuis/': '/subsystems/aes/cuis/',
+    '/abi/cuis/': cuisPath,
+    '/subsystems/aes/cuis/': cuisPath,
+    ...Object.fromEntries(cuisGroups.map(({ slug }) => [`/subsystems/aes/cuis/${slug}/`, cuisGroupPath(slug)])),
     '/abi/elf-entry/': '/os-variants/ptos/elf-entry/',
     '/historical/': '/sources/',
     '/subsystems/bios/about-the-bios/': '/subsystems/bios/',

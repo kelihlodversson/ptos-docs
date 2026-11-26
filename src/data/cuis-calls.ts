@@ -19,7 +19,7 @@ export interface CuisGroup {
   calls: CuisCall[];
 }
 
-export const cuisPath = '/subsystems/aes/cuis/';
+export const cuisPath = '/subsystems/cuis/';
 export const cuisGroupPath = (slug: string) => `${cuisPath}${slug}/`;
 export const cuisCallPath = (name: CuisCall['name']) => `/reference/${name.toLowerCase().replaceAll('_', '-')}/`;
 export const cuisArguments = ['RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9'];

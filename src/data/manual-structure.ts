@@ -1,6 +1,6 @@
 import { pages, records } from './historical';
 import type { Edition, HistoricalPage } from './historical';
-import { cuisPath } from './cuis-calls';
+import { cuisGroupPath, cuisGroups } from './cuis-calls';
 
 export const historicalPath = (language: Edition, slug: string) => `/historical/${language}/${slug}/`;
 export const elfEntryPath = '/os-variants/ptos/elf-entry/';
@@ -11,8 +11,8 @@ export const argvProcedurePath = '/conventions/protocols/argv-procedure/';
 
 const areas = [
   {
-    slug: 'subsystems', name: 'Subsystems', description: 'TOS interfaces for programs, graphics, devices and storage.',
-    chapters: ['bios', 'xbios', 'gemdos', 'aes', 'vdi', 'line-a', 'xhdi'],
+    slug: 'subsystems', name: 'Subsystems', description: 'pTOS interfaces for programs, graphics, devices and storage.',
+    chapters: ['bios', 'xbios', 'gemdos', 'aes', 'vdi', 'cuis', 'line-a', 'xhdi'],
   },
   {
     slug: 'os-variants', name: 'OS variants and extensions', description: 'TOS-compatible systems, desktop environments and emulators.',
@@ -95,7 +95,7 @@ export const chapterOverviewGroups: Record<string, { name: string; slugs: string
       'application-library', 'event-library', 'window-library', 'menu-library', 'object-library',
       'form-library', 'graphics-library', 'file-selector-library', 'resource-library', 'scrap-library', 'shell-library',
     ] },
-    { name: 'Programming notes', slugs: ['aes-fundamentals', 'cuis'] },
+    { name: 'Programming notes', slugs: ['aes-fundamentals'] },
     { name: 'Extensions', slugs: [extensionDirectories.aes.topic.slug] },
     { name: 'Reference indexes', slugs: ['aes-function-list', 'aes-structures'] },
   ],
@@ -147,6 +147,11 @@ const renamedChapters: Record<string, { name: string; historicalSlug: string }> 
   'keyboard-scancodes': { name: 'Keyboard Scancodes', historicalSlug: 'the-scancode' },
 };
 
+const nativeChapters: Record<string, Pick<ManualTopic, 'name' | 'standalone'>> = {
+  ptos: { name: 'pTOS' },
+  cuis: { name: 'CUIS', standalone: true },
+};
+
 export const chapterIntroductions: Record<string, string> = {
   bios: 'about-the-bios',
   gemdos: 'about-the-gemdos',
@@ -156,7 +161,8 @@ export const chapterIntroductions: Record<string, string> = {
 };
 
 const sectionAdditions: Record<string, ManualTopic[]> = {
-  aes: [{ slug: 'cuis', name: 'CUIS', href: cuisPath, standalone: true }, extensionDirectories.aes.topic],
+  aes: [extensionDirectories.aes.topic],
+  cuis: cuisGroups.map(({ slug, title }) => ({ slug, name: title, href: cuisGroupPath(slug), standalone: true })),
   gemdos: [extensionDirectories.gemdos.topic],
   xbios: [extensionDirectories.xbios.topic],
   protocols: [{
@@ -174,7 +180,8 @@ export const manualAreas = areas.map(({ chapters: slugs, ...metadata }) => {
   const area = { ...metadata, href: `/${metadata.slug}/` };
   const chapters = slugs.map((slug): ManualChapter => {
     const href = `${area.href}${slug}/`;
-    const historicalSlug = slug === 'ptos' ? undefined : renamedChapters[slug]?.historicalSlug ?? slug;
+    const native = nativeChapters[slug];
+    const historicalSlug = native ? undefined : renamedChapters[slug]?.historicalSlug ?? slug;
     const original = historicalSlug ? englishBySlug.get(historicalSlug) : undefined;
     if (historicalSlug && !original) throw new Error(`Missing tos.hyp chapter: ${historicalSlug}`);
     const historicalSections = historicalSlug ? children(historicalSlug).filter(section =>
@@ -190,7 +197,8 @@ export const manualAreas = areas.map(({ chapters: slugs, ...metadata }) => {
       slug: 'argv-procedure', name: 'ARGV procedure', href: argvProcedurePath, historicalSlug: 'argv-procedure',
     });
     return {
-      slug, href, area, historicalSlug, name: renamedChapters[slug]?.name ?? original?.title ?? 'pTOS',
+      slug, href, area, historicalSlug, name: native?.name ?? renamedChapters[slug]?.name ?? original!.title,
+      standalone: native?.standalone,
       sections: [...sections, ...(sectionAdditions[slug] ?? [])],
     };
   });

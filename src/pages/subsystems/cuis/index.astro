@@ -1,13 +1,16 @@
 ---
-import CuisTargetPanels from '../../../../components/CuisTargetPanels.astro';
-import Layout from '../../../../components/Layout.astro';
-import SourceList from '../../../../components/SourceList.astro';
-import { cuisGroups, cuisGroupPath, cuisTransport } from '../../../../data/cuis-calls';
-import { manualBreadcrumbs } from '../../../../data/manual-structure';
-import abi from '../../../../data/abi.json';
+import CuisTargetPanels from '../../../components/CuisTargetPanels.astro';
+import Layout from '../../../components/Layout.astro';
+import SourceList from '../../../components/SourceList.astro';
+import { cuisGroups, cuisGroupPath, cuisTransport } from '../../../data/cuis-calls';
+import { chapterLocation } from '../../../data/manual-structure';
+import abi from '../../../data/abi.json';
+
+const { chapter } = chapterLocation('cuis');
+const { area } = chapter!;
 ---
 <Layout title="CUIS" description="Core User Interface Services and the pTOS syscall ABI used by userspace libaes."
-  running="AES" breadcrumbs={manualBreadcrumbs('aes')}>
+  running="CUIS" breadcrumbs={[{ label: area.name, href: area.href }]}>
   <header class="directory-head"><h1>CUIS</h1><p>Core User Interface Services</p></header>
   <aside class="prm-notice" aria-label="CUIS development status">
     <strong>Development warning.</strong> CUIS is under heavy development. Its API and syscall ABI may change.
@@ -15,7 +18,7 @@ import abi from '../../../../data/abi.json';
   <p>CUIS is the kernel backend for the experimental userspace <code>libaes.so</code>.
     The library invokes CUIS through an architecture-specific syscall ABI. CUIS coordinates shared state such as
     endpoint ownership, window stacking, clipping, focus, input and waits.</p>
-  <p>Applications call the GEM API through GEMlib and libaes, starting with
+  <p>Applications use the GEM <a href="/subsystems/aes/">AES</a> API through GEMlib and libaes, starting with
     <a href="/reference/appl_init/"><code>appl_init</code></a>. libaes translates those calls into CUIS operations
     when it needs a kernel service. It handles object trees, resources, dialogs and GEM policy in the application’s
     address space. <a href="/subsystems/vdi/">VDI</a> provides drawing operations.</p>

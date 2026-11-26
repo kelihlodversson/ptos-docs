@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 const selectTarget = (page: import('@playwright/test').Page) => page.getByRole('combobox', { name: 'Target / Language' });
 const revisions = JSON.parse(readFileSync(new URL('../src/data/sources.json', import.meta.url), 'utf8'));
 const ptosSourceTree = `https://github.com/${revisions.ptos.repo}/tree/${revisions.ptos.revision}`;
-const cuisOverview = '/subsystems/aes/cuis/';
+const cuisOverview = '/subsystems/cuis/';
 const cuisExample = '/reference/cuis-session-query/';
 
 test('target changes in place and persists without moving or hiding the prototype', async ({ page }) => {
@@ -64,8 +64,7 @@ test('the calling convention tabs switch the same persisted target as the header
 });
 
 test('unsupported, planned and unverified scopes remain distinct from absent language bindings', async ({ page }) => {
-  await page.goto('/abi/cuis/');
-  await expect(page).toHaveURL(cuisOverview);
+  await page.goto(cuisOverview);
   const select = selectTarget(page);
   const m68k = page.getByRole('tabpanel', { name: '68k' });
   await expect(m68k).toContainText('Planned');
@@ -451,16 +450,40 @@ test('chapter navigation follows tos.hyp and places extensions with related call
   await page.goto('/subsystems/gemdos/memory-management/');
   await expect(page.getByRole('link', { name: 'Mmap', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Pclone', exact: true })).toHaveCount(0);
+});
+
+test('CUIS is a top-level subsystem with a cross-reference from AES', async ({ page }) => {
+  await page.goto('/subsystems/');
+  await page.getByRole('link', { name: 'CUIS', exact: true }).click();
+  await expect(page).toHaveURL(cuisOverview);
+  const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb' });
+  await expect(breadcrumb.getByRole('listitem')).toHaveText(['Subsystems', 'CUIS']);
+  await expect(page.getByRole('main')).toContainText('Core User Interface Services');
+  await expect(page.getByRole('complementary', { name: 'CUIS development status' })).toContainText('Its API and syscall ABI may change.');
+  await page.getByRole('link', { name: 'Sessions and discovery' }).click();
+  await expect(page).toHaveURL(`${cuisOverview}sessions/`);
+  await expect(breadcrumb.getByRole('listitem')).toHaveText(['Subsystems', 'CUIS', 'Sessions and discovery']);
+  await page.getByRole('link', { name: 'CUIS_SESSION_QUERY', exact: true }).click();
+  await expect(page).toHaveURL(cuisExample);
+  await expect(breadcrumb.getByRole('listitem')).toHaveText(['Subsystems', 'CUIS', 'Sessions and discovery', 'CUIS_SESSION_QUERY']);
   await page.goto('/subsystems/aes/');
   await page.getByRole('main').locator('p').first().getByRole('link', { name: 'CUIS', exact: true }).click();
   await expect(page).toHaveURL(cuisOverview);
-  await expect(page.getByRole('main')).toContainText('Core User Interface Services');
-  await expect(page.getByRole('complementary', { name: 'CUIS development status' })).toContainText('Its API and syscall ABI may change.');
-  await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'AES', exact: true })).toHaveAttribute('href', '/subsystems/aes/');
-  await page.getByRole('link', { name: 'Sessions and discovery' }).click();
-  await page.getByRole('link', { name: 'CUIS_SESSION_QUERY', exact: true }).click();
-  await expect(page).toHaveURL(cuisExample);
-  await expect(breadcrumb.getByRole('listitem')).toHaveText(['Subsystems', 'AES', 'CUIS', 'Sessions and discovery', 'CUIS_SESSION_QUERY']);
+  await page.getByRole('main').getByRole('link', { name: 'AES', exact: true }).click();
+  await expect(page).toHaveURL('/subsystems/aes/');
+});
+
+test('previous CUIS overview and call-group URLs redirect to the subsystem', async ({ page }) => {
+  for (const oldPath of ['/abi/cuis/', '/subsystems/aes/cuis/']) {
+    await page.goto(oldPath);
+    await expect(page).toHaveURL(cuisOverview);
+  }
+  const groups = await page.getByRole('main').locator('.manual-index a').evaluateAll(links => links.map(link => link.getAttribute('href')!));
+  expect(groups).toHaveLength(7);
+  for (const group of groups) {
+    await page.goto(group.replace('/subsystems/cuis/', '/subsystems/aes/cuis/'));
+    await expect(page).toHaveURL(group);
+  }
 });
 
 test('all CUIS call groups list distinct references with architecture-specific details', async ({ page }) => {
@@ -542,7 +565,7 @@ test('the main sections contain only the assigned chapters', async ({ page }) =>
   await expect(main.locator('p').first()).toContainText('pTOS organizes its system interfaces');
   await expect(main.getByText('Atari introduced TOS in 1985', { exact: false })).toBeVisible();
   await expect(main.locator('.manual-index a')).toHaveText([
-    'BIOS', 'XBIOS', 'GEMDOS', 'AES', 'VDI', 'Line-A', 'XHDI',
+    'BIOS', 'XBIOS', 'GEMDOS', 'AES', 'VDI', 'CUIS', 'Line-A', 'XHDI',
   ]);
   expect((await page.request.get('/subsystems/the-pmmu-functions-handler/')).status()).toBe(404);
   await main.getByRole('link', { name: 'AES', exact: true }).click();
@@ -627,7 +650,7 @@ test('AES and VDI fold their About material into grouped chapter overviews', asy
   await page.setViewportSize({ width: 390, height: 844 });
   const main = page.getByRole('main');
   for (const [slug, introduction, firstGroup, notes, extension, indexes] of [
-    ['aes', 'AES 4.0 expanded the library interfaces', 'Application library', ['AES fundamentals', 'CUIS'],
+    ['aes', 'AES 4.0 expanded the library interfaces', 'Application library', ['AES fundamentals'],
       'AES extensions', ['AES function list', 'AES structures']],
     ['vdi', 'additional fonts and output devices could require a disk-loaded GDOS', 'Control functions',
       ['VDI fundamentals', 'VDI bindings'], 'TC-VDI functions', ['VDI functions list', 'VDI structures']],
