@@ -336,7 +336,7 @@ test('Ssystem keeps the MiNT modes and pTOS differences in one table', async ({ 
     await expect(nested.locator(':scope > tbody > tr').first()).not.toHaveText(/^\s*$/);
   }
   await expect(table.locator(':scope > tbody').first().locator(':scope > tr[id]')).toHaveCount(41);
-  await expect(table.locator(':scope > tbody').last().locator(':scope > tr[id]')).toHaveCount(9);
+  await expect(table.locator(':scope > tbody').last().locator(':scope > tr[id]')).toHaveCount(8);
   await expect(table.locator('span[id^="native-S_"]')).toHaveCount(26);
   await expect(mode('S_INQUIRE')).toContainText('-1 (0xFFFF)');
   await expect(mode('S_OSNAME').locator(':scope > td').first()).toContainText("0x4d694e54 ('MiNT')");
@@ -372,11 +372,11 @@ test('Ssystem keeps the MiNT modes and pTOS differences in one table', async ({ 
   }
   await page.goto('/reference/ssystem/#native-S_GETCOOKIE');
   await expect(mode('S_GETCOOKIE').locator('#native-S_GETCOOKIE')).toBeAttached();
+  await expect(mode('PEXECVE_GUEST_SSYSTEM')).toHaveCount(0);
 
   for (const [slug, name] of [
     ['s-deskinfo', 'S_DESKINFO'],
     ['s-deskset', 'S_DESKSET'],
-    ['pexecve-guest-ssystem', 'PEXECVE_GUEST_SSYSTEM'],
   ]) {
     await page.goto(`/reference/${slug}/#calling-convention`, { waitUntil: 'commit' });
     await expect(page).toHaveURL(`/reference/ssystem/#${name}`);
@@ -871,6 +871,7 @@ test('pTOS setup links document the boot files and moved ELF convention', async 
   await main.getByRole('link', { name: 'PTOS.INI', exact: true }).click();
   await expect(main.getByText('C:\\PTOS.INI', { exact: true })).toBeVisible();
   await expect(main.locator('pre')).toContainText('interpreter = \\BIN\\PARATOS.TOS');
+  await expect(main.getByRole('link', { name: 'AT_PTOS_LAUNCH_VECTORS' })).toHaveAttribute('href', '/os-variants/ptos/elf-entry/#launch-vectors');
   await main.getByRole('link', { name: 'PTOS.INF under Font installation' }).click();
   await expect(page).toHaveURL('/os-variants/ptos/fonts/#system-font');
   await expect(main.getByText('\\GEMSYS\\FONTS', { exact: true })).toBeVisible();
@@ -951,19 +952,14 @@ test('Pexecve documents the native ABI while ParaTOS keeps the guest Pexec trap'
   await expect(page.locator('.prm-bit-fields code')).toHaveText(['0x1', '0x193']);
   await expect(prototype).toBeVisible();
   await expect(page.getByText('Shared-address-space ARM supplies mode 0', { exact: false })).toBeVisible();
-  await page.getByRole('link', { name: 'PEXECVE_GUEST_SSYSTEM', exact: true }).click();
-  await expect(page).toHaveURL('/reference/ssystem/#PEXECVE_GUEST_SSYSTEM');
-  const guestMode = page.locator('#PEXECVE_GUEST_SSYSTEM');
-  await expect(guestMode).toContainText('-10 (0xFFF6)');
-  await expect(guestMode).toContainText('CONF_WITH_BINFMT');
-  await guestMode.getByRole('link', { name: 'Request layout' }).click();
-  await expect(page).toHaveURL('/reference/ssystem/#PEXECVE_GUEST_SSYSTEM-layout');
-  const guestRequest = page.getByRole('table', { name: 'PEXECVE_GUEST_REQUEST' });
-  await expect(guestRequest.getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'environment', exact: true }) })).toContainText('+20');
-  await expect(page.getByText('Native byte order (68k big endian, ARM and x32 little endian) · 4-byte alignment · 24 bytes total')).toBeVisible();
+  await page.goto('/reference/pexecve-guest-ssystem/#calling-convention', { waitUntil: 'commit' });
+  await expect(page).toHaveURL('/reference/pexecve/#paratos');
+  await expect(page.locator('#paratos')).toContainText('translates guest modes 0, 100 and 200 to native Pexecve');
+  await expect(page.locator('#paratos')).toContainText('all 128 bytes of the original command tail');
   await page.goto('/reference/pexec/');
   await expect(page.getByRole('tabpanel', { name: 'x32' })).toContainText('The raw syscall returns EINVFN');
   await expect(page.getByText('All GEMDOS versions.', { exact: true })).toBeVisible();
+  await expect(page.getByText('ParaTOS translates modes 0, 100 and 200 to native Pexecve', { exact: false })).toBeVisible();
 });
 
 test('AES vector shell calls and static ELF startup are linked through the manual', async ({ page }) => {
@@ -977,7 +973,8 @@ test('AES vector shell calls and static ELF startup are linked through the manua
   await expect(page.locator('.prm-prototype')).toContainText('short shel_readve(');
   await page.getByRole('link', { name: 'ELF32 process entry', exact: true }).click();
   await expect(page.getByText('Static vector startup enters', { exact: false })).toBeVisible();
-  await expect(page.locator('#guest-launch')).toContainText('0x5005');
+  await expect(page.locator('#launch-vectors')).toContainText('0x5004');
+  await expect(page.getByRole('row', { name: /AT_PTOS_GUEST_LAUNCH/ })).toHaveCount(0);
 });
 
 test('search covers historical sections outside the function index', async ({ page }) => {

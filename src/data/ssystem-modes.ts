@@ -1,5 +1,4 @@
 import { nativeCalls, nativePath } from './native-calls.ts';
-import type { NativeCall } from './native-calls.ts';
 
 export const ssystemDescription = 'Query the kernel, manage cookies and system variables, and access native pTOS services.';
 export const ssystemModePath = (name: string) => `/reference/ssystem/#${name}`;
@@ -12,8 +11,6 @@ interface Mode {
   condition?: string;
   href?: string;
   description?: string[];
-  layout?: NativeCall['layout'];
-  sources?: NativeCall['sources'];
 }
 
 export const ssystemModeGroups: { title: string; modes: Mode[] }[] = [
@@ -65,7 +62,7 @@ export const ssystemModeGroups: { title: string; modes: Mode[] }[] = [
       result: call.title + '. ' + call.result,
       condition: call.status === 'experimental' ? `Experimental. ${call.config}` : call.config,
       ...(call.embeddedInSsystem
-        ? { description: call.description, layout: call.layout, sources: call.layout ? call.sources : undefined }
+        ? { description: call.description }
         : { href: nativePath(call.name) }),
     } satisfies Mode)).sort((a, b) => b.number - a.number),
   ] },
