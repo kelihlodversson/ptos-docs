@@ -9,16 +9,19 @@ import GfaBinding from './GfaBinding.astro';
 import SourceList from './SourceList.astro';
 import NativeTarget from './NativeTarget.astro';
 import { catalog, paratosSourceTree, ptosSourceTree } from '../data/catalog';
-import { nativePath } from '../data/native-calls';
+import { nativeCalls, nativePath } from '../data/native-calls';
 import type { NativeCall } from '../data/native-calls';
 import { manualBreadcrumbs, nativeSection } from '../data/manual-structure';
 import { pages } from '../data/historical';
 import historicalMerges from '../data/historical-merges.json';
+import { ssystemModePath } from '../data/ssystem-modes';
 
 interface Props { call: NativeCall }
 const { call } = Astro.props;
 const params: [string, string][] = call.args.map(([name, , info]) => [name, info]);
-const relatedPath = (name: string) => catalog.find(entry => entry.name === name)?.href ?? nativePath(name);
+const relatedPath = (name: string) => nativeCalls.some(entry => entry.name === name && entry.embeddedInSsystem)
+  ? ssystemModePath(name)
+  : catalog.find(entry => entry.name === name)?.href ?? nativePath(name);
 const historical = call.historical ? pages('en').find(page => page.href === call.historical) : undefined;
 const merged = Object.values(historicalMerges).includes(nativePath(call.name)) ? historical : undefined;
 const historicalFact = (label: string) => historical?.facts.find(fact => fact.label === label)?.value;
