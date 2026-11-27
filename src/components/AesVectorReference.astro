@@ -1,0 +1,58 @@
+---
+import CallingConvention from './CallingConvention.astro';
+import Fact from './Fact.astro';
+import GfaBinding from './GfaBinding.astro';
+import Layout from './Layout.astro';
+import Masthead from './Masthead.astro';
+import ParameterList from './ParameterList.astro';
+import SourceList from './SourceList.astro';
+import TargetPanels from './TargetPanels.astro';
+import type { AesVectorCall } from '../data/aes-vector-calls';
+import { elfEntryPath, manualBreadcrumbs } from '../data/manual-structure';
+import { nativePath } from '../data/native-calls';
+
+interface Props { call: AesVectorCall }
+const { call } = Astro.props;
+const read = call.name === 'shel_readve';
+const legacy = read ? 'shel_read' : 'shel_write';
+const companion = read ? 'shel_writeve' : 'shel_readve';
+---
+<Layout title={call.name} description={call.title} running="AES — Shell library" breadcrumbs={manualBreadcrumbs('aes', 'shell-library')}>
+  <article>
+    <Masthead name={call.name} title={call.title} subsystem="AES" />
+    <section aria-labelledby="prm-prototype-heading">
+      <h2 id="prm-prototype-heading" class="prm-section-heading">C Prototype</h2>
+      <pre class="prm-prototype"><code>{call.prototype}</code></pre>
+    </section>
+    <dl class="prm-facts">
+      <Fact label="Operation">{call.title}.</Fact>
+      <Fact label="Parameters"><ParameterList entries={call.parameters} /></Fact>
+      <Fact label="Description">{call.description.map(text => <p>{text}</p>)}</Fact>
+      <Fact label="Return Value">{call.result}</Fact>
+      <Fact label="Availability">pTOS x32 with <code>CONF_WITH_LIBAES</code> and matching GEMlib and libcmini.
+        The classic kernel AES provides <a href={`/historical/en/${legacy.replaceAll('_', '-')}/`}>{legacy}</a>.</Fact>
+    </dl>
+    <TargetPanels>
+      <CallingConvention slot="68k" binding={{ status: 'unsupported', scope: '68k kernel AES', detail: 'The 68k kernel AES has no vector shell entry.' }} />
+      <CallingConvention slot="arm" binding={{ status: 'unsupported', scope: 'ARM kernel AES', detail: 'The ARM kernel AES has no vector shell entry.' }} />
+      <CallingConvention slot="x32" binding={{ status: 'experimental', scope: 'pTOS userspace libaes',
+        detail: `Use the x32 C calling convention. GEMlib delegates to mt_${call.name} in libaes.so, passing its AESGLOBAL as the final argument. Call that entry directly to supply your own registered AESGLOBAL.` }} />
+      <GfaBinding slot="gfa" />
+    </TargetPanels>
+    <section aria-labelledby="related-heading">
+      <h2 id="related-heading" class="prm-section-heading ruled">See Also</h2>
+      <ul class="related-links">
+        <li><a href={nativePath(companion)}>{companion}</a></li>
+        <li><a href="/reference/pexecve/">Pexecve</a></li>
+        <li><a href={elfEntryPath}>ELF32 process entry</a></li>
+      </ul>
+    </section>
+    <SourceList sources={[
+      ['gemlib', 'ptos/gem.h', 'Public GEMlib declaration'],
+      ['gemlib', `ptos/a_${call.name}.c`, 'GEMlib wrapper'],
+      ['ptos', 'include/libaes.h', 'Native libaes declaration'],
+      ['ptos', 'lib/aes/shell.c', 'Shell implementation'],
+      ['ptos', 'tests/cuis/gem_argv.c', 'Vector launch and snapshot regression'],
+    ]} />
+  </article>
+</Layout>

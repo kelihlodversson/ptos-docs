@@ -1,8 +1,7 @@
 ---
 import { formatHistoricalTables } from '../data/format-historical-tables';
-import { ptosSourceTree, statusLabels, targets } from '../data/catalog';
+import { paratosSourceTree, ptosSourceTree, statusLabels, targets } from '../data/catalog';
 import type { CPU } from '../data/catalog';
-import revisions from '../data/sources.json';
 import type { Binding } from '../data/overlays';
 interface Props { history?: string; support: Record<CPU, Binding>; paraTos: string }
 const { history, support, paraTos } = Astro.props;
@@ -19,4 +18,4 @@ const { history, support, paraTos } = Astro.props;
   })}
 </ul>
 <slot />
-<p><strong>ParaTOS</strong> · {paraTos} <a href={`https://github.com/${revisions.paratos.repo}/pull/${revisions.paratos.pullRequest}`}>PR #27</a></p>
+<p><strong>ParaTOS</strong> · {paraTos} <a href={paratosSourceTree}>ParaTOS main snapshot</a></p>

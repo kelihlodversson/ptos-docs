@@ -1,5 +1,6 @@
 import imported from './toshyp.generated.json';
 import revisions from './sources.json';
+import { aesVectorCalls } from './aes-vector-calls';
 import { nativeCalls, nativePath } from './native-calls';
 import { cuisCallPath, cuisGroups, cuisPath } from './cuis-calls';
 import { ssystemDescription } from './ssystem-modes';
@@ -22,6 +23,7 @@ export const statusLabels: Record<Status, string> = {
 
 export type Source = [keyof typeof revisions, string, string];
 export const ptosSourceTree = `https://github.com/${revisions.ptos.repo}/tree/${revisions.ptos.revision}`;
+export const paratosSourceTree = `https://github.com/${revisions.paratos.repo}/tree/${revisions.paratos.revision}`;
 
 export function sourceLink([key, path, label]: Source) {
   const { repo, revision } = revisions[key];
@@ -44,6 +46,9 @@ export const catalog = [
   ...nativeCalls.filter(call => !call.embeddedInSsystem).map(call => ({
     name: call.name, description: call.title, subsystem: 'GEMDOS', ...nativeLocation(call.name), href: nativePath(call.name),
   })),
+  ...aesVectorCalls.map(call => ({
+    name: call.name, description: call.title, subsystem: 'AES', ...chapterLocation('aes', 'shell-library'), href: nativePath(call.name),
+  })),
   ...Object.values(imported).map(record => ({
     name: record.name, description: record.operation, subsystem: record.subsystem,
     ...historicalLocation(functionByName.get(record.name)!.historicalHref), href: referencePath(record.name),
@@ -56,7 +61,7 @@ export const catalog = [
     name: call.name, description: call.title, subsystem: 'CUIS', ...chapterLocation('cuis', group.slug),
     href: cuisCallPath(call.name),
   }))),
-  { name: 'ELF32 process entry', description: 'Initial stack for dynamically interpreted ELF programs',
+  { name: 'ELF32 process entry', description: 'Initial stack for static vector launches and dynamically interpreted ELF programs',
     subsystem: 'pTOS', ...chapterLocation('ptos', 'elf-entry'), href: elfEntryPath, kind: 'abi' as const },
 ].map(entry => ({ ...entry, group: entry.section?.name ?? entry.chapter?.name ?? entry.subsystem }))
   .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase(), 'en'));

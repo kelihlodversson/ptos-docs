@@ -1,5 +1,5 @@
 {
-  "revision": "63b472bbba969aab7ace64ff132dcdfe88a2e89b",
+  "revision": "ff1c7728d5ae54ff2cac5a7650b71f55d145c717",
   "gemdos": {
     "0": {
       "args": ""
@@ -244,6 +244,10 @@
     "381": {
       "args": "PLW",
       "config": "CONF_WITH_USER_ASPACE"
+    },
+    "403": {
+      "args": "WPPP",
+      "source": "bdos/bdosmain.c"
     }
   },
   "bios": {
@@ -861,6 +865,8 @@
     "shel_put": "available",
     "shel_rdef": "available",
     "shel_wdef": "available",
+    "shel_readve": "available",
+    "shel_writeve": "available",
     "shel_write": "partial",
     "scrp_read": "available",
     "scrp_write": "available"

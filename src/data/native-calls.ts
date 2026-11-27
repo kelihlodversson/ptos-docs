@@ -13,6 +13,7 @@ export interface NativeCall {
   paraTos: string;
   sources: Source[];
   related: string[];
+  modes?: [mode: string, description: string][];
   historical?: string;
   mode?: number;
   embeddedInSsystem?: true;
@@ -29,13 +30,13 @@ export interface NativeCall {
 
 const processConfig = 'Requires a managed user process with CONF_WITH_MULTITHREADING. This option defaults on for eligible x32, ARMv7 and 68k builds with user address spaces.';
 const paraPosix: Source = ['paratos', 'host/posix/README.md', 'ParaTOS POSIX backend contract'];
-const paraTests: Source = ['paratos', 'tests/posix/pexec.py', 'ParaTOS PR #27 execution and fork tests'];
+const paraTests: Source = ['paratos', 'tests/posix/pexec.py', 'ParaTOS POSIX execution and fork tests'];
 const paraDispatch: Source = ['paratos', 'host/ptos/dispatch.c', 'pTOS-hosted guest GEMDOS dispatcher'];
 const paraPosixDispatch: Source = ['paratos', 'gemdos/gemdos_dispatch.c', 'POSIX guest GEMDOS dispatcher'];
 const paraPosixProcess: Source = ['paratos', 'host/posix/proc.c', 'POSIX guest fork, exit and residency'];
 const paraSsystem: Source = ['paratos', 'host/posix/sys.c', 'POSIX guest Ssystem mode dispatch'];
-const noGuestOpcode = 'Neither the POSIX nor the pTOS-hosted 68k guest dispatcher exposes this opcode in ParaTOS PR #27.';
-const noGuestMode = 'This native Ssystem mode is unsupported in the POSIX and pTOS-hosted guest dispatchers in ParaTOS PR #27.';
+const noGuestOpcode = 'Neither the POSIX nor the pTOS-hosted 68k guest dispatcher exposes this opcode.';
+const noGuestMode = 'This native Ssystem mode is unsupported in the POSIX and pTOS-hosted 68k guest dispatchers.';
 const sdk: Source = ['libcmini', 'include/mint/mintbind.h', 'SDK GEMDOS bindings'];
 const mintDispatcher: Source = ['ptos', 'bdos/mintproc.c', 'GEMDOS process dispatcher'];
 const procConfig: Source = ['ptos', 'bdos/Kconfig', 'Configuration gates'];
@@ -59,7 +60,7 @@ const waitArgs: Argument[] = [
   ['usage', 4, 'Null, or a writable array of two 32-bit words for approximate user time in milliseconds and zero system time.'],
 ];
 const waitResult = 'A successful reap consumes one completion. Bits 31–16 are PID, bits 15–8 are the fault signal, and bits 7–0 are the normal exit code. Failed usage copyout leaves the completion available. No matching unreaped child returns EFILNF.';
-const waitDescription = 'The caller can reap direct children once. A public wait cannot consume the child claimed by synchronous managed Pexec(0). An optional CUIS notification keeps its independent completion.';
+const waitDescription = 'The caller can reap direct children once. A public wait cannot consume the child claimed by synchronous managed Pexecve(0) or native 68k Pexec(0). An optional CUIS notification keeps its independent completion.';
 const waitSources: Source[] = [mintDispatcher, ['ptos', 'doc/mint-calls.txt', 'Native PROCESS wait ABI'], processTests, sdk,
   paraPosix, paraDispatch, ['paratos', 'test_programs/syscalls/pfork_waitpid.c', 'ParaTOS guest fork and wait test']];
 const paraWait = 'The POSIX backend collects eligible staged and native children. Synchronous Pexec reserves its own child. Staged waits report zero resource usage. The pTOS-hosted guest dispatcher handles this call through its guest task wait path.';
@@ -67,6 +68,39 @@ const ssystemSource: Source = ['ptos', 'bdos/ssystem.c', 'Ssystem dispatch and d
 const ssystemHeader: Source = ['ptos', 'bdos/ssystem.h', 'Mode constants and structure declarations'];
 
 export const nativeCalls: NativeCall[] = [
+  {
+    name: 'Pexecve', title: 'Launch or replace an executable with explicit argument and environment vectors', opcode: 0x193,
+    prototype: 'long Pexecve(short mode,\n    const char *path,\n    char *const argv[],\n    char *const envp[]);',
+    args: [
+      ['mode', 2, 'Signed mode word. Pass 0, 100 or 200.'],
+      ['path', 4, 'Readable NUL-terminated executable pathname. The path controls loading independently of argv[0].'],
+      ['argv', 4, 'Readable NULL-terminated array of argument string pointers. A first NULL slot means an empty vector. Empty strings are valid entries.'],
+      ['envp', 4, 'Readable NULL-terminated array of environment string pointers. To inherit the environment, pass the inherited vector explicitly. A vector of just NULL selects an empty environment.'],
+    ],
+    description: [
+      'Both vectors contain native-endian 32-bit user pointers, including on x32. The kernel copies the path, vectors and strings before publishing a launch. The path is limited to 1,024 bytes including NUL. The combined vector limit is 1,024 non-NULL entries and 65,536 bytes, counting four bytes per slot, both NULL slots and all string terminators. Loader and stack limits also apply.',
+      'Native ELF programs receive argc, argv, envp and auxv on the initial stack. A binfmt redirect prepends the interpreter name, its options and the program path to the original operands after argv[0]. The requested path remains the executable identity.',
+      'A 68k PRG receives a basepage. An empty argv[0] and operands without spaces, quote characters or empty strings can use a classic counted tail of at most 126 bytes. Other representable vectors use tail marker 127 and an extended ARGV block. An empty argv vector, an empty envp entry, a variable starting with ARGV= or a compatibility block exceeding 32,766 bytes returns ERANGE for PRG startup. A zero-entry environment vector is valid.',
+      'The libcmini Pexecve wrapper on m68k falls back to the same Pexec mode using extended ARGV when the trap returns EINVFN. libcmini also exposes POSIX execve(), which uses mode 200 and returns −1 with errno on failure.',
+    ],
+    modes: [
+      ['0', 'Load and run synchronously. Where the scheduler admits a managed child, wait for that exact child. ARM and x32 also have a synchronous path without scheduling. The raw 68k call requires managed child admission.'],
+      ['100', 'Load and start asynchronously. Requires CONF_WITH_MULTITHREADING and an admitted caller. Returns the child PID.'],
+      ['200', 'Replace the caller’s program image with CONF_WITH_EXEC_REPLACE. Success keeps the PROCESS, PID, THREAD, open files, current directories, parent and children. The new program enters through its own startup ABI.'],
+    ],
+    result: 'Mode 0 returns the child’s termination status on success. Mode 100 returns a positive PID. Mode 200 transfers control to the new image on success and returns an error to the original image on failure. EINVFN means an unsupported mode or build, EACCDN means admission was refused, EIMBA covers null or unreadable user pointers, EFILNF covers an empty path, ERANGE covers limits, and ENSMEM covers allocation failure. Loader and copy errors can also propagate.',
+    config: 'ARM and x32 provide the native entry with user address spaces. Shared-address-space ARM supplies mode 0 with CONF_WITH_ARM_SHARED_EXEC, derived from ARM ELF loading. The native 68k entry requires user address spaces and multithreading, with the target format loader enabled. Modes 100 and 200 have the feature gates described above.',
+    paraTos: 'Guest programs use classic Pexec. The pTOS-hosted backend invokes the vector-launch transaction through the host Ssystem emulator request for guest modes 0, 100 and 200.',
+    sources: [
+      ['libcmini', 'include/mint/osbind.h', 'Public C declaration'], ['libcmini', 'sources/pexecve.c', 'SDK trap and m68k fallback'],
+      ['ptos', 'include/pexecve.h', 'Opcode and vector limits'], ['ptos', 'bdos/bdosmain.c', 'Native dispatch and mode word'],
+      ['ptos', 'bdos/proc.c', 'Mode dispatch and child admission'], ['ptos', 'bdos/launch_args.c', 'User vector validation and copy'],
+      ['ptos', 'doc/pexecve-migration.txt', 'Launch and backward compatibility contract'],
+      ['ptos', 'tests/pexecve_args.c', 'Argument capture regressions'], ['ptos', 'tests/ldso_runtime/pexecve_prg.c', 'Vector-to-PRG fixture'],
+      ['paratos', 'host/ptos/runtime.c', 'Guest-to-native vector launch'], procConfig,
+    ],
+    related: ['Pexec', 'Pwaitpid', 'PEXECVE_GUEST_SSYSTEM', 'ELF32 process entry'],
+  },
   {
     name: 'Pclone', title: 'Create a managed process or thread sharing an address space', opcode: 0x190,
     prototype: 'long Pclone(const struct ptos_clone_args *args, unsigned long size);',
@@ -214,13 +248,38 @@ export const nativeCalls: NativeCall[] = [
     ] },
   },
   {
-    name: 'S_PROCEXEC', title: 'Private native process launch and observation transport', opcode: 0x154, mode: -9,
+    name: 'PEXECVE_GUEST_SSYSTEM', title: 'Launch a program from a 68k emulator with preserved PRG startup data', opcode: 0x154, mode: -10,
+    prototype: 'long Ssystem(short mode, long request, long size);',
+    args: [['mode', 2, 'PEXECVE_GUEST_SSYSTEM (−10).'], ['request', 4, 'Address of a 4-byte-aligned PEXECVE_GUEST_REQUEST.'], ['size', 4, 'Exactly 24 bytes.']],
+    description: [
+      'A native emulator translates its guest’s Pexec modes 0, 100 and 200 to this host request. It passes explicit argv and envp together with all 128 bytes of the guest’s original counted tail and an optional raw environment block. The kernel snapshots the inputs before it admits the launch.',
+      'The raw tail length byte must be at most 127, argv must contain argv[0], and envp must exclude legacy ARGV= entries. The optional raw environment is double-NUL-terminated and limited to 32,766 bytes. An inherited guest environment contributes ordinary variables to envp.',
+      'A direct binfmt redirect without options publishes the original argv[0] and opaque PRG data in AT_PTOS_GUEST_LAUNCH. ParaTOS uses that record to restore the guest basepage. A shebang or multi-hop interpreter chain uses its own argument list.',
+    ],
+    result: 'Returns the Pexecve mode’s result. An incorrect size or alignment returns EINVAL. A null or unreadable request returns EIMBA, and disabled modes return EINVFN.',
+    config: 'Requires CONF_WITH_SSYSTEM, CONF_WITH_BINFMT, CONF_WITH_MULTITHREADING and CONF_WITH_USER_ASPACE. Ssystem(S_INQUIRE, −10, 0) probes the native service.',
+    paraTos: 'The native pTOS-hosted emulator uses this mode internally. A 68k guest uses its classic Pexec trap.',
+    sources: [ssystemSource, ['ptos', 'include/pexecve.h', 'Mode value and limits'], ['ptos', 'bdos/launch_args.h', 'Request layout'],
+      ['ptos', 'bdos/launch_args.c', 'Guest buffer validation'], ['ptos', 'lib/ldso/launch.h', 'Auxiliary vector record'],
+      ['paratos', 'host/ptos/runtime.c', 'Native ParaTOS request'], ['paratos', 'tests/ptos/semantics.c', 'Guest launch coverage']],
+    related: ['Ssystem', 'Pexec', 'Pexecve', 'ELF32 process entry'],
+    layout: { caption: 'PEXECVE_GUEST_REQUEST', bytes: 24, alignment: 4, fields: [
+      { name: 'mode', offset: 0, bytes: 4, detail: 'Launch mode 0, 100 or 200.' },
+      { name: 'path', offset: 4, bytes: 4, detail: 'Native address of the requested executable pathname.' },
+      { name: 'argv', offset: 8, bytes: 4, detail: 'Native address of the NULL-terminated argument vector.' },
+      { name: 'envp', offset: 12, bytes: 4, detail: 'Native address of the NULL-terminated environment vector.' },
+      { name: 'tail', offset: 16, bytes: 4, detail: 'Native address of the complete 128-byte classic tail.' },
+      { name: 'environment', offset: 20, bytes: 4, detail: 'Native address of the raw double-NUL guest environment, or zero.' },
+    ] },
+  },
+  {
+    name: 'S_PROCEXEC', title: 'Native process launch and observation transport', opcode: 0x154, mode: -9,
     prototype: 'long Ssystem(short mode, long request, long size);',
     args: [['mode', 2, 'S_PROCEXEC (−9).'], ['request', 4, 'Address of a 4-aligned PROCESS_EXEC_REQUEST.'], ['size', 4, 'Exactly 72 bytes.']],
     description: [
       'This private PROCESS transport is used by native libaes and headless consumers. PREPARE (0) stores a private launch and returns a positive owned handle. COMMIT (1) publishes the child, returns its PID and retains the handle for observation. A failed replacement preserves an earlier deferred successor.',
       'SNAPSHOT (2) copies non-consuming completion state. CLOSE (3) consumes the handle, including after a cleanup error, and leaves a committed child running. CANCEL_DEFERRED (4) cancels only the caller’s unpublished successor. DEFER (5) commits a deferred successor and closes the temporary right. START (6) launches an unobserved asynchronous child and returns its PID.',
-      'PREPARE accepts policy 0 for asynchronous launch or 1 for deferred replacement. DEFER and START use zero policy and handle. Other unused or reserved values must be zero. SNAPSHOT is the only operation that copies out. A failed SNAPSHOT leaves completion available for retry.',
+      'PREPARE accepts policy 0 for asynchronous launch or 1 for deferred replacement. DEFER and START use zero policy and handle. PREPARE, DEFER and START accept PROCESS_EXEC_VECTOR_ARGS (1) in flags, making tail and environment point to argv and envp. An optional classic_tail points to a 128-byte short tail for legacy shel_read. Zero flags select the classic GEMDOS tail and flat environment. Other unused fields must be zero. SNAPSHOT is the only operation that copies out and remains retryable after a fault.',
     ],
     result: 'A scalar status, handle or PID according to operation. Unsupported builds return EINVFN. Invalid requests or unreadable input return a negative GEMDOS error. A SNAPSHOT copy fault can modify part of the output without consuming it.',
     config: 'CONF_WITH_PROCESS_EXEC requires CONF_WITH_USER_ASPACE, CONF_WITH_SSYSTEM and CONF_WITH_MULTITHREADING. S_INQUIRE reports availability. The separate CONF_WITH_PROCESS_EXEC_TEST profile keeps dispatch enabled while suppressing discovery.',
@@ -228,18 +287,19 @@ export const nativeCalls: NativeCall[] = [
     sources: [ssystemSource, procConfig, ['ptos', 'include/process_exec.h', 'Transport operations and fixed-size argument'],
       ['ptos', 'include/process_completion.h', 'Completion fields'], ['ptos', 'doc/process-exec.txt', 'Source-level transport contract'],
       ['ptos', 'tests/process_exec_dispatch.c', 'Dispatch and validation tests'], sdk, paraDispatch, paraSsystem],
-    related: ['Ssystem', 'S_PROCIDENT', 'Pexec', 'Pwaitpid'],
+    related: ['Ssystem', 'S_PROCIDENT', 'Pexecve', 'Pwaitpid'],
     layout: { caption: 'PROCESS_EXEC_REQUEST', bytes: 72, alignment: 4, fields: [
       { name: 'operation', offset: 0, bytes: 4, detail: 'Operation number 0 through 6.' },
       { name: 'handle', offset: 4, bytes: 4, detail: 'Owned observation or admission handle.' },
       { name: 'policy', offset: 8, bytes: 4, detail: 'Asynchronous or deferred replacement.' },
-      { name: 'reserved', offset: 12, bytes: 4, detail: 'Zero.' },
+      { name: 'flags', offset: 12, bytes: 4, detail: 'Zero for classic arguments, or PROCESS_EXEC_VECTOR_ARGS (1) for launch operations.' },
       { name: 'path', offset: 16, bytes: 4, detail: 'Executable pathname address.' },
-      { name: 'tail', offset: 20, bytes: 4, detail: 'Command-tail address.' },
-      { name: 'environment', offset: 24, bytes: 4, detail: 'Environment address or zero to inherit.' },
+      { name: 'tail', offset: 20, bytes: 4, detail: 'Command-tail address, or argv address in vector mode.' },
+      { name: 'environment', offset: 24, bytes: 4, detail: 'Classic environment address or zero to inherit, or explicit envp address in vector mode.' },
       { name: 'directory', offset: 28, bytes: 4, detail: 'Working-directory address or zero to inherit.' },
       { name: 'completion', offset: 32, bytes: 32, detail: 'PROCESS_COMPLETION, filled by SNAPSHOT.' },
-      { name: 'reserved_tail', offset: 64, bytes: 8, detail: 'Two zero words.' },
+      { name: 'classic_tail', offset: 64, bytes: 4, detail: 'Optional short-tail address in vector mode. Zero in other modes.' },
+      { name: 'reserved', offset: 68, bytes: 4, detail: 'Zero.' },
     ] },
   },
 ];

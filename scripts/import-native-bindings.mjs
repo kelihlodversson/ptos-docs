@@ -20,6 +20,10 @@ for (const [, , count, shape, opcode] of dispatch.matchAll(/F\((\w+)\)[^\n]*W_N\
 }
 assert.deepEqual(gemdos[0x3d], { args: 'PW', config: undefined });
 assert.equal(gemdos[0x4b].args, 'WLLL');
+assert.match(dispatch, /#if ARCH_ARM \|\| \(CONF_WITH_NATIVE_ABI && CONF_WITH_USER_ASPACE\)\s+\{ NI,[^\n]+0x4B: historical Pexec/);
+const { GEMDOS_PEXECVE } = defineNumbers(source('include/pexecve.h'));
+assert.match(dispatch, /if \(fn == GEMDOS_PEXECVE\)/);
+gemdos[GEMDOS_PEXECVE] = { args: 'WPPP', source: 'bdos/bdosmain.c' };
 
 const mint = source('bdos/mintproc.c');
 const mintNumbers = defineNumbers(source('bdos/mintproc.h'));

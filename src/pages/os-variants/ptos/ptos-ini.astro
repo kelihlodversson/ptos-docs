@@ -56,5 +56,8 @@ const example = [
     Malformed native executables and errors from a selected interpreter propagate to the caller.
     The selected interpreter receives the original program path followed by its arguments.
     For a script, the optional argument on the <code>#!</code> line precedes the script path.</p>
+  <p>Native <a href="/reference/pexecve/">Pexecve</a> preserves argument boundaries through each redirect.
+    For a direct PRG redirect, ParaTOS can read the original name and raw guest data from
+    <a href="/os-variants/ptos/elf-entry/#guest-launch"><code>AT_PTOS_GUEST_LAUNCH</code></a>.</p>
   <p>For the system font setting, see <a href="/os-variants/ptos/fonts/#system-font">PTOS.INF under Font installation</a>.</p>
 </PtosGuide>

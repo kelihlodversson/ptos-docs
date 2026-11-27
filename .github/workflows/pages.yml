@@ -105,7 +105,8 @@ jobs:
           for path in / /subsystems/ /subsystems/gemdos/process-functions/ /subsystems/aes/ \
             /os-variants/ /os-variants/ptos/ /os-variants/ptos/ptos-ini/ /os-variants/ptos/desktop-and-console/ \
             /os-variants/ptos/fonts/ /os-variants/ptos/elf-entry/ /conventions/ /conventions/protocols/xcontrol/ \
-            /reference/fclose/ /reference/pexec/ /reference/appl_init/ /reference/ssystem/ \
+            /reference/fclose/ /reference/pexec/ /reference/pexecve/ /reference/appl_init/ /reference/ssystem/ \
+            /reference/shel-writeve/ /reference/shel-readve/ /reference/pexecve-guest-ssystem/ \
             /subsystems/cuis/ /subsystems/cuis/sessions/ /reference/cuis-session-query/ \
             /abi/cuis/ /subsystems/aes/cuis/ /subsystems/aes/cuis/sessions/ \
             /historical/en/fopen/ /historical/de/contents/ /reference/pclone/ /gfa-basic/; do

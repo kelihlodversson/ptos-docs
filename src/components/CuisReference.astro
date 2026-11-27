@@ -27,6 +27,7 @@ const sources: Source[] = [
 ];
 if (call.name === 'CUIS_STREAM_RECEIPT') sources.push(['ptos', 'include/cuis_receipt.h', 'Receipt fields, offsets and alignment']);
 if (call.name === 'CUIS_STREAM_READ') sources.push(['ptos', 'lib/aes/lifecycle.c', 'CH_EXIT delivery and receipt origin']);
+if (call.name === 'CUIS_LAUNCH_ATTACH') sources.push(['ptos', 'include/process_exec.h', 'Vector launch request layout']);
 ---
 <Layout title={call.name} description={call.title} running="CUIS" {breadcrumbs}>
   <article class="cuis-reference">
@@ -50,6 +51,7 @@ if (call.name === 'CUIS_STREAM_READ') sources.push(['ptos', 'lib/aes/lifecycle.c
     <section aria-labelledby="related-heading">
       <h2 id="related-heading" class="prm-section-heading ruled">See Also</h2>
       <ul class="related-links">
+        {call.name === 'CUIS_LAUNCH_ATTACH' && <li><a href="/reference/s-procexec/">PROCESS_EXEC_REQUEST layout</a></li>}
         {call.related?.map(name => <li><a href={cuisCallPath(name)}>{name}</a></li>)}
         <li><a href={cuisGroupPath(group.slug)}>{group.title}</a></li>
         <li><a href={`${cuisPath}#calling-convention`}>CUIS calling conventions</a></li>

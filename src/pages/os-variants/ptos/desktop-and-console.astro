@@ -12,6 +12,7 @@ import { elfEntryPath } from '../../../data/manual-structure';
   ['ptos', 'configs/pc-x86_64-desktop_defconfig', 'PC desktop build configuration'],
   ['ptos', 'lib/ldso/build.mk', 'ELF runtime installation tree'],
   ['ptos', 'lib/aes/build.mk', 'libaes installation path'],
+  ['ptos', 'doc/pexecve-migration.txt', 'Native EmuCON and external shell vector launch'],
 ]}>
   <h2 class="prm-section-heading ruled">Boot files</h2>
   <TableScroll label="Boot-drive paths">
@@ -43,5 +44,11 @@ import { elfEntryPath } from '../../../data/manual-structure';
     <code>obj/ldso/runtime/GEMSYS</code> on the EFI boot volume alongside the desktop and console.
     Keep <code>LD.SO</code>, <code>LIBPTOS.SO</code> and <code>LIBAES.SO</code> under <code>\GEMSYS\LIB\X32</code>.
     A dynamically linked EmuCON still needs its runtime files when pTOS falls back to it.</p>
-  <p>See <a href={elfEntryPath}>ELF32 process entry</a> for the interpreter startup ABI.</p>
+  <h2 class="prm-section-heading ruled">EmuCON program arguments</h2>
+  <p>ARM and x32 EmuCON start external commands with <a href="/reference/pexecve/">Pexecve(0)</a>. The resolved path
+    selects the executable. The typed command stays in <code>argv[0]</code>, including when EmuCON resolves it through
+    <code>PATH</code> or adds an extension. Children inherit the current directory, explicit environment and stdout redirection.</p>
+  <p>The native editor scrolls horizontally and accepts up to 199 input bytes and 30 arguments, including the command name.
+    Quoted spaces and empty arguments survive the launch. The classic 68k console passes the historical GEMDOS tail.
+    See <a href={elfEntryPath}>ELF32 process entry</a> for native vector startup.</p>
 </PtosGuide>

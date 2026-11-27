@@ -11,7 +11,7 @@ const targets = [
 ---
 <section aria-labelledby="elf-executables">
   <h2 id="elf-executables" class="prm-section-heading ruled">ELF executables in pTOS</h2>
-  <p><a href="/reference/pexec/">Pexec</a> selects the loader from the file signature. Bytes <code>7F 45 4C 46</code>
+  <p><a href="/reference/pexecve/">Pexecve</a> and the native 68k <a href="/reference/pexec/">Pexec</a> path select the loader from the file signature. Bytes <code>7F 45 4C 46</code>
     select ELF when <code>CONF_WITH_ELF_LOADER</code> is enabled. The 68k PRG loader uses the signature
     <code>60 1A</code> when <code>CONF_WITH_PRG_LOADER</code> is enabled.</p>
   <TableScroll label="ELF32 class and machine by target">
@@ -65,7 +65,7 @@ const targets = [
     is <code>/GEMSYS/LIB/<var>arch</var>/LD.SO</code>, where <var>arch</var> is <code>X32</code>, <code>ARM</code>,
     or <code>M68K</code>. A missing interpreter prevents the program from starting.</p>
   <p>See <a href="/subsystems/gemdos/program-launch-and-tpa/#elf-startup">Program launch and TPA</a> for
-    placement in memory and <a href={elfEntryPath}>ELF32 process entry</a> for the interpreted startup ABI.</p>
+    placement in memory and <a href={elfEntryPath}>ELF32 process entry</a> for the static vector and interpreted startup ABI.</p>
 </section>
 <SourceList sources={[
   ['ptos', 'bdos/kpgmld.c', 'Format detection and loader dispatch'],

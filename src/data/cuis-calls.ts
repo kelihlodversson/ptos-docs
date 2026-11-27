@@ -521,10 +521,15 @@ export const cuisGroups: CuisGroup[] = [
     calls: [
       {
         name: 'CUIS_LAUNCH_ATTACH', opcode: 93, handler: 'cuis_launch_attach', title: 'Launch a process with GUI attachments',
-        parameters: [defaultSession, ['authorization', 'ULONG', 'Nonzero mask of CUIS_LAUNCH_CONSOLE (1) and CUIS_LAUNCH_OBSERVE (2).'],
-          ['path', 'const char *', 'User pointer to the executable path.'], ['tail', 'const char *', 'User pointer to the command tail.'],
-          ['environment', 'const char *', 'User pointer to the environment, or zero to inherit.'],
-          ['directory', 'const char *', 'Optional user pointer to the child’s starting directory.']],
+        parameters: [defaultSession, ['authorization', 'ULONG', 'Select CUIS_LAUNCH_CONSOLE (1), CUIS_LAUNCH_OBSERVE (2) or both. Add CUIS_LAUNCH_VECTORS (4) to pass a native request.'],
+          ['path_or_request', 'const void *', 'Executable pathname or address of a PROCESS_EXEC_REQUEST.'],
+          ['tail_or_size', 'UQUAD', 'Classic command-tail address or request size in bytes.'],
+          ['environment', 'const char *', 'Classic environment address or zero to inherit. Zero in vector mode.'],
+          ['directory', 'const char *', 'Optional classic child directory. Zero in vector mode.']],
+        modes: [
+          ['Classic', 'Pass the pathname, tail, environment and directory directly in the final four slots.'],
+          ['CUIS_LAUNCH_VECTORS (4)', 'Pass the request address and size 72, then two zero slots. The request must have operation PROCESS_EXEC_PREPARE, policy 0 and flags PROCESS_EXEC_VECTOR_ARGS.'],
+        ],
         detail: 'Prepares the native process, installs the requested console lease or observation receipt, and commits the launch. The console lease is tied to the child’s process lifetime.',
         result: 'The child’s positive PID, EAGAIN if console ownership or receipt capacity blocks the launch, or another negative GEMDOS error.',
         related: ['CUIS_STREAM_RECEIPT', 'CUIS_SESSION_WAIT'],

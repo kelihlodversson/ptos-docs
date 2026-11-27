@@ -50,9 +50,10 @@ const HistoricalBody = section.href === systemVariablesPath ? BiosSystemVariable
     <p>File flushing, file locking and driver identification for older TOS network drivers.</p>}
   {programFormat && <p>On m68k, pTOS supports ELF executables and legacy GEMDOS PRG programs when their loaders are enabled.
     On ARM and x32, pTOS can run compatible 68k PRG binaries through ParaTOS when configured as an executable handler.</p>}
-  {programLaunch && <p>pTOS uses <a href="/reference/pexec/">Pexec</a> to load and start programs. On m68k, it can launch ELF
-    and classic GEMDOS PRG programs when their loaders are enabled. Classic PRG startup places a basepage in the program’s
-    Transient Program Area (TPA). On ARM and x32, pTOS can launch compatible 68k PRG binaries through ParaTOS.</p>}
+  {programLaunch && <p>Use <a href="/reference/pexecve/">Pexecve</a> for native vector-based launch. On m68k,
+    <a href="/reference/pexec/">Pexec</a> also launches ELF and classic GEMDOS PRG programs when their loaders are enabled.
+    Classic PRG startup places a basepage in the program’s Transient Program Area (TPA).
+    On ARM and x32, pTOS can launch compatible 68k PRG binaries through ParaTOS.</p>}
   {programTopic && <nav aria-label={programFormat ? 'Program formats' : 'Program startup'}>
     <ul class="related-links">
       <li><a href={programFormat ? '#elf-executables' : '#elf-startup'}>{programFormat ? 'ELF executables' : 'ELF startup and memory'}</a></li>

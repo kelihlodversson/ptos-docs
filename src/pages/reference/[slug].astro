@@ -2,6 +2,7 @@
 import ReferenceLeaf from '../../components/ReferenceLeaf.astro';
 import NativeReference from '../../components/NativeReference.astro';
 import CuisReference from '../../components/CuisReference.astro';
+import AesVectorReference from '../../components/AesVectorReference.astro';
 import HistoricalRedirect from '../../components/HistoricalRedirect.astro';
 import { historical } from '../../data/catalog';
 import type { Historical } from '../../data/catalog';
@@ -9,6 +10,8 @@ import { nativeCalls, nativePath } from '../../data/native-calls';
 import type { NativeCall } from '../../data/native-calls';
 import { cuisCallPath, cuisGroups } from '../../data/cuis-calls';
 import type { CuisCall, CuisGroup } from '../../data/cuis-calls';
+import { aesVectorCalls } from '../../data/aes-vector-calls';
+import type { AesVectorCall } from '../../data/aes-vector-calls';
 
 export function getStaticPaths() {
   return [
@@ -18,17 +21,21 @@ export function getStaticPaths() {
     ...nativeCalls.map(native => ({
       params: { slug: nativePath(native.name).split('/')[2] }, props: { native },
     })),
+    ...aesVectorCalls.map(aes => ({
+      params: { slug: nativePath(aes.name).split('/')[2] }, props: { aes },
+    })),
     ...cuisGroups.flatMap(({ calls, slug, title }) => calls.map(call => ({
       params: { slug: cuisCallPath(call.name).split('/')[2] }, props: { cuis: { call, group: { slug, title } } },
     }))),
   ];
 }
 
-type Props = { record: Historical; native?: never; cuis?: never }
-  | { native: NativeCall; record?: never; cuis?: never }
-  | { cuis: { call: CuisCall; group: Pick<CuisGroup, 'slug' | 'title'> }; native?: never; record?: never };
-const { record, native, cuis } = Astro.props;
+type Props = { record: Historical; native?: never; cuis?: never; aes?: never }
+  | { native: NativeCall; record?: never; cuis?: never; aes?: never }
+  | { cuis: { call: CuisCall; group: Pick<CuisGroup, 'slug' | 'title'> }; native?: never; record?: never; aes?: never }
+  | { aes: AesVectorCall; record?: never; native?: never; cuis?: never };
+const { record, native, cuis, aes } = Astro.props;
 ---
-{cuis ? <CuisReference {...cuis} /> : native?.embeddedInSsystem
+{aes ? <AesVectorReference call={aes} /> : cuis ? <CuisReference {...cuis} /> : native?.embeddedInSsystem
   ? <HistoricalRedirect name={native.name} destination={`/reference/ssystem/#${native.name}`} />
   : native ? <NativeReference call={native} /> : <ReferenceLeaf name={record.name} {record} />}
