@@ -5,21 +5,21 @@
   },
   "ptos": {
     "repo": "kelihlodversson/pTOS",
-    "revision": "63b472bbba969aab7ace64ff132dcdfe88a2e89b",
+    "revision": "ff1c7728d5ae54ff2cac5a7650b71f55d145c717",
     "branch": "master"
   },
   "paratos": {
     "repo": "SapionAps/ParaTos",
-    "revision": "b4a530c1af161b5b7225059877e578fbc37b7c45",
-    "pullRequest": 27
+    "revision": "add2ebc295edf062c9fd3245b2dfb5c85ba68dfc",
+    "branch": "main"
   },
   "gemlib": {
     "repo": "kelihlodversson/gemlib",
-    "revision": "b76a9166911b3757044912827df6f4d0ab9cbcd7"
+    "revision": "cac2202ba39d7b2d3c4a51967697e9b75d8e741b"
   },
   "libcmini": {
     "repo": "kelihlodversson/libcmini",
-    "revision": "ba71b392badaf8b9a7e8ca4f2f02b7c393e81eb5"
+    "revision": "f67aad9da53e66b4caa965e03cf4cc8316eaaf51"
   },
   "design": {
     "repo": "kelihlodversson/ptos.dev",

@@ -119,6 +119,9 @@ export function historicalBinding(page: HistoricalPage, cpu: CPU): Result {
 
   if (page.subsystem === 'GEMDOS') {
     const entry = gemdos[opcode];
+    if (opcode === 0x4b && cpu !== '68k') return unavailable('bdos/bdosmain.c', t(
+      'Raw Pexec returns EINVFN before reading its arguments. Use Pexecve for native launch.',
+      'Der direkte Pexec-Aufruf liefert EINVFN, bevor er die Argumente liest. Native Programme verwenden Pexecve.'));
     if (!entry || name === 'srealloc' && cpu !== '68k') return unavailable('bdos/bdosmain.c');
     if (name === 'maddalt' && cpu === 'x32') return unavailable('bdos/uaccess.c', t(
       'The kernel can add alternate RAM, but the ring-3 call returns EACCDN.',

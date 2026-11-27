@@ -104,7 +104,7 @@ test('keyboard selection and unavailable storage work', async ({ page }) => {
   await select.press('ArrowDown');
   await select.press('Enter');
   await expect(select).toHaveValue('arm');
-  await expect(page.getByText('SVC #1 enters', { exact: false })).toBeVisible();
+  await expect(page.getByRole('tabpanel', { name: 'ARM' })).toContainText('The raw trap returns EINVFN');
 });
 
 test('invalid stored selection defaults to 68k', async ({ page }) => {
@@ -157,7 +157,7 @@ test('mobile x32 diagram shows both selector words and their bit boundaries', as
   expect(await diagram.evaluate(el => el.scrollWidth === el.clientWidth)).toBe(true);
 });
 
-for (const path of ['/', '/reference/fclose/', '/reference/pexec/', '/reference/appl_init/', '/reference/ssystem/', cuisOverview, '/reference/cuis-endpoint-barrier/', '/os-variants/ptos/elf-entry/', '/os-variants/ptos/desktop-and-console/', '/subsystems/gemdos/', '/subsystems/gemdos/legacy-extensions/', '/conventions/protocols/argv-procedure/', '/search/', '/gfa-basic/']) {
+for (const path of ['/', '/reference/fclose/', '/reference/pexec/', '/reference/pexecve/', '/reference/appl_init/', '/reference/ssystem/', cuisOverview, '/reference/cuis-endpoint-barrier/', '/os-variants/ptos/elf-entry/', '/os-variants/ptos/desktop-and-console/', '/subsystems/gemdos/', '/subsystems/gemdos/legacy-extensions/', '/conventions/protocols/argv-procedure/', '/search/', '/gfa-basic/']) {
   test(`WCAG A/AA smoke audit at ${path}`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(path);
@@ -270,7 +270,7 @@ test('GEMDOS format and launch topics document ELF and render the TPA layout as 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.getByRole('link', { name: 'Program launch and TPA', exact: true }).click();
   await expect(page).toHaveURL(`${launch}#elf-startup`);
-  await expect(main.locator('p').first()).toContainText('pTOS uses Pexec to load and start programs');
+  await expect(main.locator('p').first()).toContainText('Use Pexecve for native vector-based launch');
   await expect(main.locator('p').first()).toContainText('ARM and x32, pTOS can launch compatible 68k PRG binaries through ParaTOS');
   const startup = main.getByRole('navigation', { name: 'Program startup' });
   await startup.getByRole('link', { name: 'Classic GEMDOS PRG startup' }).click();
@@ -336,7 +336,7 @@ test('Ssystem keeps the MiNT modes and pTOS differences in one table', async ({ 
     await expect(nested.locator(':scope > tbody > tr').first()).not.toHaveText(/^\s*$/);
   }
   await expect(table.locator(':scope > tbody').first().locator(':scope > tr[id]')).toHaveCount(41);
-  await expect(table.locator(':scope > tbody').last().locator(':scope > tr[id]')).toHaveCount(8);
+  await expect(table.locator(':scope > tbody').last().locator(':scope > tr[id]')).toHaveCount(9);
   await expect(table.locator('span[id^="native-S_"]')).toHaveCount(26);
   await expect(mode('S_INQUIRE')).toContainText('-1 (0xFFFF)');
   await expect(mode('S_OSNAME').locator(':scope > td').first()).toContainText("0x4d694e54 ('MiNT')");
@@ -512,8 +512,8 @@ test('all CUIS call groups list distinct references with architecture-specific d
   const launchAttach = `LONG cuis_launch_attach(
     LONG session,
     ULONG authorization,
-    const char *path,
-    const char *tail,
+    const void *path_or_request,
+    UQUAD tail_or_size,
     const char *environment,
     const char *directory
 );`;
@@ -527,6 +527,8 @@ test('all CUIS call groups list distinct references with architecture-specific d
   const x32 = page.getByRole('tabpanel', { name: 'x32' });
   await expect(x32.getByRole('table', { name: 'Register assignments' }).getByRole('rowheader')).toHaveText(['RAX', 'RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9']);
   await expect(x32.locator('.prm-bit-fields code')).toHaveText(['0x103', '0x5D']);
+  await expect(page.getByText('CUIS_LAUNCH_VECTORS (4)', { exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'PROCESS_EXEC_REQUEST layout' })).toHaveAttribute('href', '/reference/s-procexec/');
 });
 
 test('CUIS prototypes retain typed pointers and register order where the ABI requires padding', async ({ page }) => {
@@ -914,19 +916,58 @@ test('the pTOS master notes distinguish native staged execution, fork and PROCES
   await page.goto('/reference/pexec/');
   const select = selectTarget(page);
   await select.selectOption('arm');
-  await expect(page.getByText('On MMU ARM, modes 3, 4, 5, 6, 7, 104 and 106 are unsupported.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('tabpanel', { name: 'ARM' })).toContainText('The raw trap returns EINVFN');
   await expect(page.getByRole('row', { name: /200 .*same PROCESS/ })).toContainText('CONF_WITH_EXEC_REPLACE');
   await select.selectOption('68k');
   await expect(page.getByText(/including PRG-only builds/)).toBeVisible();
   await page.goto('/reference/pclone/');
   await expect(page.getByRole('link', { name: 'master snapshot' })).toHaveAttribute('href', ptosSourceTree);
-  await expect(page.getByRole('link', { name: 'ParaTOS PR #27' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'ParaTOS main snapshot' })).toBeVisible();
   await expect(page.getByRole('row', { name: /child_pid/ })).toContainText('+28');
   await expect(page.getByText(/pTOS 1\.4/)).toHaveCount(0);
   await page.goto('/reference/s-procexec/');
   await select.selectOption('x32');
   await expect(page.getByRole('row', { name: /completion.*SNAPSHOT/ })).toContainText('+32');
+  await expect(page.getByRole('row', { name: /classic_tail/ })).toContainText('+64');
   await expect(page.locator('.prm-prototype')).toBeVisible();
+});
+
+test('Pexecve documents the native ABI while ParaTOS keeps the guest Pexec trap', async ({ page }) => {
+  await page.goto('/subsystems/gemdos/process-functions/');
+  await page.getByRole('link', { name: 'Pexecve', exact: true }).click();
+  const prototype = page.locator('.prm-prototype');
+  await expect(prototype).toContainText('long Pexecve(short mode, const char *path,');
+  await expect(page.getByRole('table', { name: 'Caller stack at TRAP #1' }).getByRole('row', { name: /envp/ })).toContainText('+12');
+  const select = selectTarget(page);
+  await select.selectOption('arm');
+  await expect(page.getByRole('tabpanel', { name: 'ARM' })).toContainText('SVC #1');
+  await expect(page.getByRole('row', { name: /R4 envp/ })).toBeVisible();
+  await select.selectOption('x32');
+  await expect(page.locator('.prm-bit-fields code')).toHaveText(['0x1', '0x193']);
+  await expect(prototype).toBeVisible();
+  await expect(page.getByText('Shared-address-space ARM supplies mode 0', { exact: false })).toBeVisible();
+  await page.getByRole('link', { name: 'PEXECVE_GUEST_SSYSTEM', exact: true }).click();
+  const guestRequest = page.getByRole('table', { name: 'PEXECVE_GUEST_REQUEST' });
+  await expect(guestRequest.getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'environment', exact: true }) })).toContainText('+20');
+  await page.goto('/reference/ssystem/#PEXECVE_GUEST_SSYSTEM');
+  await expect(page.locator('#PEXECVE_GUEST_SSYSTEM')).toContainText('CONF_WITH_BINFMT');
+  await page.goto('/reference/pexec/');
+  await expect(page.getByRole('tabpanel', { name: 'x32' })).toContainText('The raw syscall returns EINVFN');
+  await expect(page.getByText('All GEMDOS versions.', { exact: true })).toBeVisible();
+});
+
+test('AES vector shell calls and static ELF startup are linked through the manual', async ({ page }) => {
+  await page.goto('/subsystems/aes/shell-library/');
+  await page.getByRole('link', { name: 'shel_writeve', exact: true }).first().click();
+  await expect(page.locator('.prm-prototype')).toContainText('short shel_writeve(');
+  await expect(page.getByRole('tabpanel', { name: '68k' })).toContainText('Unsupported');
+  await selectTarget(page).selectOption('x32');
+  await expect(page.getByRole('tabpanel', { name: 'x32' })).toContainText('mt_shel_writeve');
+  await page.getByRole('link', { name: 'shel_readve', exact: true }).click();
+  await expect(page.locator('.prm-prototype')).toContainText('short shel_readve(');
+  await page.getByRole('link', { name: 'ELF32 process entry', exact: true }).click();
+  await expect(page.getByText('Static vector startup enters', { exact: false })).toBeVisible();
+  await expect(page.locator('#guest-launch')).toContainText('0x5005');
 });
 
 test('search covers historical sections outside the function index', async ({ page }) => {

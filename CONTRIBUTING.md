@@ -85,7 +85,7 @@ the architecture and OS recorded on the reference page.
 
 Add OS-specific material to `src/data/overlays.ts` or `src/data/native-calls.ts`.
 The evidence baseline is the exact commit pinned in `src/data/sources.json`
-from pTOS `master`, alongside the pinned ParaTOS PR #27 commit. Cite the
+from pTOS `master`, alongside the pinned ParaTOS `main` commit. Cite the
 implementation, public header, configuration and corresponding test where
 available. Scope compatibility notes to the native kernel, host backend or
 guest interface the source verifies.

@@ -7,6 +7,7 @@ test.skip(!directory, 'Set MANUAL_SCREENSHOTS to capture review images.');
 for (const { slug, route, target } of [
   { slug: 'fclose', route: '/reference/fclose/', target: '68k' },
   { slug: 'pexec', route: '/reference/pexec/', target: '68k' },
+  { slug: 'pexecve', route: '/reference/pexecve/', target: 'x32' },
   { slug: 'cuis', route: '/subsystems/cuis/', target: 'x32' },
   { slug: 'cuis-call', route: '/reference/cuis-launch-attach/', target: 'x32' },
   { slug: 'fopen', route: '/historical/en/fopen/', target: '68k' },

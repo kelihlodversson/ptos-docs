@@ -47,6 +47,13 @@ const destination = (historicalMerges as Record<string, string>)[page.slug];
         <HistoricalPtosAvailability {page} />
       </Fact>}
     </dl>}
+    {english && page.slug === 'shel-write' && <p>On pTOS x32, libaes converts classic counted tails to vectors.
+      With mode 0 and <code>CL_PARSE</code>, it also accepts byte 127 followed by a NUL-terminated command string.
+      Tail marker 127 with <code>CL_NORMAL</code> and the MagiC byte-255 shortcut return zero in native libaes.
+      Use <a href="/reference/shel-writeve/">shel_writeve</a> for explicit arguments and environment.</p>}
+    {english && page.slug === 'shel-read' && <p>On pTOS x32, libaes returns a classic view of a vector launch when the
+      operands can be quoted into a tail of at most 126 bytes. Otherwise it returns zero and preserves the buffers.
+      Use <a href="/reference/shel-readve/">shel_readve</a> to read the original vectors.</p>}
     {page.body && <div class="historical-body" set:html={formatHistoricalTables(page.body, page.language)} />}
     {page.function && <TargetPanels heading={english ? 'Calling Convention' : 'Aufrufkonvention'}>
       <div slot="68k">

@@ -5,26 +5,46 @@ import TargetPanels from '../../../components/TargetPanels.astro';
 import ElfEntry from '../../../components/ElfEntry.astro';
 import GfaBinding from '../../../components/GfaBinding.astro';
 import SourceList from '../../../components/SourceList.astro';
+import TableScroll from '../../../components/TableScroll.astro';
 import { manualBreadcrumbs } from '../../../data/manual-structure';
 ---
-<Layout title="ELF32 process entry" description="Initial stack for dynamically interpreted ELF programs" running="pTOS"
+<Layout title="ELF32 process entry" description="Initial stack for static vector launches and dynamically interpreted ELF programs" running="pTOS"
   breadcrumbs={manualBreadcrumbs('ptos')}>
   <article>
     <Masthead name="ELF32 process entry" title="Initial stack and auxiliary vector" subsystem="pTOS native ABI" />
-    <p class="abi-intro">This layout applies to the standard <code>PT_INTERP</code> entry path with <code>CONF_WITH_ELF_SHARED</code>.
-      It begins at <code>argc</code>, with no synthetic return address. Classic PRG and static ELF processes follow their own startup conventions.</p>
+    <p class="abi-intro">This layout applies to native static ELF vector launches and to <code>PT_INTERP</code> launches
+      with <code>CONF_WITH_ELF_SHARED</code>. The stack begins at <code>argc</code> with no synthetic return address.
+      Static vector startup enters at <code>AT_ENTRY</code> with <code>AT_BASE = 0</code>.
+      Use libcmini’s <code>elfcrt0.o</code> for static vector startup. Classic PRG and shared-memory 68k Pexec use basepage entry.</p>
     <TargetPanels heading="Process Entry Format">
-      <ElfEntry slot="68k" scope="68k address-space ELF build" sp="SP" finalizer="D1" byteOrder="Big endian" />
-      <ElfEntry slot="arm" scope="ARM shared ELF build" sp="SP" finalizer="R0" byteOrder="Little endian" />
-      <ElfEntry slot="x32" scope="x32 shared ELF build" sp="RSP" finalizer="RDX" byteOrder="Little endian" />
+      <ElfEntry slot="68k" scope="68k private address-space ELF build" sp="SP" finalizer="D1" byteOrder="Big endian" />
+      <ElfEntry slot="arm" scope="ARM ELF build, including shared-memory static vector entry" sp="SP" finalizer="R0" byteOrder="Little endian" />
+      <ElfEntry slot="x32" scope="x32 ELF build" sp="RSP" finalizer="RDX" byteOrder="Little endian" />
       <GfaBinding slot="gfa" />
     </TargetPanels>
-    <p>See also <a href="/reference/pexec/">Pexec</a>.</p>
+    <TableScroll label="Launch and executable auxiliary entries">
+      <table class="prm-rule-table">
+        <caption>Launch and executable auxiliary entries</caption>
+        <thead><tr><th scope="col">Type</th><th scope="col">Value</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>
+          <tr><th scope="row"><code>AT_EXECFN</code></th><td>31</td><td>Executable pathname, available separately from <code>argv[0]</code>.</td></tr>
+          <tr><th scope="row"><code>AT_PTOS_BASEPAGE</code></th><td><code>0x5000</code></td><td>Program basepage for GEMDOS state.</td></tr>
+          <tr><th scope="row"><code>AT_PTOS_LAUNCH</code></th><td><code>0x5003</code></td><td>Optional classic launch record for libaes shell queries.</td></tr>
+          <tr><th scope="row"><code>AT_PTOS_LAUNCH_VECTORS</code></th><td><code>0x5004</code></td><td>Optional snapshot of the original path, argv and envp. Three native 32-bit address fields.</td></tr>
+          <tr id="guest-launch"><th scope="row"><code>AT_PTOS_GUEST_LAUNCH</code></th><td><code>0x5005</code></td><td>Optional record for a direct binfmt redirect. Four native 32-bit fields at offsets 0, 4, 8 and 12 hold the original argv[0] address, raw tail address, raw environment address and environment byte count. Absent raw fields are zero.</td></tr>
+        </tbody>
+      </table>
+    </TableScroll>
+    <p>See <a href="/reference/pexecve/">Pexecve</a>, <a href="/reference/pexec/">Pexec</a> and the
+      <a href="/reference/pexecve-guest-ssystem/">ParaTOS guest launch request</a>.</p>
     <SourceList sources={[
       ['ptos', 'doc/elf-shared.txt', 'Interpreter entry ABI by architecture'],
       ['ptos', 'doc/process-entry.txt', 'Static and classic entry contracts'],
       ['ptos', 'lib/ldso/startup.c', 'Stack packing and alignment'],
+      ['ptos', 'lib/ldso/launch.h', 'Launch records and auxiliary tags'],
       ['ptos', 'tests/interp_probe/check.c', 'Interpreter entry probe'],
+      ['ptos', 'tests/ldso_runtime/static_program.c', 'Static vector-entry probe'],
+      ['libcmini', 'sources/elfcrt.c', 'ELF CRT vector consumer'],
     ]} />
   </article>
 </Layout>

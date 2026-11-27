@@ -102,10 +102,13 @@ const { subject } = Astro.props;
   The checks below apply to TOS-compatible systems that expose pipes on drive <code>U:</code>.</p>}
 {subject === 'network' && <p>pTOS currently leaves the MiNTnet socket calls unimplemented. This section documents
   the BSD socket and vectored I/O calls in the MiNTnet ABI.</p>}
-{subject === 'argv-procedure' && <p>The pTOS libcmini startup code can read the classic ARGV environment convention.
-  The x32 <code>libaes</code> shell can also build an ARGV environment when launching programs with
-  <code>CL_PARSE</code>. Dynamically linked pTOS ELF programs receive arguments through the
-  <a href={elfEntryPath}>ELF32 initial stack</a>.</p>}
+{subject === 'argv-procedure' && <p>Classic PRG startup and ParaTOS guest launches use the ARGV environment convention.
+  Native ELF applications launched with <a href="/reference/pexecve/">Pexecve</a> or
+  <a href="/reference/shel-writeve/">shel_writeve</a> receive explicit vectors through the <a href={elfEntryPath}>ELF32 initial stack</a>.
+  libcmini translates legacy ARM and x32 <code>Pexec()</code> calls to those vectors.</p>}
+{subject === 'shell-library' && <p>On pTOS x32, use <a href="/reference/shel-writeve/">shel_writeve</a> to
+  launch from GEM with explicit vectors and <a href="/reference/shel-readve/">shel_readve</a> to inspect the
+  application’s startup snapshot. The classic shell calls continue to use command-tail buffers.</p>}
 {subject === 'os-variants' && <p>The pTOS chapter covers configuration, applications and
   startup conventions. The other chapters describe TOS variants and environments whose interfaces provide
   compatibility context for pTOS development.</p>}
@@ -125,4 +128,4 @@ const { subject } = Astro.props;
   current pTOS builds is unverified.</p>}
 {subject === 'ptos' && <p>pTOS is an EmuTOS-derived operating system with native builds for 68k, ARM and x32.
   Its boot files depend on the target and build configuration. These sections cover executable handlers,
-  external EmuDesk and EmuCON, fonts, and the startup ABI for dynamically linked ELF programs.</p>}
+  external EmuDesk and EmuCON, fonts, and the startup ABI for native ELF programs.</p>}

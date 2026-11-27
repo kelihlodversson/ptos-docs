@@ -83,11 +83,15 @@ export const overlays: Record<string, Overlay> = {
       '68k': { status: 'implemented', scope: 'Native pTOS GEMDOS, with staged PRG modes on applicable builds',
         detail: 'TRAP #1 uses the caller’s stack. D0 holds the result. Layout is shown for the four-argument binding. Interpret the long slots by mode.',
         stack: abi.pexec },
-      ...gemdos('0x4B', ['mode', '16-bit mode'], ['Path pointer, flags or zero', 'Tail or basepage pointer', 'Environment pointer or zero']),
+      arm: { status: 'unsupported', scope: 'Raw GEMDOS opcode 0x4B on all ARM builds',
+        detail: 'The raw trap returns EINVFN before reading its arguments. libcmini translates pathname modes 0, 100 and 200 to Pexecve. The Pexecve build gates apply.' },
+      x32: { status: 'unsupported', scope: 'Raw GEMDOS opcode 0x4B on x32',
+        detail: 'The raw syscall returns EINVFN before reading its arguments. libcmini translates pathname modes 0, 100 and 200 to Pexecve. The Pexecve build gates apply.' },
     },
     sources: [
       ...gemdosSources, ['ptos', 'bdos/proc.c', 'Native Pexec mode dispatch and ownership'],
-      ['ptos', 'doc/pexec-legacy-modes.txt', 'Staged PRG rules and native restrictions'],
+      ['ptos', 'doc/pexec-legacy-modes.txt', '68k mode availability and raw ARM/x32 cutover'],
+      ['libcmini', 'sources/pexec_compat.c', 'ARM and x32 C compatibility wrapper'],
       ['ptos', 'doc/freemint-compatibility.txt', 'Managed mode 0 and fork interaction'],
       ['ptos', 'bdos/Kconfig', 'Native scheduling and mode 200 build gates'],
       ['ptos', 'doc/exec-replacement.txt', 'Replacement contracts and supported loaders'],
@@ -97,9 +101,10 @@ export const overlays: Record<string, Overlay> = {
       ['ptos', 'tests/x32_probe/x32_probe.c', 'x32 launch and argument probes'],
       ['paratos', 'tests/ptos/semantics.c', 'ParaTOS pTOS-hosted launch and overlay regression'],
       ['paratos', 'host/posix/README.md', 'ParaTOS POSIX staged launch and replacement rules'],
-      ['paratos', 'tests/posix/pexec.py', 'ParaTOS PR #27 staged launch and fork regression'],
+      ['paratos', 'tests/posix/pexec.py', 'ParaTOS POSIX staged launch and fork regression'],
+      ['paratos', 'host/ptos/README.txt', 'ParaTOS guest launch, vectors and staged processes'],
     ],
-    paraTos: 'The POSIX backend in ParaTOS PR #27 uses fork/exec for modes 0 and 100. Staged modes 4, 6, 104 and 106 share guest RAM across a host fork. Mode 200 calls execve and is refused while staged guests still depend on the caller. The separate pTOS-hosted backend has native and emulated launch and overlay fixtures.',
+    paraTos: 'Both backends retain the guest Pexec trap. The POSIX backend uses fork/exec for modes 0 and 100. Staged starts 4, 6, 104 and 106 share guest RAM across a host fork. The POSIX mode 200 uses host execve, reaps finished host children before replacement and refuses a staged caller or an unsettled staged child. On a pTOS host, modes 0, 100 and 200 use the vector launch transaction through Ssystem mode −10. The emulator handles guest PRG staging and basepage modes locally. Mode 200 is refused from a cloned guest or overlay and while cloned guests are outstanding.',
   },
   appl_init: {
     params: [['void', 'The standard GEMlib call takes no arguments. The historical X_BUF_V2 form is a FreeGEM extension.']],
@@ -147,22 +152,21 @@ export const overlays: Record<string, Overlay> = {
       ['paratos', 'host/posix/sys.c', 'ParaTOS POSIX guest Ssystem modes'],
       ['paratos', 'host/ptos/dispatch.c', 'ParaTOS pTOS-hosted guest Ssystem modes'],
     ],
-    paraTos: 'The POSIX guest returns zero for the discovery call without checking its arguments, supports guest cookie and system-variable reads, and refuses writes with EACCDN. The pTOS-hosted guest checks each selector, handles cookie reads and system-variable access in the guest, forwards scalar build identification queries to pTOS, and reports zero for S_OSFEATURES. Both guest dispatchers omit the native pTOS modes −2 through −9.',
+    paraTos: 'The POSIX guest returns zero for the discovery call without checking its arguments, supports guest cookie and system-variable reads, and refuses writes with EACCDN. The pTOS-hosted guest checks each selector, handles cookie reads and system-variable access in the guest, forwards scalar build identification queries to pTOS, and reports zero for S_OSFEATURES. Native pTOS extension modes −2 through −10 are outside the guest ABI.',
   },
 };
 
 for (const cpu of ['arm', 'x32'] as const) {
-  overlays.Pexec.targets[cpu].scope += ', modes 0, 100 and 200 on supported MMU builds';
   overlays.Ssystem.targets[cpu].scope += ' with CONF_WITH_SSYSTEM';
 }
 
 export const pexecModes: [mode: string, args: string, meaning: string][] = [
-  ['0', 'path, cmdline, env', 'Load and run. A managed caller waits for its exact child and receives the full 16-bit status.'],
+  ['0', 'path, cmdline, env', 'Load and run a PRG or ELF when its loader is enabled. A managed caller waits for its exact child and receives the full 16-bit status.'],
   ['3', 'path, cmdline, env', 'Stage a PRG and return a basepage on 68k. On 68k a target that would stage an ELF image returns EPLFMT.'],
   ['4', '0L, basepage, 0L', 'Run a retained PRG in place on ROM/non-MMU 68k. On supported 68k MMU builds, launch a new PROCESS sharing the caller’s address space and wait.'],
-  ['5', '0L, cmdline, env', 'Create and return a classic 68k basepage.'],
+  ['5', '0L, cmdline, env', 'Create and return a classic 68k basepage when the platform supports it.'],
   ['6', '0L, basepage, 0L', 'Run a staged 68k image and transfer ownership.'],
-  ['7', 'prgflags, cmdline, env', 'Create a classic 68k basepage with program flags.'],
+  ['7', 'prgflags, cmdline, env', 'Create a classic 68k basepage with program flags when the platform supports it.'],
   ['100', 'path, cmdline, env', 'Load and schedule a child with CONF_WITH_MULTITHREADING. Returns the child PID.'],
   ['104', '0L, basepage, 0L', 'Start a staged PRG in a new PROCESS sharing the caller’s ASPACE. Requires CONF_WITH_SHARED_VM_PEXEC and returns its PID.'],
   ['106', '0L, basepage, 0L', 'Start a staged 68k PRG asynchronously, transferring the image. Requires the scheduler and legacy path.'],

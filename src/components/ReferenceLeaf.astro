@@ -46,25 +46,28 @@ const { title, operation } = record;
       </Fact>
       <Fact label="Availability">
         <Availability history={record.availability} support={overlay.targets} paraTos={overlay.paraTos}>
-          {name === 'Pexec' && <p>Historical version qualifications for modes 6 and 7, and MagiC restrictions, appear in the mode descriptions above.</p>}
+          {name === 'Pexec' && <p>On ARM and x32, use <a href={referencePath('Pexecve')}>Pexecve</a> for native program launch.
+            With the matching libcmini, existing <code>Pexec(mode, path, tail, env)</code> source can still use modes 0, 100 and 200.
+            The C wrapper converts counted tails or marker-127 ARGV blocks to vectors. A null environment inherits the caller’s <code>environ</code>.
+            Staged modes return <code>EINVFN</code> through that wrapper.</p>}
           {name === 'appl_init' && <p>ARM and 68k builds with per-process address spaces lack kernel AES at this revision. Native libaes ports for those configurations are <strong>planned</strong> follow-ups.</p>}
         </Availability>
       </Fact>
     </dl>
 
     {name === 'Pexec' && <section aria-labelledby="mode-fields">
-      <h2 id="mode-fields" class="prm-section-heading ruled">Parameter Fields · native pTOS modes</h2>
-      <p>Use the SDK’s four-argument <code>Pexec(mode, prog, tail, env)</code> binding. The historical prototypes above describe other systems as well.</p>
-      <TableScroll label="Native pTOS Pexec modes">
+      <h2 id="mode-fields" class="prm-section-heading ruled">Parameter Fields · native 68k pTOS modes</h2>
+      <p>The 68k trap takes the four-argument <code>Pexec(mode, prog, tail, env)</code> form with the slots described below.</p>
+      <TableScroll label="Native 68k pTOS Pexec modes">
         <table class="prm-rule-table">
           <thead><tr><th scope="col">Mode</th><th scope="col">Arguments after mode</th><th scope="col">Meaning</th></tr></thead>
           <tbody>{pexecModes.map(([mode, args, meaning]) => <tr><th scope="row">{mode}</th><td><code>{args}</code></td><td>{meaning}</td></tr>)}</tbody>
         </table>
       </TableScroll>
-      <p>On MMU ARM and x32, staged modes 3, 4, 5, 6, 7, 104 and 106 return <code>EINVFN</code> before arguments are read. Non-MMU ARM retains the legacy paths for 3–7, with compatibility unchecked.</p>
+      <p>Staged starts enter at <code>p_tbase</code> with classic basepage startup, even from a 68k ELF caller.
+        The caller must own the basepage and can start a staged image once. An odd entry address returns <code>EINVAL</code>.</p>
       <p>Mode 200 keeps the existing PROCESS, PID, TID, open files, current directories, parent and children.
-        <code>CONF_WITH_EXEC_REPLACE</code> defaults on with <code>CONF_WITH_MULTITHREADING</code> and a supported loader.
-        Public <code>Pexecve</code> is <strong>planned</strong> as a later API migration. <a href="https://github.com/kelihlodversson/pTOS/issues/1008">pTOS #1008</a></p>
+        <code>CONF_WITH_EXEC_REPLACE</code> defaults on with <code>CONF_WITH_MULTITHREADING</code> and the PRG or ELF loader.</p>
     </section>}
 
     <TargetPanels>
@@ -74,13 +77,8 @@ const { title, operation } = record;
         {name === 'Pexec' && <p>Non-MMU 68k keeps its classic staged modes, with 104 and 106 refused. On eligible MMU builds, modes 4 and 104 use the shared-VM PRG path.
           On MMU builds, mode 200 is available with classic PRG or ELF loading, including PRG-only builds. The replacement format determines the startup ABI.</p>}
       </CallingConvention>
-      <CallingConvention slot="arm" binding={overlay.targets.arm}>
-        {name === 'Pexec' && <p>On MMU ARM, modes 3, 4, 5, 6, 7, 104 and 106 are unsupported.
-          Mode 100 needs <code>CONF_WITH_MULTITHREADING</code> and mode 200 needs <code>CONF_WITH_EXEC_REPLACE</code> with ELF loading.</p>}
-      </CallingConvention>
+      <CallingConvention slot="arm" binding={overlay.targets.arm} />
       <CallingConvention slot="x32" binding={overlay.targets.x32}>
-        {name === 'Pexec' && <p>On x32, modes 3, 4, 5, 6, 7, 104 and 106 are unsupported.
-          Mode 100 needs <code>CONF_WITH_MULTITHREADING</code> and mode 200 needs <code>CONF_WITH_EXEC_REPLACE</code> with ELF loading.</p>}
         {name === 'appl_init' && <p><a href={`${cuisPath}#calling-convention`}>CUIS calling conventions</a> describe
           the syscall ABI that userspace <code>libaes.so</code> uses to invoke the kernel.</p>}
       </CallingConvention>
@@ -98,6 +96,8 @@ const { title, operation } = record;
         {record.related.map(({ label, href }) => <li><a href={historicalReference(label, href)}>{label}</a></li>)}
         {name === 'Fclose' && <li><a href={referencePath('Pexec')}>Pexec</a></li>}
         {name === 'Pexec' && <>
+          <li><a href={referencePath('Pexecve')}>Pexecve</a></li>
+          <li><a href="/reference/pexecve-guest-ssystem/">ParaTOS guest launch request</a></li>
           <li><a href={elfEntryPath}>ELF32 process entry</a></li>
           <li><a href="/reference/pfork/">Pfork</a></li>
           <li><a href="/reference/pvfork/">Pvfork</a></li>

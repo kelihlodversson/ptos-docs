@@ -29,6 +29,8 @@ assert.match(fromKernel('aes/Kconfig'), /config CONF_WITH_CUIS\s+bool\s+depends 
 const dispatch = fromKernel('bdos/bdosmain.c');
 assert.match(dispatch, /F\(xclose\).*W_N\(1,W\).*0x3E/);
 assert.match(dispatch, /F\(xexec\).*W_N\(4,WLLL\).*0x4B/);
+assert.match(dispatch, /#if ARCH_ARM \|\| \(CONF_WITH_NATIVE_ABI && CONF_WITH_USER_ASPACE\)\s+\{ NI,[^\n]+0x4B: historical Pexec/);
+assert.match(dispatch, /#if CONF_WITH_ARM_SHARED_EXEC \|\| \(CONF_WITH_USER_ASPACE && \(CONF_WITH_MULTITHREADING \|\| CONF_WITH_NATIVE_ABI\)\)\s+if \(fn == GEMDOS_PEXECVE\)/);
 const m68k = fromSdk('include/mint/osbind.h');
 assert.match(m68k, /trap_1_ww\(\(short\)\(0x3E\),\(short\)\(handle\)\)/);
 assert.match(m68k, /trap_1_wwlll\(\(short\)\(0x4B\),\(short\)\(mode\),\(long\)\(prog\),/);
@@ -42,8 +44,8 @@ assert.deepEqual(words, abi.console.fields.map(field => field.name));
 assert.match(fromKernel('include/portab.h'), /typedef\s+(?:unsigned short|uint16_t)\s+UWORD;/);
 
 const startup = fromKernel('lib/ldso/startup.c');
-assert.match(startup, /aux\[auxwords-2\] = aux\[auxwords-1\] = 0/);
-assert.match(startup, /\(s.base \+ s.back - vectors\) & ~15U/);
+assert.match(startup, /aux\[auxwords\+\+\] = 0; aux\[auxwords\+\+\] = 0/);
+assert.match(startup, /\(s.base \+ s.back - s.front\) & ~15U/);
 const probe = fromKernel('tests/interp_probe/check.c');
 assert.match(probe, /v \+= argc \+ 1/);
 assert.match(probe, /v \+= 3/);
@@ -53,6 +55,7 @@ console.log('Verified CUIS constants and configuration, GEMDOS dispatch and SDK 
 const { nativeCalls } = await import('../src/data/native-calls.ts');
 const get = name => nativeCalls.find(call => call.name === name);
 const kernelHeaders = {
+  'include/pexecve.h': 'Pexecve',
   'include/pclone.h': 'Pclone',
   'include/threadcalls.h': ['Pthjoin', 'Ptermgrp'],
   'bdos/mintproc.h': ['Pfork', 'Pvfork', 'Pwait', 'Pwait3', 'Pwaitpid', 'Syield'],
@@ -61,6 +64,32 @@ const kernelHeaders = {
 for (const [path, names] of Object.entries(kernelHeaders)) {
   const header = fromKernel(path);
   for (const name of [names].flat()) assert.equal(define(header, 'GEMDOS_' + name.toUpperCase()), get(name).opcode);
+}
+assert.ok(m68k.includes(get('Pexecve').prototype.replace(/\s+/g, ' ')));
+assert.deepEqual(get('Pexecve').args.map(([, bytes]) => bytes), [2, 4, 4, 4]);
+assert.match(fromSdk('sources/pexecve.c'), /trap_1_wwlll\(PEXECVE_NATIVE, mode, \(long\)path, \(long\)argv, \(long\)envp\)/);
+assert.match(fromSdk('sources/pexec_compat.c'), /return Pexecve\(mode, prog, classic, environ \? environ : empty_env\)/);
+assert.match(fromKernel('include/pexecve.h'), /PEXECVE_PATH_MAX\s+1024UL[\s\S]*PEXECVE_ARG_MAX\s+65536UL[\s\S]*PEXECVE_MAX_ENTRIES\s+1024UL/);
+assert.match(fromKernel('bdos/launch_args.h'), /ULONG mode, path, argv, envp, tail, environment;\s*\} PEXECVE_GUEST_REQUEST;/);
+assert.deepEqual(get('PEXECVE_GUEST_SSYSTEM').layout.fields.map(field => field.offset), [0, 4, 8, 12, 16, 20]);
+const processExec = fromKernel('include/process_exec.h');
+for (const { name, offset } of get('S_PROCEXEC').layout.fields) {
+  assert.match(processExec, new RegExp(`offsetof\\(PROCESS_EXEC_REQUEST,${name}\\)==${offset}\\b`), name);
+}
+assert.equal(define(processExec, 'PROCESS_EXEC_VECTOR_ARGS'), 1);
+assert.equal(define(cuis, 'CUIS_LAUNCH_VECTORS'), 4);
+assert.match(fromKernel('aes/cuis_session.c'), /vectors && \(tail != sizeof\(request\) \|\| environment \|\| directory\)/);
+const launchRecords = fromKernel('lib/ldso/launch.h');
+assert.equal(define(launchRecords, 'DL_AT_PTOS_LAUNCH_VECTORS'), 0x5004);
+assert.equal(define(launchRecords, 'DL_AT_PTOS_GUEST_LAUNCH'), 0x5005);
+const { aesVectorCalls } = await import('../src/data/aes-vector-calls.ts');
+const libaesHeader = fromKernel('include/libaes.h').replace(/\s+/g, ' ');
+const libaesExports = fromKernel('lib/aes/exports.map');
+for (const { name, prototype } of aesVectorCalls) {
+  const declaration = prototype.replace(/\s+/g, ' ').replace(` ${name}(`, ` mt_${name}(`)
+    .replace(');', ', AESGLOBAL *global);');
+  assert.ok(libaesHeader.includes(declaration), declaration);
+  assert.match(libaesExports, new RegExp(`\\bmt_${name};`));
 }
 const { ssystemModeGroups } = await import('../src/data/ssystem-modes.ts');
 const documentedModes = ssystemModeGroups.flatMap(group => group.modes);
@@ -71,9 +100,13 @@ assert.match(ssystem, /lval_table\[\] = \{[^}]*SVAR_ENTRY\(0x4ba, hz_200\)/);
 assert.match(ssystem, /if \(p == &hz_200\)\s+return hz_200;/);
 const ssystemDispatch = ssystem.split('\nLONG xssystem(')[1];
 assert.ok(ssystemDispatch);
-const dispatchModes = [...ssystemDispatch.matchAll(/^\s*case (S_[A-Z_]+):/gm)].map(match => match[1]);
+const dispatchModes = [...ssystemDispatch.matchAll(/^\s*case (S_[A-Z_]+|PEXECVE_GUEST_SSYSTEM):/gm)].map(match => match[1]);
 assert.deepEqual(documentedModes.map(mode => mode.name).sort(), dispatchModes.sort());
 for (const { name, number } of documentedModes) {
+  if (name === 'PEXECVE_GUEST_SSYSTEM') {
+    assert.match(fromKernel('include/pexecve.h'), new RegExp(`^#define ${name}\\s+\\(${number}\\)`, 'm'));
+    continue;
+  }
   const selector = new RegExp(`^#define ${name}\\s+(?:\\(\\(WORD\\))?(0x[0-9a-f]+|\\d+)\\b`, 'm')
     .exec(consoleHeader)?.[1];
   assert.equal(Number(selector), number & 0xffff, name);
@@ -115,7 +148,8 @@ function configBody(name) {
   assert.ok(definition, name);
   return definition.split('\nconfig ')[0].split('\n    help')[0];
 }
-assert.match(configBody('CONF_WITH_STAGED_PEXEC'), /def_bool CONF_WITH_LEGACY_PEXEC \|\| !CONF_WITH_USER_ASPACE/);
+assert.match(configBody('CONF_WITH_STAGED_PEXEC'), /def_bool CONF_WITH_LEGACY_PEXEC \|\| \(!CONF_WITH_USER_ASPACE && !ARCH_ARM\)/);
+assert.match(configBody('CONF_WITH_ARM_SHARED_EXEC'), /def_bool ARCH_ARM && !CONF_WITH_USER_ASPACE && CONF_WITH_ELF_LOADER/);
 assert.match(configBody('CONF_WITH_MULTITHREADING'), /depends on CONF_WITH_USER_ASPACE && \(!ARCH_ARM \|\| CPU_ARMV7\)\s+default y/);
 assert.match(configBody('CONF_WITH_PREEMPTION'), /depends on CONF_WITH_MULTITHREADING[\s\S]+default y/);
 assert.match(configBody('CONF_WITH_EXEC_REPLACE'), /depends on CONF_WITH_MULTITHREADING\s+depends on CONF_WITH_ELF_LOADER \|\| \(ARCH_M68K_CLASSIC && CONF_WITH_PRG_LOADER\)\s+default y/);
@@ -129,11 +163,13 @@ assert.match(fromKernel('lib/aes/application.c'), /global->ap_id = \(short\)iden
 assert.match(fromSdk('include/mint/mintbind.h'), /#define Ptermgrp\(status\).*0x192/);
 assert.match(show(guest, paratos, 'host/posix/README.md'), /The first staged launch copies the accessible RAM/);
 assert.match(show(guest, paratos, 'host/ptos/runtime.c'), /ptos_call\(GEMDOS_OP_PCLONE,/);
+assert.match(show(guest, paratos, 'host/ptos/runtime.c'), /ptos_call\(GEMDOS_OP_SSYSTEM, PTOS_GUEST_LAUNCH_SSYSTEM,/);
+assert.match(show(guest, paratos, 'host/ptos/dispatch.c'), /case GEMDOS_OP_PEXEC: \{/);
 assert.match(show(guest, paratos, 'host/posix/proc.c'), /NOT_IMPLEMENTED\(GEMDOS, Ptermres, 49\)/);
 assert.match(show(guest, paratos, 'host/posix/proc.c'), /int16_t Pvfork \( void \).*?return Pfork\(\);/s);
 assert.match(show(guest, paratos, 'host/ptos/dispatch.c'), /case GEMDOS_OP_SYIELD: ptos_task_yield/);
 assert.doesNotMatch(show(guest, paratos, 'host/ptos/dispatch.c'), /case GEMDOS_OP_P(?:CLONE|THJOIN|TERMGRP):/);
-console.log('Verified pTOS master native opcodes, discovery and configuration and ParaTOS PR #27 guest paths');
+console.log('Verified pTOS master native opcodes, discovery, ARM shared launch and ParaTOS main guest paths');
 
 const bootConfig = fromKernel('bdos/binfmt.c');
 assert.ok(bootConfig.includes(String.raw`"A:\\PTOS.INI"`));
