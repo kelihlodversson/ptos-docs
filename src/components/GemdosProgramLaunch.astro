@@ -6,8 +6,9 @@ import { elfEntryPath } from '../data/manual-structure';
 <section aria-labelledby="elf-startup">
   <h2 id="elf-startup" class="prm-section-heading ruled">ELF startup and memory in pTOS</h2>
   <p>Use <a href="/reference/pexecve/">Pexecve(0)</a> to load and run a native ELF executable with explicit vectors.
-    Link libcmini’s <code>elfcrt0.o</code> for static ELF vector entry. On 68k, <a href="/reference/pexec/">Pexec(0)</a>
-    still loads ELF with the configured loader, and <code>Pexec(3)</code> rejects staged ELF with <code>EPLFMT</code>.</p>
+    Link libcmini’s <code>elfcrt0.o</code> for static ELF vector entry. On classic 68k with a shared address space,
+    <code>CONF_WITH_M68K_SHARED_EXEC</code> enables <code>Pexecve(0)</code> for the configured PRG or ELF loader.
+    On 68k, <a href="/reference/pexec/">Pexec(0)</a> also loads ELF when enabled, and <code>Pexec(3)</code> rejects staged ELF with <code>EPLFMT</code>.</p>
   <TableScroll label="ELF image placement and startup">
     <table class="prm-rule-table">
       <caption>ELF image placement and startup</caption>
@@ -15,9 +16,10 @@ import { elfEntryPath } from '../data/manual-structure';
       <tbody>
         <tr><th scope="row">Static ELF, single address space</th>
           <td class="table-prose">Load segments into the TPA following the basepage, with padding where alignment requires it.
-            Startup code can release surplus TPA with <a href="/historical/en/mshrink/">Mshrink</a>
-            after reserving the image, argument storage and stack.</td>
-          <td>Shared-memory ARM launches use the standard ELF stack. Shared-memory 68k Pexec uses classic basepage entry.</td></tr>
+            Standard ELF entry reserves a 256 KiB stack area in the child’s TPA, which holds the initial vectors.</td>
+          <td class="table-prose"><code>Pexecve(0)</code> on shared ARM and classic 68k uses the standard ELF stack.
+            Classic 68k <code>Pexec(0)</code> uses it for <a href={`${elfEntryPath}#entry-note`}>marked ELF</a> with
+            <code>CONF_WITH_M68K_SHARED_EXEC</code>. Unmarked images keep basepage entry.</td></tr>
         <tr><th scope="row">Static ELF, private address space</th>
           <td class="table-prose">Load segments directly into the process’s private pages. The TPA holds the basepage. The image,
             startup storage and user stack occupy their own ranges.</td>
@@ -31,9 +33,10 @@ import { elfEntryPath } from '../data/manual-structure';
       </tbody>
     </table>
   </TableScroll>
-  <p>At standard ELF entry, use <code>AT_PTOS_BASEPAGE</code> to find the basepage. For classic 68k basepage entry,
-    the basepage address is at <code>4(SP)</code> and <code>A0</code> is zero. Built-in and internal staged accessory paths
-    retain their entry contracts.</p>
+  <p>At standard ELF entry, use <code>AT_PTOS_BASEPAGE</code> to find the basepage. Classic programs and accessories use
+    the <a href={`${elfEntryPath}#basepage-entry`}>basepage entry convention</a>.
+    Shared-address-space kernel AES can give marked ELF accessories the same <a href={`${elfEntryPath}#startup-role`}>standard stack</a>
+    with the accessory role.</p>
   <p>For static ELF, <code>p_tbase</code> holds the relocated entry address and <code>p_dlen</code> is zero.
     The ELF loader reports the file-backed image through <code>p_tlen</code> and the trailing region through
     <code>p_bbase</code> and <code>p_blen</code>. Use the <code>PT_LOAD</code> records for individual segment boundaries.</p>

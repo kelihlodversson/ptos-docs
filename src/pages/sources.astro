@@ -29,8 +29,9 @@ import { gfaSource } from '../data/gfa-reference';
   <ul class="source-revisions">
     {Object.values(revisions).map(({ repo, revision }) => <li><a href={`https://github.com/${repo}/tree/${revision}`}>{repo}</a> <code>{revision}</code></li>)}
   </ul>
-  <p>pTOS implementation notes use the pinned commit above from the <code>{revisions.ptos.branch}</code> branch.
+  <p>The implementation and startup notes use the pinned pTOS and libcmini master revisions above.
     <a href={`https://github.com/${revisions.ptos.repo}/tree/${revisions.ptos.branch}`}>pTOS master on GitHub</a> ·
+    <a href={`https://github.com/${revisions.libcmini.repo}/tree/${revisions.libcmini.branch}`}>libcmini master on GitHub</a> ·
     <a href={`https://github.com/${revisions.paratos.repo}/tree/${revisions.paratos.branch}`}>ParaTOS main on GitHub</a></p>
   <p> <a href="https://github.com/kelihlodversson/ptos-docs">Manual source and revision history</a></p>
 </Layout>

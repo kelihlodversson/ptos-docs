@@ -8,6 +8,7 @@ import GfaBinding from '../../../components/GfaBinding.astro';
 import HistoricalNativeTarget from '../../../components/HistoricalNativeTarget.astro';
 import HistoricalPtosAvailability from '../../../components/HistoricalPtosAvailability.astro';
 import HistoricalRedirect from '../../../components/HistoricalRedirect.astro';
+import SourceList from '../../../components/SourceList.astro';
 import { pages } from '../../../data/historical';
 import { importedNavigation } from '../../../data/manual-structure';
 import type { HistoricalPage } from '../../../data/historical';
@@ -47,10 +48,23 @@ const destination = (historicalMerges as Record<string, string>)[page.slug];
         <HistoricalPtosAvailability {page} />
       </Fact>}
     </dl>}
-    {english && page.slug === 'shel-write' && <p>On pTOS x32, libaes converts classic counted tails to vectors.
-      With mode 0 and <code>CL_PARSE</code>, it also accepts byte 127 followed by a NUL-terminated command string.
-      Tail marker 127 with <code>CL_NORMAL</code> and the MagiC byte-255 shortcut return zero in native libaes.
-      Use <a href="/reference/shel-writeve/">shel_writeve</a> for explicit arguments and environment.</p>}
+    {english && page.slug === 'shel-write' && <section aria-labelledby="ptos-launch">
+      <h2 id="ptos-launch" class="prm-section-heading ruled">Launching from x32 libaes</h2>
+      <p><code>SWM_LAUNCHACC</code> (3) starts an ELF accessory with any filename. <code>SWM_LAUNCH</code> (0)
+        infers the role from the extension, so a <code>.ACC</code> file starts as an accessory.
+        <code>SWM_LAUNCHNOW</code> (1) selects program startup even for a <code>.ACC</code> file.
+        See <a href="/os-variants/ptos/elf-entry/#startup-role">ELF program and accessory startup</a> for the CRT contract.</p>
+      <p>Modes 0 and 3 default to the executable directory and send one <code>CH_EXIT</code> on child exit.
+        Both accept <code>SW_DEFDIR</code> and <code>SW_ENVIRON</code> with a <code>SHELW</code> request.
+        Use <code>CL_NORMAL</code> for a classic counted tail. <code>CL_PARSE</code> also accepts byte 127 followed by
+        a NUL-terminated command string. Tail marker 127 with <code>CL_NORMAL</code> and the MagiC byte-255 shortcut
+        return zero. Use <a href="/reference/shel-writeve/">shel_writeve</a> for explicit vectors.</p>
+      <SourceList sources={[
+        ['ptos', 'lib/aes/shell.c', 'x32 shell mode handling'],
+        ['ptos', 'doc/libaes-shell-compatibility.md', 'Compatibility and launch mode details'],
+        ['ptos', 'tests/cuis/shell.c', 'Shell launch role coverage'],
+      ]} />
+    </section>}
     {english && page.slug === 'shel-read' && <p>On pTOS x32, libaes returns a classic view of a vector launch when the
       operands can be quoted into a tail of at most 126 bytes. Otherwise it returns zero and preserves the buffers.
       Use <a href="/reference/shel-readve/">shel_readve</a> to read the original vectors.</p>}

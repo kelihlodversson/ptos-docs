@@ -12,6 +12,7 @@ import { elfEntryPath } from '../../../data/manual-structure';
   ['ptos', 'configs/pc-x86_64-desktop_defconfig', 'PC desktop build configuration'],
   ['ptos', 'lib/ldso/build.mk', 'ELF runtime installation tree'],
   ['ptos', 'lib/aes/build.mk', 'libaes installation path'],
+  ['ptos', 'desk/deskmain.c', 'External EmuDesk accessory selection'],
   ['ptos', 'doc/pexecve-migration.txt', 'Native EmuCON and external shell vector launch'],
 ]}>
   <h2 class="prm-section-heading ruled">Boot files</h2>
@@ -44,6 +45,10 @@ import { elfEntryPath } from '../../../data/manual-structure';
     <code>obj/ldso/runtime/GEMSYS</code> on the EFI boot volume alongside the desktop and console.
     Keep <code>LD.SO</code>, <code>LIBPTOS.SO</code> and <code>LIBAES.SO</code> under <code>\GEMSYS\LIB\X32</code>.
     A dynamically linked EmuCON still needs its runtime files when pTOS falls back to it.</p>
+  <p>External EmuDesk starts up to six <code>.ACC</code> files from the root of its initial drive once per desktop session.
+    These are native x32 ELF executables linked with the shared runtime and libaes. EmuDesk uses
+    <a href="/historical/en/shel-write/#ptos-launch"><code>SWM_LAUNCHACC</code></a> to request accessory startup.
+    See <a href={`${elfEntryPath}#startup-role`}>ELF program and accessory startup</a> for linking instructions.</p>
   <h2 class="prm-section-heading ruled">EmuCON program arguments</h2>
   <p>ARM and x32 EmuCON start external commands with <a href="/reference/pexecve/">Pexecve(0)</a>. The resolved path
     selects the executable. The typed command stays in <code>argv[0]</code>, including when EmuCON resolves it through

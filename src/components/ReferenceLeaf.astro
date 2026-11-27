@@ -65,7 +65,12 @@ const { title, operation } = record;
         </table>
       </TableScroll>
       <p>Staged starts enter at <code>p_tbase</code> with classic basepage startup, even from a 68k ELF caller.
-        The caller must own the basepage and can start a staged image once. An odd entry address returns <code>EINVAL</code>.</p>
+        The caller must own the basepage. On classic 68k with a shared address space, mode 4 keeps the image available
+        for another start after it exits. Mode 6 transfers ownership. On MMU builds, the shared-VM path returns
+        <code>EIMBA</code> for a second start of the same basepage and <code>EINVAL</code> for an odd entry address.</p>
+      <p>On classic 68k with a shared address space, <a href={referencePath('Pexecve')}>Pexecve(0)</a> accepts explicit vectors.
+        A <code>Pexec(0)</code> launch can select the same ELF entry convention through the
+        <a href={`${elfEntryPath}#entry-note`}>standard startup note</a>.</p>
       <p>Mode 200 keeps the existing PROCESS, PID, TID, open files, current directories, parent and children.
         <code>CONF_WITH_EXEC_REPLACE</code> defaults on with <code>CONF_WITH_MULTITHREADING</code> and the PRG or ELF loader.</p>
     </section>}
@@ -102,7 +107,10 @@ const { title, operation } = record;
           <li><a href="/reference/pvfork/">Pvfork</a></li>
           <li><a href="/reference/pwaitpid/">Pwaitpid</a></li>
         </>}
-        {name === 'appl_init' && <li><a href={cuisPath}>CUIS</a></li>}
+        {name === 'appl_init' && <>
+          <li><a href={cuisPath}>CUIS</a></li>
+          <li><a href={`${elfEntryPath}#startup-role`}>ELF program and accessory startup</a></li>
+        </>}
       </ul>
     </section>
 

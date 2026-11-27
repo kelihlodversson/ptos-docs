@@ -23,18 +23,19 @@ export const aesVectorCalls: AesVectorCall[] = [
     result: 'Returns 1 on success. A null output pointer, missing launch metadata or invalid registration returns 0 and preserves all output values.',
   },
   {
-    name: 'shel_writeve', title: 'Launch an application with explicit vectors',
+    name: 'shel_writeve', title: 'Launch a program or accessory with explicit vectors',
     prototype: 'short shel_writeve(short mode,\n    short graphical,\n    short execution,\n    const void *command,\n    char *const argv[],\n    char *const envp[]);',
     parameters: [
-      ['mode', 'SWM_LAUNCH (0) or SWM_LAUNCHNOW (1), optionally with SW_DEFDIR.'],
-      ['graphical', 'With SWM_LAUNCHNOW, use GEMAPP or TOSAPP. SWM_LAUNCH derives the kind from the file extension.'],
-      ['execution', 'Use CL_NORMAL with SWM_LAUNCH. SWM_LAUNCHNOW accepts SHW_IMMED, SHW_PARALLEL or SHW_CHAIN. SHW_CHAIN requires GEMAPP.'],
+      ['mode', 'SWM_LAUNCH (0), SWM_LAUNCHNOW (1) or SWM_LAUNCHACC (3), optionally with SW_DEFDIR.'],
+      ['graphical', 'With SWM_LAUNCHNOW, use GEMAPP or TOSAPP. SWM_LAUNCH derives the kind from the file extension. SWM_LAUNCHACC selects the accessory role for any pathname. Modes 0 and 3 ignore this parameter.'],
+      ['execution', 'Use CL_NORMAL with SWM_LAUNCH and SWM_LAUNCHACC. SWM_LAUNCHNOW accepts SHW_IMMED, SHW_PARALLEL or SHW_CHAIN. SHW_CHAIN requires GEMAPP.'],
       ['command', 'Executable pathname, or a SHELW pointer with newcmd and defdir when using SW_DEFDIR.'],
       ['argv', 'Readable NULL-terminated argument vector including argv[0], which may be an empty string.'],
       ['envp', 'Readable NULL-terminated environment vector. A null pointer inherits the current environment and a vector with just NULL selects an empty environment.'],
     ],
     description: [
       'Pass separated arguments directly. SW_ENVIRON and CL_PARSE are invalid for vector launch. The library resolves the executable against the caller before applying an explicit child directory. The PROCESS launch transaction copies the vectors and attaches any required console or child-completion state before the child starts.',
+      'SWM_LAUNCH starts .ACC files as ELF accessories and uses the suffix to classify other files. SWM_LAUNCHACC selects ELF accessory startup regardless of suffix. Both modes default to the executable directory and send CH_EXIT when the child exits. SWM_LAUNCHNOW selects program startup even for a .ACC file.',
       'SHW_CHAIN prepares a GEM successor to run after the calling application exits. The prepared image retains the copied arguments, environment and directory.',
     ],
     result: 'Returns the positive child PID for an ordinary successful launch, 1 for an accepted SHW_CHAIN, or 0 on failure.',
