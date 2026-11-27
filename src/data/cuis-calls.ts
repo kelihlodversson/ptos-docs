@@ -528,7 +528,7 @@ export const cuisGroups: CuisGroup[] = [
           ['directory', 'const char *', 'Optional classic child directory. Zero in vector mode.']],
         modes: [
           ['Classic', 'Pass the pathname, tail, environment and directory directly in the final four slots.'],
-          ['CUIS_LAUNCH_VECTORS (4)', 'Pass the request address and size 72, then two zero slots. The request must have operation PROCESS_EXEC_PREPARE, policy 0 and flags PROCESS_EXEC_VECTOR_ARGS.'],
+          ['CUIS_LAUNCH_VECTORS (4)', 'Pass the request address and size 72, then two zero slots. Use PROCESS_EXEC_PREPARE, policy 0 and PROCESS_EXEC_VECTOR_ARGS in flags. To start an ELF accessory, also set PROCESS_EXEC_ACCESSORY in the request and select observation without a console lease.'],
         ],
         detail: 'Prepares the native process, installs the requested console lease or observation receipt, and commits the launch. The console lease is tied to the child’s process lifetime.',
         result: 'The child’s positive PID, EAGAIN if console ownership or receipt capacity blocks the launch, or another negative GEMDOS error.',

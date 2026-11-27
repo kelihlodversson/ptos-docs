@@ -43,6 +43,7 @@ const companion = read ? 'shel_writeve' : 'shel_readve';
       <h2 id="related-heading" class="prm-section-heading ruled">See Also</h2>
       <ul class="related-links">
         <li><a href={nativePath(companion)}>{companion}</a></li>
+        {!read && <li><a href="/historical/en/shel-write/#ptos-launch">shel_write launch modes</a></li>}
         <li><a href="/reference/pexecve/">Pexecve</a></li>
         <li><a href={elfEntryPath}>ELF32 process entry</a></li>
       </ul>
@@ -53,6 +54,7 @@ const companion = read ? 'shel_writeve' : 'shel_readve';
       ['ptos', 'include/libaes.h', 'Native libaes declaration'],
       ['ptos', 'lib/aes/shell.c', 'Shell implementation'],
       ['ptos', 'tests/cuis/gem_argv.c', 'Vector launch and snapshot regression'],
+      ['ptos', 'doc/libaes-shell-compatibility.md', 'Shell modes and compatibility'],
     ]} />
   </article>
 </Layout>

@@ -266,6 +266,7 @@ test('GEMDOS format and launch topics document ELF and render the TPA layout as 
     await expect(machines.getByRole('row').filter({ hasText: cpu })).toContainText(machine);
   }
   await expect(page.getByRole('rowheader', { name: 'PT_INTERP' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'pTOS startup note' })).toHaveAttribute('href', '/os-variants/ptos/elf-entry/#entry-note');
   await expect(page.getByRole('table', { name: 'Digital Research symbol types' }).getByRole('columnheader', { name: 'Value' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.getByRole('link', { name: 'Program launch and TPA', exact: true }).click();
@@ -279,6 +280,8 @@ test('GEMDOS format and launch topics document ELF and render the TPA layout as 
   await startup.getByRole('link', { name: 'ELF startup and memory' }).click();
   await expect(page).toHaveURL(`${launch}#elf-startup`);
   await expect(main.getByRole('heading', { name: 'ELF startup and memory in pTOS' })).toBeInViewport();
+  await expect(page.getByRole('row', { name: /Static ELF, single address space/ })).toContainText('256 KiB');
+  await expect(page.getByRole('row', { name: /Static ELF, single address space/ })).toContainText('CONF_WITH_M68K_SHARED_EXEC');
   await expect(page.getByRole('row', { name: /Static ELF, private address space/ })).toContainText('private pages');
   await expect(page.getByRole('row', { name: /ELF with PT_INTERP/ })).toContainText('auxiliary vector');
   const tpa = page.getByRole('table', { name: 'Classic PRG TPA after Mshrink' });
@@ -922,6 +925,7 @@ test('the pTOS master notes distinguish native staged execution, fork and PROCES
   const select = selectTarget(page);
   await select.selectOption('arm');
   await expect(page.getByRole('tabpanel', { name: 'ARM' })).toContainText('The raw trap returns EINVFN');
+  await expect(page.getByRole('row', { name: /^4 0L, basepage/ })).toContainText('The caller can start it again after exit');
   await expect(page.getByRole('row', { name: /200 .*same PROCESS/ })).toContainText('CONF_WITH_EXEC_REPLACE');
   await select.selectOption('68k');
   await expect(page.getByText(/including PRG-only builds/)).toBeVisible();
@@ -934,6 +938,8 @@ test('the pTOS master notes distinguish native staged execution, fork and PROCES
   await select.selectOption('x32');
   await expect(page.getByRole('row', { name: /completion.*SNAPSHOT/ })).toContainText('+32');
   await expect(page.getByRole('row', { name: /classic_tail/ })).toContainText('+64');
+  const requestFlags = page.getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'flags', exact: true }) });
+  await expect(requestFlags).toContainText('Bit 1 requests ELF accessory startup');
   await expect(page.locator('.prm-prototype')).toBeVisible();
 });
 
@@ -951,7 +957,9 @@ test('Pexecve documents the native ABI while ParaTOS keeps the guest Pexec trap'
   await select.selectOption('x32');
   await expect(page.locator('.prm-bit-fields code')).toHaveText(['0x1', '0x193']);
   await expect(prototype).toBeVisible();
-  await expect(page.getByText('Shared-address-space ARM supplies mode 0', { exact: false })).toBeVisible();
+  const config = page.getByText('CONF_WITH_M68K_SHARED_EXEC', { exact: false });
+  await expect(config).toContainText('PRG-only Atari and Amiga ROMs');
+  await expect(config).toContainText('return EINVFN for modes 100 and 200');
   await page.goto('/reference/pexecve-guest-ssystem/#calling-convention', { waitUntil: 'commit' });
   await expect(page).toHaveURL('/reference/pexecve/#paratos');
   await expect(page.locator('#paratos')).toContainText('translates guest modes 0, 100 and 200 to native Pexecve');
@@ -964,17 +972,32 @@ test('Pexecve documents the native ABI while ParaTOS keeps the guest Pexec trap'
 
 test('AES vector shell calls and static ELF startup are linked through the manual', async ({ page }) => {
   await page.goto('/subsystems/aes/shell-library/');
+  await page.getByRole('link', { name: 'shel_write', exact: true }).first().click();
+  const launchNotes = page.getByRole('region', { name: 'Launching from x32 libaes' });
+  await expect(launchNotes).toContainText('SWM_LAUNCHACC (3) starts an ELF accessory with any filename');
+  await expect(launchNotes).toContainText('CL_PARSE also accepts byte 127');
   await page.getByRole('link', { name: 'shel_writeve', exact: true }).first().click();
   await expect(page.locator('.prm-prototype')).toContainText('short shel_writeve(');
   await expect(page.getByRole('tabpanel', { name: '68k' })).toContainText('Unsupported');
   await selectTarget(page).selectOption('x32');
   await expect(page.getByRole('tabpanel', { name: 'x32' })).toContainText('mt_shel_writeve');
+  await expect(page.getByText('Use CL_NORMAL with SWM_LAUNCH and SWM_LAUNCHACC', { exact: false })).toBeVisible();
   await page.getByRole('link', { name: 'shel_readve', exact: true }).click();
   await expect(page.locator('.prm-prototype')).toContainText('short shel_readve(');
   await page.getByRole('link', { name: 'ELF32 process entry', exact: true }).click();
   await expect(page.getByText('Static vector startup enters', { exact: false })).toBeVisible();
   await expect(page.locator('#launch-vectors')).toContainText('0x5004');
+  const role = page.getByRole('row', { name: /^AT_PTOS_ENTRY_TYPE/ });
+  await expect(role).toContainText('0x5006');
+  await expect(role).toContainText('an absent tag selects program startup');
+  await expect(page.getByText('0x50544F53', { exact: true })).toBeVisible();
+  await expect(page.getByText('is a compatibility name for the same object', { exact: false })).toContainText('dynacccrt.o');
+  const classic = page.getByRole('table', { name: 'Classic program and accessory basepage entry' });
+  await expect(classic.getByRole('row', { name: /^68k/ })).toContainText('Basepage at 4(SP), A0 = 0');
+  await expect(classic.getByRole('row', { name: /^68k/ })).toContainText('Kernel AES passes the basepage in A0');
   await expect(page.getByRole('row', { name: /AT_PTOS_GUEST_LAUNCH/ })).toHaveCount(0);
+  await page.goto('/reference/cuis-launch-attach/');
+  await expect(page.getByText('select observation without a console lease', { exact: false })).toBeVisible();
 });
 
 test('search covers historical sections outside the function index', async ({ page }) => {

@@ -108,7 +108,8 @@ const { subject } = Astro.props;
   libcmini translates legacy ARM and x32 <code>Pexec()</code> calls to those vectors.</p>}
 {subject === 'shell-library' && <p>On pTOS x32, use <a href="/reference/shel-writeve/">shel_writeve</a> to
   launch from GEM with explicit vectors and <a href="/reference/shel-readve/">shel_readve</a> to inspect the
-  application’s startup snapshot. The classic shell calls continue to use command-tail buffers.</p>}
+  application’s startup snapshot. Both <a href="/historical/en/shel-write/#ptos-launch">shel_write</a> and
+  <code>shel_writeve</code> can select ELF accessory startup.</p>}
 {subject === 'os-variants' && <p>The pTOS chapter covers configuration, applications and
   startup conventions. The other chapters describe TOS variants and environments whose interfaces provide
   compatibility context for pTOS development.</p>}

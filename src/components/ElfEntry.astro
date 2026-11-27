@@ -6,7 +6,7 @@ interface Props { scope: string; sp: string; finalizer: string; byteOrder: strin
 const { scope, sp, finalizer, byteOrder } = Astro.props;
 ---
 <CallingConvention binding={{ status: 'implemented', scope,
-  detail: `${sp} points to the 16-byte aligned initial stack. At dynamic handoff the interpreter supplies its finalizer in ${finalizer}. Static vector entry goes directly to the executable.` }}>
+  detail: `${sp} points to the 16-byte aligned initial stack. At dynamic handoff the interpreter supplies its finalizer in ${finalizer}. At static entry ${finalizer} is zero.` }}>
   <MemoryLayout {...abi.elf} caption="Initial user stack for ELF32 vector entry" {byteOrder} />
   <p>Each pointer occupies four bytes. <code>envc</code> is the number of non-null environment entries. Argument and environment strings are stored in the child’s stack allocation.</p>
 </CallingConvention>

@@ -91,11 +91,13 @@ export const overlays: Record<string, Overlay> = {
     sources: [
       ...gemdosSources, ['ptos', 'bdos/proc.c', 'Native Pexec mode dispatch and ownership'],
       ['ptos', 'doc/pexec-legacy-modes.txt', '68k mode availability and raw ARM/x32 cutover'],
+      ['ptos', 'doc/process-entry.txt', 'Standard entry for marked 68k ELF programs'],
       ['libcmini', 'sources/pexec_compat.c', 'ARM and x32 C compatibility wrapper'],
       ['ptos', 'doc/freemint-compatibility.txt', 'Managed mode 0 and fork interaction'],
       ['ptos', 'bdos/Kconfig', 'Native scheduling and mode 200 build gates'],
       ['ptos', 'doc/exec-replacement.txt', 'Replacement contracts and supported loaders'],
       ['ptos', 'tests/pclone/exec200_native.c', 'Mode 200 native acceptance probe'],
+      ['ptos', 'tests/binfmt/fixtures/driver.c', 'Repeated starts of a retained PRG on shared 68k'],
       ['ptos', 'bdos/uaccess.c', 'Address-space argument checks'],
       ['ptos', 'include/bdosdefs.h', 'Mode constants'],
       ['ptos', 'tests/x32_probe/x32_probe.c', 'x32 launch and argument probes'],
@@ -114,7 +116,7 @@ export const overlays: Record<string, Overlay> = {
       arm: { ...legacyAES, detail: legacyAES.detail + ' The traditional ARM binding uses SVC #2.',
         registers: [['R0', 'AES selector 0xC8'], ['R1', 'AESPB pointer'], ['int_out[0]', 'Application ID or failure']] },
       x32: { status: 'experimental', scope: 'Native x32 GEMlib and CONF_WITH_LIBAES',
-        detail: 'GEMlib appl_init() calls the userspace libaes mt_appl_init(AESGLOBAL *). libaes manages caller-owned initialization state and invokes kernel services through the CUIS syscall ABI. The returned application ID identifies the GUI client. It is distinct from the PROCESS identity, MiNT PID and CUIS session handle. Ring-3 generic GEM class 2 is unsupported.' },
+        detail: 'GEMlib appl_init() calls the userspace libaes mt_appl_init(AESGLOBAL *). libaes manages caller-owned initialization state and invokes kernel services through the CUIS syscall ABI. It classifies the client as APP_APPLICATION or APP_ACCESSORY from the runtime startup role. The returned application ID identifies the GUI client. It is distinct from the PROCESS identity, MiNT PID and CUIS session handle. Ring-3 generic GEM class 2 is unsupported.' },
     },
     sources: [
       ['ptos', 'aes/Kconfig', 'Kernel AES and experimental libaes configuration'],
@@ -124,6 +126,7 @@ export const overlays: Record<string, Overlay> = {
       ['ptos', 'bios/arch/x86_64/trap.c', 'Ring-3 class 2 rejection'],
       ['gemlib', 'ptos/a_appl_init.c', 'Public appl_init wrapper'],
       ['ptos', 'lib/aes/application.c', 'Userspace mt_appl_init implementation'],
+      ['ptos', 'tests/cuis/application.c', 'Runtime role and AES classification regression'],
       ['ptos', 'tests/x32_desktop/cuis_client.c', 'Native desktop client regression'],
     ],
     paraTos: 'ParaTOS appl_init coverage is unverified in this edition.',
@@ -152,7 +155,7 @@ export const overlays: Record<string, Overlay> = {
       ['paratos', 'host/posix/sys.c', 'ParaTOS POSIX guest Ssystem modes'],
       ['paratos', 'host/ptos/dispatch.c', 'ParaTOS pTOS-hosted guest Ssystem modes'],
     ],
-    paraTos: 'The POSIX guest returns zero for the discovery call without checking its arguments, supports guest cookie and system-variable reads, and refuses writes with EACCDN. The pTOS-hosted guest checks each selector, handles cookie reads and system-variable access in the guest, forwards scalar build identification queries to pTOS, and reports zero for S_OSFEATURES. Native pTOS extension modes −2 through −10 are outside the guest ABI.',
+    paraTos: 'The POSIX guest returns zero for the discovery call without checking its arguments, supports guest cookie and system-variable reads, and refuses writes with EACCDN. The pTOS-hosted guest checks each selector, handles cookie reads and system-variable access in the guest, forwards scalar build identification queries to pTOS, and reports zero for S_OSFEATURES. Native pTOS extension modes are outside the guest ABI.',
   },
 };
 
@@ -161,9 +164,9 @@ for (const cpu of ['arm', 'x32'] as const) {
 }
 
 export const pexecModes: [mode: string, args: string, meaning: string][] = [
-  ['0', 'path, cmdline, env', 'Load and run a PRG or ELF when its loader is enabled. A managed caller waits for its exact child and receives the full 16-bit status.'],
+  ['0', 'path, cmdline, env', 'Load and run a PRG or ELF when its loader is enabled. With CONF_WITH_M68K_SHARED_EXEC, a marked ELF uses standard stack entry. Unmarked ELF in that configuration retains legacy basepage entry. A managed caller waits for its exact child and receives the full 16-bit status.'],
   ['3', 'path, cmdline, env', 'Stage a PRG and return a basepage on 68k. On 68k a target that would stage an ELF image returns EPLFMT.'],
-  ['4', '0L, basepage, 0L', 'Run a retained PRG in place on ROM/non-MMU 68k. On supported 68k MMU builds, launch a new PROCESS sharing the caller’s address space and wait.'],
+  ['4', '0L, basepage, 0L', 'Run a retained PRG in place on ROM/non-MMU 68k. The caller can start it again after exit. On supported 68k MMU builds, launch a new PROCESS sharing the caller’s address space and wait.'],
   ['5', '0L, cmdline, env', 'Create and return a classic 68k basepage when the platform supports it.'],
   ['6', '0L, basepage, 0L', 'Run a staged 68k image and transfer ownership.'],
   ['7', 'prgflags, cmdline, env', 'Create a classic 68k basepage with program flags when the platform supports it.'],

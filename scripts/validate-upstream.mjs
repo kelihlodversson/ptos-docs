@@ -30,7 +30,7 @@ const dispatch = fromKernel('bdos/bdosmain.c');
 assert.match(dispatch, /F\(xclose\).*W_N\(1,W\).*0x3E/);
 assert.match(dispatch, /F\(xexec\).*W_N\(4,WLLL\).*0x4B/);
 assert.match(dispatch, /#if ARCH_ARM \|\| \(CONF_WITH_NATIVE_ABI && CONF_WITH_USER_ASPACE\)\s+\{ NI,[^\n]+0x4B: historical Pexec/);
-assert.match(dispatch, /#if CONF_WITH_ARM_SHARED_EXEC \|\| \(CONF_WITH_USER_ASPACE && \(CONF_WITH_MULTITHREADING \|\| CONF_WITH_NATIVE_ABI\)\)\s+if \(fn == GEMDOS_PEXECVE\)/);
+assert.match(dispatch, /#if CONF_WITH_PEXECVE\s+if \(fn == GEMDOS_PEXECVE\)/);
 const m68k = fromSdk('include/mint/osbind.h');
 assert.match(m68k, /trap_1_ww\(\(short\)\(0x3E\),\(short\)\(handle\)\)/);
 assert.match(m68k, /trap_1_wwlll\(\(short\)\(0x4B\),\(short\)\(mode\),\(long\)\(prog\),/);
@@ -46,11 +46,26 @@ assert.match(fromKernel('include/portab.h'), /typedef\s+(?:unsigned short|uint16
 const startup = fromKernel('lib/ldso/startup.c');
 assert.match(startup, /aux\[auxwords\+\+\] = 0; aux\[auxwords\+\+\] = 0/);
 assert.match(startup, /\(s.base \+ s.back - s.front\) & ~15U/);
+const startupHeader = fromKernel('lib/ldso/startup.h');
+const entryRole = fromKernel('lib/entry_role.h');
+const elfCrt = fromSdk('sources/elfcrt.c');
+assert.equal(define(startupHeader, 'DL_AT_PTOS_ENTRY_TYPE'), 0x5006);
+assert.equal(define(elfCrt, 'AT_PTOS_ENTRY_TYPE'), 0x5006);
+assert.equal(define(entryRole, 'PTOS_ENTRY_PROGRAM'), 0);
+assert.equal(define(entryRole, 'PTOS_ENTRY_ACCESSORY'), 1);
+assert.match(startupHeader, /DL_SHARED_STACK_SIZE\s+\(256UL \* 1024\)/);
+assert.match(startup, /if \(vectors->entry_type != PTOS_ENTRY_PROGRAM\) \{\s+aux\[auxwords\+\+\] = DL_AT_PTOS_ENTRY_TYPE; aux\[auxwords\+\+\] = vectors->entry_type;/);
+assert.match(elfCrt, /_app = entry_type != PTOS_ENTRY_ACCESSORY;/);
+assert.match(fromSdk('sources/arch/elf-entry-note.h'), /\.balign 4\s+\.long 5, 4, 0x50544f53\s+\.asciz "pTOS"\s+\.balign 4\s+\.long 1/);
+assert.match(fromKernel('bdos/elfld.c'), /note\[0\] == 5 && note\[1\] == 4 && note\[2\] == 0x50544f53UL/);
+assert.match(fromKernel('bdos/elfld.c'), /\.argc = 1, \.entry_type = PTOS_ENTRY_ACCESSORY/);
+assert.match(fromKernel('lib/ldso/arch/x32/dyncrt.S'), /call __ptos_is_application@PLT\s+movw %ax, _app\(%rip\)/);
+assert.match(fromKernel('lib/ldso/build.mk'), /^obj\/ldso\/dynacccrt\.o: obj\/ldso\/dyncrt\.o$/m);
 const probe = fromKernel('tests/interp_probe/check.c');
 assert.match(probe, /v \+= argc \+ 1/);
 assert.match(probe, /v \+= 3/);
 assert.match(probe, /v \+= 2/);
-console.log('Verified CUIS constants and configuration, GEMDOS dispatch and SDK slots, console_dim fields, and ELF32 stack evidence');
+console.log('Verified CUIS constants and configuration, GEMDOS dispatch and SDK slots, console_dim fields, and ELF32 stack and entry roles');
 
 const { nativeCalls } = await import('../src/data/native-calls.ts');
 const get = name => nativeCalls.find(call => call.name === name);
@@ -75,8 +90,14 @@ for (const { name, offset } of get('S_PROCEXEC').layout.fields) {
   assert.match(processExec, new RegExp(`offsetof\\(PROCESS_EXEC_REQUEST,${name}\\)==${offset}\\b`), name);
 }
 assert.equal(define(processExec, 'PROCESS_EXEC_VECTOR_ARGS'), 1);
+assert.equal(define(processExec, 'PROCESS_EXEC_ACCESSORY'), 2);
 assert.equal(define(cuis, 'CUIS_LAUNCH_VECTORS'), 4);
 assert.match(fromKernel('aes/cuis_session.c'), /vectors && \(tail != sizeof\(request\) \|\| environment \|\| directory\)/);
+assert.match(fromKernel('aes/cuis_session.c'), /console && \(request.flags & PROCESS_EXEC_ACCESSORY\)/);
+assert.match(fromKernel('bdos/process_exec_request.c'), /request->policy \|\| \(request->operation != PROCESS_EXEC_PREPARE &&\s+request->operation != PROCESS_EXEC_START\)/);
+assert.equal(define(fromKernel('include/gem_shelw.h'), 'SWM_LAUNCHACC'), 3);
+assert.match(fromKernel('lib/aes/shell.c'), /mode == SWM_LAUNCHACC \? SHELL_ACCESSORY/);
+assert.match(fromKernel('lib/aes/application.c'), /__ptos_entry_type\(\) == PTOS_ENTRY_ACCESSORY \?\s+APP_ACCESSORY : APP_APPLICATION/);
 const launchRecords = fromKernel('lib/ldso/launch.h');
 assert.equal(define(launchRecords, 'DL_AT_PTOS_LAUNCH_VECTORS'), 0x5004);
 const { aesVectorCalls } = await import('../src/data/aes-vector-calls.ts');
@@ -143,6 +164,10 @@ function configBody(name) {
 }
 assert.match(configBody('CONF_WITH_STAGED_PEXEC'), /def_bool CONF_WITH_LEGACY_PEXEC \|\| \(!CONF_WITH_USER_ASPACE && !ARCH_ARM\)/);
 assert.match(configBody('CONF_WITH_ARM_SHARED_EXEC'), /def_bool ARCH_ARM && !CONF_WITH_USER_ASPACE && CONF_WITH_ELF_LOADER/);
+assert.match(configBody('CONF_WITH_M68K_SHARED_EXEC'), /depends on ARCH_M68K_CLASSIC && !CONF_WITH_USER_ASPACE\s+depends on CONF_WITH_PRG_LOADER \|\| CONF_WITH_ELF_LOADER\s+default y/);
+assert.match(configBody('CONF_WITH_SHARED_EXEC'), /def_bool CONF_WITH_ARM_SHARED_EXEC \|\| CONF_WITH_M68K_SHARED_EXEC/);
+assert.match(configBody('CONF_WITH_PEXECVE'), /def_bool CONF_WITH_SHARED_EXEC \|\| \(CONF_WITH_USER_ASPACE && \(CONF_WITH_MULTITHREADING \|\| CONF_WITH_NATIVE_ABI\)\)/);
+assert.match(fromKernel('bdos/proc.c'), /#if CONF_WITH_SHARED_EXEC\s+LONG xpexecve\([^)]*\)[\s\S]*?if \(mode != PE_LOADGO\)\s+return EINVFN;/);
 assert.match(configBody('CONF_WITH_MULTITHREADING'), /depends on CONF_WITH_USER_ASPACE && \(!ARCH_ARM \|\| CPU_ARMV7\)\s+default y/);
 assert.match(configBody('CONF_WITH_PREEMPTION'), /depends on CONF_WITH_MULTITHREADING[\s\S]+default y/);
 assert.match(configBody('CONF_WITH_EXEC_REPLACE'), /depends on CONF_WITH_MULTITHREADING\s+depends on CONF_WITH_ELF_LOADER \|\| \(ARCH_M68K_CLASSIC && CONF_WITH_PRG_LOADER\)\s+default y/);
@@ -164,7 +189,7 @@ assert.match(show(guest, paratos, 'host/posix/proc.c'), /NOT_IMPLEMENTED\(GEMDOS
 assert.match(show(guest, paratos, 'host/posix/proc.c'), /int16_t Pvfork \( void \).*?return Pfork\(\);/s);
 assert.match(show(guest, paratos, 'host/ptos/dispatch.c'), /case GEMDOS_OP_SYIELD: ptos_task_yield/);
 assert.doesNotMatch(show(guest, paratos, 'host/ptos/dispatch.c'), /case GEMDOS_OP_P(?:CLONE|THJOIN|TERMGRP):/);
-console.log('Verified pTOS master native opcodes, discovery, ARM shared launch and ParaTOS main guest paths');
+console.log('Verified pTOS master native opcodes, discovery, ARM and 68k shared launch, and ParaTOS main guest paths');
 
 const bootConfig = fromKernel('bdos/binfmt.c');
 assert.ok(bootConfig.includes(String.raw`"A:\\PTOS.INI"`));

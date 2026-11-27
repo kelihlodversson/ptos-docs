@@ -15,9 +15,10 @@ import { manualBreadcrumbs } from '../../../data/manual-structure';
     <p class="abi-intro">This layout applies to native static ELF vector launches and to <code>PT_INTERP</code> launches
       with <code>CONF_WITH_ELF_SHARED</code>. The stack begins at <code>argc</code> with no synthetic return address.
       Static vector startup enters at <code>AT_ENTRY</code> with <code>AT_BASE = 0</code>.
-      Use libcmini’s <code>elfcrt0.o</code> for static vector startup. Classic PRG and shared-memory 68k Pexec use basepage entry.</p>
+      Classic PRG and ACC images use <a href="#basepage-entry">basepage entry</a>. Shared-address-space 68k <code>Pexec</code>
+      also uses it for unmarked legacy ELF images.</p>
     <TargetPanels heading="Process Entry Format">
-      <ElfEntry slot="68k" scope="68k private address-space ELF build" sp="SP" finalizer="D1" byteOrder="Big endian" />
+      <ElfEntry slot="68k" scope="68k ELF builds with private or shared address spaces" sp="SP" finalizer="D1" byteOrder="Big endian" />
       <ElfEntry slot="arm" scope="ARM ELF build, including shared-memory static vector entry" sp="SP" finalizer="R0" byteOrder="Little endian" />
       <ElfEntry slot="x32" scope="x32 ELF build" sp="RSP" finalizer="RDX" byteOrder="Little endian" />
       <GfaBinding slot="gfa" />
@@ -31,18 +32,63 @@ import { manualBreadcrumbs } from '../../../data/manual-structure';
           <tr><th scope="row"><code>AT_PTOS_BASEPAGE</code></th><td><code>0x5000</code></td><td>Program basepage for GEMDOS state.</td></tr>
           <tr><th scope="row"><code>AT_PTOS_LAUNCH</code></th><td><code>0x5003</code></td><td>Optional classic launch record for libaes shell queries.</td></tr>
           <tr id="launch-vectors"><th scope="row"><code>AT_PTOS_LAUNCH_VECTORS</code></th><td><code>0x5004</code></td><td>Optional snapshot of the original requested path, argv and envp. Three native 32-bit address fields.</td></tr>
+          <tr id="entry-type"><th scope="row"><code>AT_PTOS_ENTRY_TYPE</code></th><td><code>0x5006</code></td><td>Startup role. Value <code>1</code> selects accessory startup. Value <code>0</code> or an absent tag selects program startup. The kernel emits this tag for accessories.</td></tr>
         </tbody>
       </table>
     </TableScroll>
+    <section aria-labelledby="startup-role">
+      <h2 id="startup-role" class="prm-section-heading ruled">Program and accessory startup</h2>
+      <p>Both roles use the same stack layout and <code>main(argc, argv, envp)</code>. The CRT sets the GEM variable
+        <code>_app</code> to <code>1</code> for a program or <code>0</code> for an accessory before application preinitializers.
+        System libraries can read the role through the private <code>__ptos_entry_type()</code> runtime interface.
+        The role affects startup and AES classification and grants no additional permissions.</p>
+      <p>Link the startup object first so its preinitializer runs before the application’s. Use libcmini’s
+        <code>elfcrt0.o</code> for static vector startup. On x32 with <code>libptos.so</code>, use <code>dyncrt.o</code>
+        for both dynamic roles. <code>dynacccrt.o</code> is a compatibility name for the same object.</p>
+      <p>On x32, <a href="/reference/shel-writeve/">shel_writeve</a> or
+        <a href="/historical/en/shel-write/#ptos-launch">shel_write</a> can choose the role. <code>SWM_LAUNCH</code> infers it
+        from the suffix. <code>SWM_LAUNCHACC</code> can start the same ELF file named <code>.PRG</code> as an accessory.
+        <a href="/reference/pexecve/">Pexecve</a> always selects program startup.</p>
+      <h3 id="entry-note" class="prm-section-heading">Standard ELF entry note</h3>
+      <p>libcmini’s <code>elfcrt0.o</code> supplies the <code>.note.ptos.entry</code> section. The loader reads it from
+        a <code>PT_NOTE</code> program header. The note has the name <code>pTOS</code>
+        including its NUL (<code>namesz = 5</code>), type <code>0x50544F53</code>, and a four-byte descriptor of
+        <code>1</code>. The header and descriptor use target byte order, with the name and descriptor padded to
+        four-byte boundaries. This note identifies the entry convention. The launcher selects the role separately.</p>
+      <p>Kernel AES on classic 68k and ARM builds with shared-address-space vector execution and the ELF loader can start a marked accessory
+        with its pathname as <code>argv[0]</code> and an empty environment. On classic 68k, marked programs launched by
+        <code>Pexec(0)</code> also use standard entry when <code>CONF_WITH_M68K_SHARED_EXEC</code> is enabled.
+        Unmarked staged images and classic PRGs keep their established basepage entry.</p>
+      <h3 id="basepage-entry" class="prm-section-heading">Classic basepage entry</h3>
+      <p>Use libcmini’s <code>crt0.o</code> for classic 68k PRG and ACC images. The entry convention tells the CRT
+        which startup routine to use.</p>
+      <TableScroll label="Classic program and accessory basepage entry">
+        <table class="prm-rule-table">
+          <caption>Classic program and accessory basepage entry</caption>
+          <thead><tr><th scope="col">Target</th><th scope="col">Program</th><th scope="col">Desk accessory</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">68k</th><td>Basepage at <code>4(SP)</code>, <code>A0 = 0</code>.</td>
+              <td>Kernel AES passes the basepage in <code>A0</code>.</td></tr>
+            <tr><th scope="row">ARM</th><td>Basepage in <code>R0</code>, <code>R1 = 0</code>.</td>
+              <td>Kernel AES passes the basepage in <code>R0</code> and sets <code>R1 = 1</code>.</td></tr>
+          </tbody>
+        </table>
+      </TableScroll>
+    </section>
     <p>See <a href="/reference/pexecve/">Pexecve</a> and <a href="/reference/pexec/">Pexec</a>.</p>
     <SourceList sources={[
       ['ptos', 'doc/elf-shared.txt', 'Interpreter entry ABI by architecture'],
       ['ptos', 'doc/process-entry.txt', 'Static and classic entry contracts'],
       ['ptos', 'lib/ldso/startup.c', 'Stack packing and alignment'],
       ['ptos', 'lib/ldso/launch.h', 'Launch records and auxiliary tags'],
+      ['ptos', 'lib/ldso/startup.h', 'Entry role auxiliary tag'],
+      ['ptos', 'lib/ldso/arch/x32/dyncrt.S', 'Dynamic CRT role preinitializer'],
+      ['ptos', 'bdos/elfld.c', 'Entry note recognition and shared startup'],
       ['ptos', 'tests/interp_probe/check.c', 'Interpreter entry probe'],
       ['ptos', 'tests/ldso_runtime/static_program.c', 'Static vector-entry probe'],
       ['libcmini', 'sources/elfcrt.c', 'ELF CRT vector consumer'],
+      ['libcmini', 'sources/arch/elf-entry-note.h', 'Standard ELF entry note'],
+      ['libcmini', 'sources/arch/m68k/crt0.S', 'Classic m68k program and accessory startup'],
     ]} />
   </article>
 </Layout>

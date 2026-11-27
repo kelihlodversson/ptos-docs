@@ -5,7 +5,7 @@
   },
   "ptos": {
     "repo": "kelihlodversson/pTOS",
-    "revision": "cbf582c72c403241c108ffdfb439761fd7176e8a",
+    "revision": "20db343d71d1b9bae51947f921ca70154407ddce",
     "branch": "master"
   },
   "paratos": {
@@ -19,7 +19,8 @@
   },
   "libcmini": {
     "repo": "kelihlodversson/libcmini",
-    "revision": "f67aad9da53e66b4caa965e03cf4cc8316eaaf51"
+    "revision": "3f48a9a65418fd54260f1fbdd8e54bece16f40ac",
+    "branch": "master"
   },
   "design": {
     "repo": "kelihlodversson/ptos.dev",
