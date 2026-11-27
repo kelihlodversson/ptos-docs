@@ -18,6 +18,7 @@ const example = [
   ['ptos', 'bdos/binfmt_rules.c', 'Configuration parser'],
   ['ptos', 'bios/bios.c', 'Boot order'],
   ['ptos', 'bdos/Kconfig', 'CONF_WITH_BINFMT'],
+  ['paratos', 'host/ptos/main.c', 'ParaTOS interpreter startup'],
 ]}>
   <h2 class="prm-section-heading ruled">Location and boot order</h2>
   <p>Place <code>PTOS.INI</code> in the root of the drive that pTOS boots from, for example <code>C:\PTOS.INI</code>.
@@ -57,7 +58,7 @@ const example = [
     The selected interpreter receives the original program path followed by its arguments.
     For a script, the optional argument on the <code>#!</code> line precedes the script path.</p>
   <p>Native <a href="/reference/pexecve/">Pexecve</a> preserves argument boundaries through each redirect.
-    For a direct PRG redirect, ParaTOS can read the original name and raw guest data from
-    <a href="/os-variants/ptos/elf-entry/#guest-launch"><code>AT_PTOS_GUEST_LAUNCH</code></a>.</p>
+    When a native caller starts a PRG through a direct binfmt redirect, ParaTOS can recover the original
+    <code>argv[0]</code> from <a href="/os-variants/ptos/elf-entry/#launch-vectors"><code>AT_PTOS_LAUNCH_VECTORS</code></a>.</p>
   <p>For the system font setting, see <a href="/os-variants/ptos/fonts/#system-font">PTOS.INF under Font installation</a>.</p>
 </PtosGuide>

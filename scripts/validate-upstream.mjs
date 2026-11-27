@@ -70,8 +70,6 @@ assert.deepEqual(get('Pexecve').args.map(([, bytes]) => bytes), [2, 4, 4, 4]);
 assert.match(fromSdk('sources/pexecve.c'), /trap_1_wwlll\(PEXECVE_NATIVE, mode, \(long\)path, \(long\)argv, \(long\)envp\)/);
 assert.match(fromSdk('sources/pexec_compat.c'), /return Pexecve\(mode, prog, classic, environ \? environ : empty_env\)/);
 assert.match(fromKernel('include/pexecve.h'), /PEXECVE_PATH_MAX\s+1024UL[\s\S]*PEXECVE_ARG_MAX\s+65536UL[\s\S]*PEXECVE_MAX_ENTRIES\s+1024UL/);
-assert.match(fromKernel('bdos/launch_args.h'), /ULONG mode, path, argv, envp, tail, environment;\s*\} PEXECVE_GUEST_REQUEST;/);
-assert.deepEqual(get('PEXECVE_GUEST_SSYSTEM').layout.fields.map(field => field.offset), [0, 4, 8, 12, 16, 20]);
 const processExec = fromKernel('include/process_exec.h');
 for (const { name, offset } of get('S_PROCEXEC').layout.fields) {
   assert.match(processExec, new RegExp(`offsetof\\(PROCESS_EXEC_REQUEST,${name}\\)==${offset}\\b`), name);
@@ -81,7 +79,6 @@ assert.equal(define(cuis, 'CUIS_LAUNCH_VECTORS'), 4);
 assert.match(fromKernel('aes/cuis_session.c'), /vectors && \(tail != sizeof\(request\) \|\| environment \|\| directory\)/);
 const launchRecords = fromKernel('lib/ldso/launch.h');
 assert.equal(define(launchRecords, 'DL_AT_PTOS_LAUNCH_VECTORS'), 0x5004);
-assert.equal(define(launchRecords, 'DL_AT_PTOS_GUEST_LAUNCH'), 0x5005);
 const { aesVectorCalls } = await import('../src/data/aes-vector-calls.ts');
 const libaesHeader = fromKernel('include/libaes.h').replace(/\s+/g, ' ');
 const libaesExports = fromKernel('lib/aes/exports.map');
@@ -100,13 +97,9 @@ assert.match(ssystem, /lval_table\[\] = \{[^}]*SVAR_ENTRY\(0x4ba, hz_200\)/);
 assert.match(ssystem, /if \(p == &hz_200\)\s+return hz_200;/);
 const ssystemDispatch = ssystem.split('\nLONG xssystem(')[1];
 assert.ok(ssystemDispatch);
-const dispatchModes = [...ssystemDispatch.matchAll(/^\s*case (S_[A-Z_]+|PEXECVE_GUEST_SSYSTEM):/gm)].map(match => match[1]);
+const dispatchModes = [...ssystemDispatch.matchAll(/^\s*case ([A-Z][A-Z0-9_]*):/gm)].map(match => match[1]);
 assert.deepEqual(documentedModes.map(mode => mode.name).sort(), dispatchModes.sort());
 for (const { name, number } of documentedModes) {
-  if (name === 'PEXECVE_GUEST_SSYSTEM') {
-    assert.match(fromKernel('include/pexecve.h'), new RegExp(`^#define ${name}\\s+\\(${number}\\)`, 'm'));
-    continue;
-  }
   const selector = new RegExp(`^#define ${name}\\s+(?:\\(\\(WORD\\))?(0x[0-9a-f]+|\\d+)\\b`, 'm')
     .exec(consoleHeader)?.[1];
   assert.equal(Number(selector), number & 0xffff, name);
@@ -163,7 +156,9 @@ assert.match(fromKernel('lib/aes/application.c'), /global->ap_id = \(short\)iden
 assert.match(fromSdk('include/mint/mintbind.h'), /#define Ptermgrp\(status\).*0x192/);
 assert.match(show(guest, paratos, 'host/posix/README.md'), /The first staged launch copies the accessible RAM/);
 assert.match(show(guest, paratos, 'host/ptos/runtime.c'), /ptos_call\(GEMDOS_OP_PCLONE,/);
-assert.match(show(guest, paratos, 'host/ptos/runtime.c'), /ptos_call\(GEMDOS_OP_SSYSTEM, PTOS_GUEST_LAUNCH_SSYSTEM,/);
+assert.match(show(guest, paratos, 'host/ptos/runtime.c'), /ptos_call\(GEMDOS_OP_PEXECVE, mode, \(intptr_t\)path,\s*\(intptr_t\)argv, \(intptr_t\)envp\)/);
+assert.match(show(guest, paratos, 'host/ptos/process.c'), /ptos_task_exec\(mode, ptos_executable, options, envp\)/);
+assert.match(show(guest, paratos, 'host/ptos/main.c'), /AT_PTOS_LAUNCH_VECTORS = 0x5004/);
 assert.match(show(guest, paratos, 'host/ptos/dispatch.c'), /case GEMDOS_OP_PEXEC: \{/);
 assert.match(show(guest, paratos, 'host/posix/proc.c'), /NOT_IMPLEMENTED\(GEMDOS, Ptermres, 49\)/);
 assert.match(show(guest, paratos, 'host/posix/proc.c'), /int16_t Pvfork \( void \).*?return Pfork\(\);/s);

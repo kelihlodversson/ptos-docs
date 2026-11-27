@@ -15,7 +15,6 @@ import type { Historical } from '../data/catalog';
 import { elfEntryPath, manualBreadcrumbs } from '../data/manual-structure';
 import { overlays, pexecModes } from '../data/overlays';
 import { cuisPath } from '../data/cuis-calls';
-import { ssystemModePath } from '../data/ssystem-modes';
 
 interface Props { name: string; record: Historical }
 const { name, record } = Astro.props;
@@ -98,7 +97,6 @@ const { title, operation } = record;
         {name === 'Fclose' && <li><a href={referencePath('Pexec')}>Pexec</a></li>}
         {name === 'Pexec' && <>
           <li><a href={referencePath('Pexecve')}>Pexecve</a></li>
-          <li><a href={ssystemModePath('PEXECVE_GUEST_SSYSTEM')}>ParaTOS guest launch request</a></li>
           <li><a href={elfEntryPath}>ELF32 process entry</a></li>
           <li><a href="/reference/pfork/">Pfork</a></li>
           <li><a href="/reference/pvfork/">Pvfork</a></li>

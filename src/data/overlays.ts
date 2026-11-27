@@ -104,7 +104,7 @@ export const overlays: Record<string, Overlay> = {
       ['paratos', 'tests/posix/pexec.py', 'ParaTOS POSIX staged launch and fork regression'],
       ['paratos', 'host/ptos/README.txt', 'ParaTOS guest launch, vectors and staged processes'],
     ],
-    paraTos: 'Both backends retain the guest Pexec trap. The POSIX backend uses fork/exec for modes 0 and 100. Staged starts 4, 6, 104 and 106 share guest RAM across a host fork. The POSIX mode 200 uses host execve, reaps finished host children before replacement and refuses a staged caller or an unsettled staged child. On a pTOS host, modes 0, 100 and 200 use the vector launch transaction through Ssystem mode −10. The emulator handles guest PRG staging and basepage modes locally. Mode 200 is refused from a cloned guest or overlay and while cloned guests are outstanding.',
+    paraTos: 'Both backends retain the guest Pexec trap. The POSIX backend uses fork/exec for modes 0 and 100. Staged starts 4, 6, 104 and 106 share guest RAM across a host fork. The POSIX mode 200 uses host execve, reaps finished host children before replacement and refuses a staged caller or an unsettled staged child. On a pTOS host, ParaTOS translates modes 0, 100 and 200 to native Pexecve. PRG targets run in a new ParaTOS image, which receives the original guest command tail and any explicit environment through launch options. The emulator handles guest PRG staging and basepage modes locally. Mode 200 is refused from a cloned guest or overlay and while cloned guests are outstanding.',
   },
   appl_init: {
     params: [['void', 'The standard GEMlib call takes no arguments. The historical X_BUF_V2 form is a FreeGEM extension.']],

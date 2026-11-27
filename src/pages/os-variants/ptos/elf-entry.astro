@@ -7,7 +7,6 @@ import GfaBinding from '../../../components/GfaBinding.astro';
 import SourceList from '../../../components/SourceList.astro';
 import TableScroll from '../../../components/TableScroll.astro';
 import { manualBreadcrumbs } from '../../../data/manual-structure';
-import { ssystemModePath } from '../../../data/ssystem-modes';
 ---
 <Layout title="ELF32 process entry" description="Initial stack for static vector launches and dynamically interpreted ELF programs" running="pTOS"
   breadcrumbs={manualBreadcrumbs('ptos')}>
@@ -31,13 +30,11 @@ import { ssystemModePath } from '../../../data/ssystem-modes';
           <tr><th scope="row"><code>AT_EXECFN</code></th><td>31</td><td>Executable pathname, available separately from <code>argv[0]</code>.</td></tr>
           <tr><th scope="row"><code>AT_PTOS_BASEPAGE</code></th><td><code>0x5000</code></td><td>Program basepage for GEMDOS state.</td></tr>
           <tr><th scope="row"><code>AT_PTOS_LAUNCH</code></th><td><code>0x5003</code></td><td>Optional classic launch record for libaes shell queries.</td></tr>
-          <tr><th scope="row"><code>AT_PTOS_LAUNCH_VECTORS</code></th><td><code>0x5004</code></td><td>Optional snapshot of the original path, argv and envp. Three native 32-bit address fields.</td></tr>
-          <tr id="guest-launch"><th scope="row"><code>AT_PTOS_GUEST_LAUNCH</code></th><td><code>0x5005</code></td><td>Optional record for a direct binfmt redirect. Four native 32-bit fields at offsets 0, 4, 8 and 12 hold the original argv[0] address, raw tail address, raw environment address and environment byte count. Absent raw fields are zero.</td></tr>
+          <tr id="launch-vectors"><th scope="row"><code>AT_PTOS_LAUNCH_VECTORS</code></th><td><code>0x5004</code></td><td>Optional snapshot of the original requested path, argv and envp. Three native 32-bit address fields.</td></tr>
         </tbody>
       </table>
     </TableScroll>
-    <p>See <a href="/reference/pexecve/">Pexecve</a>, <a href="/reference/pexec/">Pexec</a> and the
-      <a href={ssystemModePath('PEXECVE_GUEST_SSYSTEM')}>ParaTOS guest launch request</a>.</p>
+    <p>See <a href="/reference/pexecve/">Pexecve</a> and <a href="/reference/pexec/">Pexec</a>.</p>
     <SourceList sources={[
       ['ptos', 'doc/elf-shared.txt', 'Interpreter entry ABI by architecture'],
       ['ptos', 'doc/process-entry.txt', 'Static and classic entry contracts'],

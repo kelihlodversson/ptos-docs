@@ -5,12 +5,12 @@
   },
   "ptos": {
     "repo": "kelihlodversson/pTOS",
-    "revision": "ff1c7728d5ae54ff2cac5a7650b71f55d145c717",
+    "revision": "cbf582c72c403241c108ffdfb439761fd7176e8a",
     "branch": "master"
   },
   "paratos": {
     "repo": "SapionAps/ParaTos",
-    "revision": "add2ebc295edf062c9fd3245b2dfb5c85ba68dfc",
+    "revision": "7f920dac9c23832a6b083da93d85259271a79fa1",
     "branch": "main"
   },
   "gemlib": {

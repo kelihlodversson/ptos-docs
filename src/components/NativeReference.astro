@@ -47,7 +47,7 @@ const historicalAvailability = historicalFact('Availability:');
       <Fact label="Return Value">{call.result}</Fact>
       <Fact label="Availability">
         <p><strong>pTOS</strong> · {call.config} <a href={ptosSourceTree}>master snapshot</a></p>
-        <p><strong>ParaTOS</strong> · {call.paraTos} <a href={paratosSourceTree}>ParaTOS main snapshot</a></p>
+        <p id="paratos"><strong>ParaTOS</strong> · {call.paraTos} <a href={paratosSourceTree}>ParaTOS main snapshot</a></p>
         {historicalAvailability && <div class="historical-availability">
           <p><strong>Historical</strong></p>
           <div set:html={formatHistoricalTables(historicalAvailability)} />

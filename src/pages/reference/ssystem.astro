@@ -26,7 +26,6 @@ const hex = (mode: number) => '0x' + (mode & 0xFFFF).toString(16).toUpperCase().
 const processConfig = sourceLink(['ptos', 'bdos/Kconfig', 'Configuration source']);
 const history = readSsystemHistory(fact('Description:') ?? '');
 const nativeModes = ssystemModeGroups.flatMap(group => group.modes);
-const sourceReferences = [...sources, ...nativeModes.flatMap(mode => mode.sources ?? [])];
 const nativeByName = new Map(nativeModes.map(mode => [mode.name, mode]));
 const mintModes = history.modes.map(mode => {
   const ptos = nativeByName.get(mode.name);
@@ -94,7 +93,6 @@ const modeSections = [
                   {ptos.result}{ptos.condition && <> {ptos.condition}</>}
                   {name === 'S_PROCEXEC' && <> <a href={processConfig.href}>{processConfig.label}</a>.</>}
                   {ptos.description?.map(detail => <p class="mode-detail">{detail}</p>)}
-                  {ptos.layout && <p class="mode-detail"><a href={`#${name}-layout`}>Request layout</a></p>}
                   {name === 'S_GETCOOKIE' && <p class="mode-detail">
                     <a href={cookieJarPath + '#ssystem-access'}>Cookie jar access guide</a> ·
                     <a href={cookieKeysPath}>Known cookie keys (Cookie and XBRA list)</a>
@@ -119,10 +117,6 @@ const modeSections = [
         the smaller of the supplied length and the kernel structure size. Check the returned byte count before using a field.
         A size of <code>-1</code> queries the structure size and ignores the buffer. A null buffer or a nonpositive size
         outside the query form is invalid.</p>
-      {nativeModes.map(({ name, layout }) => layout && <section aria-labelledby={`${name}-layout`}>
-        <h3 id={`${name}-layout`} class="prm-section-heading ruled"><code>{name}</code> request layout</h3>
-        <MemoryLayout {...layout} byteOrder="Native byte order (68k big endian, ARM and x32 little endian)" />
-      </section>)}
       <h3 class="prm-section-heading">Historical MiNT notes</h3>
       <div set:html={formatHistoricalTables(history.notes)} />
     </section>
@@ -147,12 +141,9 @@ const modeSections = [
         <li><a href="/historical/en/sysconf/">Sysconf</a></li>
         <li><a href="/historical/en/tgettimeofday/">Tgettimeofday</a></li>
         <li><a href="/historical/en/tsettimeofday/">Tsettimeofday</a></li>
-        <li><a href="/reference/pexec/">Pexec</a></li>
-        <li><a href="/reference/pexecve/">Pexecve</a></li>
-        <li><a href="/os-variants/ptos/elf-entry/#guest-launch">ELF guest launch record</a></li>
       </ul>
     </section>
-    <SourceList sources={sourceReferences} />
+    <SourceList {sources} />
   </article>
 </Layout>
 
