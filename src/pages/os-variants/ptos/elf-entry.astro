@@ -7,6 +7,7 @@ import GfaBinding from '../../../components/GfaBinding.astro';
 import SourceList from '../../../components/SourceList.astro';
 import TableScroll from '../../../components/TableScroll.astro';
 import { manualBreadcrumbs } from '../../../data/manual-structure';
+import { ssystemModePath } from '../../../data/ssystem-modes';
 ---
 <Layout title="ELF32 process entry" description="Initial stack for static vector launches and dynamically interpreted ELF programs" running="pTOS"
   breadcrumbs={manualBreadcrumbs('ptos')}>
@@ -36,7 +37,7 @@ import { manualBreadcrumbs } from '../../../data/manual-structure';
       </table>
     </TableScroll>
     <p>See <a href="/reference/pexecve/">Pexecve</a>, <a href="/reference/pexec/">Pexec</a> and the
-      <a href="/reference/pexecve-guest-ssystem/">ParaTOS guest launch request</a>.</p>
+      <a href={ssystemModePath('PEXECVE_GUEST_SSYSTEM')}>ParaTOS guest launch request</a>.</p>
     <SourceList sources={[
       ['ptos', 'doc/elf-shared.txt', 'Interpreter entry ABI by architecture'],
       ['ptos', 'doc/process-entry.txt', 'Static and classic entry contracts'],

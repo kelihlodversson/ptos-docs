@@ -373,7 +373,11 @@ test('Ssystem keeps the MiNT modes and pTOS differences in one table', async ({ 
   await page.goto('/reference/ssystem/#native-S_GETCOOKIE');
   await expect(mode('S_GETCOOKIE').locator('#native-S_GETCOOKIE')).toBeAttached();
 
-  for (const [slug, name] of [['s-deskinfo', 'S_DESKINFO'], ['s-deskset', 'S_DESKSET']]) {
+  for (const [slug, name] of [
+    ['s-deskinfo', 'S_DESKINFO'],
+    ['s-deskset', 'S_DESKSET'],
+    ['pexecve-guest-ssystem', 'PEXECVE_GUEST_SSYSTEM'],
+  ]) {
     await page.goto(`/reference/${slug}/#calling-convention`, { waitUntil: 'commit' });
     await expect(page).toHaveURL(`/reference/ssystem/#${name}`);
     await expect(mode(name)).toBeAttached();
@@ -381,7 +385,7 @@ test('Ssystem keeps the MiNT modes and pTOS differences in one table', async ({ 
   for (const path of ['/subsystems/gemdos/system-functions/', '/functions/']) {
     await page.goto(path);
     await expect(page.getByRole('link', { name: 'Ssystem', exact: true })).toHaveAttribute('href', '/reference/ssystem/');
-    await expect(page.getByRole('link', { name: /^S_DESK(INFO|SET)$/ })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /^(S_DESKINFO|S_DESKSET|PEXECVE_GUEST_SSYSTEM)$/ })).toHaveCount(0);
   }
 });
 
@@ -934,6 +938,7 @@ test('the pTOS master notes distinguish native staged execution, fork and PROCES
 
 test('Pexecve documents the native ABI while ParaTOS keeps the guest Pexec trap', async ({ page }) => {
   await page.goto('/subsystems/gemdos/process-functions/');
+  await expect(page.getByRole('link', { name: 'PEXECVE_GUEST_SSYSTEM', exact: true })).toHaveCount(0);
   await page.getByRole('link', { name: 'Pexecve', exact: true }).click();
   const prototype = page.locator('.prm-prototype');
   await expect(prototype).toContainText('long Pexecve(short mode, const char *path,');
@@ -947,10 +952,15 @@ test('Pexecve documents the native ABI while ParaTOS keeps the guest Pexec trap'
   await expect(prototype).toBeVisible();
   await expect(page.getByText('Shared-address-space ARM supplies mode 0', { exact: false })).toBeVisible();
   await page.getByRole('link', { name: 'PEXECVE_GUEST_SSYSTEM', exact: true }).click();
+  await expect(page).toHaveURL('/reference/ssystem/#PEXECVE_GUEST_SSYSTEM');
+  const guestMode = page.locator('#PEXECVE_GUEST_SSYSTEM');
+  await expect(guestMode).toContainText('-10 (0xFFF6)');
+  await expect(guestMode).toContainText('CONF_WITH_BINFMT');
+  await guestMode.getByRole('link', { name: 'Request layout' }).click();
+  await expect(page).toHaveURL('/reference/ssystem/#PEXECVE_GUEST_SSYSTEM-layout');
   const guestRequest = page.getByRole('table', { name: 'PEXECVE_GUEST_REQUEST' });
   await expect(guestRequest.getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'environment', exact: true }) })).toContainText('+20');
-  await page.goto('/reference/ssystem/#PEXECVE_GUEST_SSYSTEM');
-  await expect(page.locator('#PEXECVE_GUEST_SSYSTEM')).toContainText('CONF_WITH_BINFMT');
+  await expect(page.getByText('Native byte order (68k big endian, ARM and x32 little endian) · 4-byte alignment · 24 bytes total')).toBeVisible();
   await page.goto('/reference/pexec/');
   await expect(page.getByRole('tabpanel', { name: 'x32' })).toContainText('The raw syscall returns EINVFN');
   await expect(page.getByText('All GEMDOS versions.', { exact: true })).toBeVisible();

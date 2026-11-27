@@ -115,6 +115,7 @@ jobs:
             case "$path" in
               /abi/cuis/) canonical="https://docs.ptos.dev/subsystems/cuis/" ;;
               /subsystems/aes/cuis/*) canonical="https://docs.ptos.dev/subsystems/${path#/subsystems/aes/}" ;;
+              /reference/pexecve-guest-ssystem/) canonical="https://docs.ptos.dev/reference/ssystem/#PEXECVE_GUEST_SSYSTEM" ;;
             esac
             file="$(mktemp)"
             for attempt in {1..12}; do

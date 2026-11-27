@@ -12,6 +12,7 @@ import { cuisCallPath, cuisGroups } from '../../data/cuis-calls';
 import type { CuisCall, CuisGroup } from '../../data/cuis-calls';
 import { aesVectorCalls } from '../../data/aes-vector-calls';
 import type { AesVectorCall } from '../../data/aes-vector-calls';
+import { ssystemModePath } from '../../data/ssystem-modes';
 
 export function getStaticPaths() {
   return [
@@ -37,5 +38,5 @@ type Props = { record: Historical; native?: never; cuis?: never; aes?: never }
 const { record, native, cuis, aes } = Astro.props;
 ---
 {aes ? <AesVectorReference call={aes} /> : cuis ? <CuisReference {...cuis} /> : native?.embeddedInSsystem
-  ? <HistoricalRedirect name={native.name} destination={`/reference/ssystem/#${native.name}`} />
+  ? <HistoricalRedirect name={native.name} destination={ssystemModePath(native.name)} />
   : native ? <NativeReference call={native} /> : <ReferenceLeaf name={record.name} {record} />}

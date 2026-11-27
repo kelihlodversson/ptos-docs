@@ -249,9 +249,11 @@ export const nativeCalls: NativeCall[] = [
   },
   {
     name: 'PEXECVE_GUEST_SSYSTEM', title: 'Launch a program from a 68k emulator with preserved PRG startup data', opcode: 0x154, mode: -10,
+    embeddedInSsystem: true,
     prototype: 'long Ssystem(short mode, long request, long size);',
     args: [['mode', 2, 'PEXECVE_GUEST_SSYSTEM (−10).'], ['request', 4, 'Address of a 4-byte-aligned PEXECVE_GUEST_REQUEST.'], ['size', 4, 'Exactly 24 bytes.']],
     description: [
+      'Pass a 4-byte-aligned request address in arg1 and exactly 24 bytes in arg2.',
       'A native emulator translates its guest’s Pexec modes 0, 100 and 200 to this host request. It passes explicit argv and envp together with all 128 bytes of the guest’s original counted tail and an optional raw environment block. The kernel snapshots the inputs before it admits the launch.',
       'The raw tail length byte must be at most 127, argv must contain argv[0], and envp must exclude legacy ARGV= entries. The optional raw environment is double-NUL-terminated and limited to 32,766 bytes. An inherited guest environment contributes ordinary variables to envp.',
       'A direct binfmt redirect without options publishes the original argv[0] and opaque PRG data in AT_PTOS_GUEST_LAUNCH. ParaTOS uses that record to restore the guest basepage. A shebang or multi-hop interpreter chain uses its own argument list.',
@@ -259,7 +261,7 @@ export const nativeCalls: NativeCall[] = [
     result: 'Returns the Pexecve mode’s result. An incorrect size or alignment returns EINVAL. A null or unreadable request returns EIMBA, and disabled modes return EINVFN.',
     config: 'Requires CONF_WITH_SSYSTEM, CONF_WITH_BINFMT, CONF_WITH_MULTITHREADING and CONF_WITH_USER_ASPACE. Ssystem(S_INQUIRE, −10, 0) probes the native service.',
     paraTos: 'The native pTOS-hosted emulator uses this mode internally. A 68k guest uses its classic Pexec trap.',
-    sources: [ssystemSource, ['ptos', 'include/pexecve.h', 'Mode value and limits'], ['ptos', 'bdos/launch_args.h', 'Request layout'],
+    sources: [['ptos', 'include/pexecve.h', 'Guest launch mode value and limits'], ['ptos', 'bdos/launch_args.h', 'Guest launch request layout'],
       ['ptos', 'bdos/launch_args.c', 'Guest buffer validation'], ['ptos', 'lib/ldso/launch.h', 'Auxiliary vector record'],
       ['paratos', 'host/ptos/runtime.c', 'Native ParaTOS request'], ['paratos', 'tests/ptos/semantics.c', 'Guest launch coverage']],
     related: ['Ssystem', 'Pexec', 'Pexecve', 'ELF32 process entry'],
