@@ -1,5 +1,5 @@
 {
-  "revision": "20db343d71d1b9bae51947f921ca70154407ddce",
+  "revision": "9030c5e0603188afd8c3041044b1aa7aaba1c218",
   "gemdos": {
     "0": {
       "args": ""
@@ -165,6 +165,10 @@
     "87": {
       "args": "PWW"
     },
+    "260": {
+      "args": "WLW",
+      "config": "CONF_WITH_USER_ASPACE"
+    },
     "267": {
       "args": "",
       "config": "CONF_WITH_KPROC",
@@ -184,6 +188,11 @@
       "args": "",
       "config": "CONF_WITH_KPROC",
       "source": "bdos/mintproc.c"
+    },
+    "285": {
+      "args": "WPPP",
+      "config": "CONF_WITH_FPOLL_TIME64",
+      "source": "bdos/bdosmain.c"
     },
     "286": {
       "args": "P",
@@ -241,12 +250,22 @@
       "config": "CONF_WITH_KPROC",
       "source": "bdos/mintproc.c"
     },
+    "346": {
+      "args": "PLL",
+      "config": "CONF_WITH_FPOLL_TIME64",
+      "source": "bdos/bdosmain.c"
+    },
     "381": {
       "args": "PLW",
       "config": "CONF_WITH_USER_ASPACE"
     },
     "403": {
       "args": "WPPP",
+      "source": "bdos/bdosmain.c"
+    },
+    "404": {
+      "args": "PLLL",
+      "config": "CONF_WITH_FPOLL_TIME64",
       "source": "bdos/bdosmain.c"
     }
   },

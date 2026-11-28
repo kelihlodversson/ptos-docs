@@ -71,6 +71,7 @@ const { nativeCalls } = await import('../src/data/native-calls.ts');
 const get = name => nativeCalls.find(call => call.name === name);
 const kernelHeaders = {
   'include/pexecve.h': 'Pexecve',
+  'include/fpoll_abi.h': 'Fpoll_time64',
   'include/pclone.h': 'Pclone',
   'include/threadcalls.h': ['Pthjoin', 'Ptermgrp'],
   'bdos/mintproc.h': ['Pfork', 'Pvfork', 'Pwait', 'Pwait3', 'Pwaitpid', 'Syield'],
@@ -80,6 +81,33 @@ for (const [path, names] of Object.entries(kernelHeaders)) {
   const header = fromKernel(path);
   for (const name of [names].flat()) assert.equal(define(header, 'GEMDOS_' + name.toUpperCase()), get(name).opcode);
 }
+const pollHeader = fromKernel('include/fpoll_abi.h');
+const sdkPollHeader = fromSdk('include/mint/poll.h');
+const pollCall = get('Fpoll_time64');
+assert.ok(sdkPollHeader.includes(pollCall.prototype));
+assert.equal(define(pollHeader, 'PTOS_POLL_MAX'), 1024);
+assert.equal(define(pollHeader, 'GEMDOS_FPOLL'), 0x15a);
+assert.equal(define(pollHeader, 'GEMDOS_FSELECT'), 0x11d);
+assert.match(pollHeader, /LONG fd;\s+UWORD events;\s+UWORD revents;\s*\} PTOS_POLLFD;/);
+assert.match(pollHeader, /sizeof\(PTOS_POLLFD\) == 8/);
+assert.match(sdkPollHeader, /int32_t fd;\s+uint16_t events;\s+uint16_t revents;/);
+assert.deepEqual(pollCall.layout.fields.map(({ name, offset, bytes }) => [name, offset, bytes]), [
+  ['fd', 0, 4], ['events', 4, 2], ['revents', 6, 2],
+]);
+for (const [name, value] of pollCall.eventFlags) {
+  assert.equal(define(pollHeader, `PTOS_${name}`), value, name);
+  assert.equal(define(sdkPollHeader, name), value, name);
+}
+assert.match(dispatch, /#if CONF_WITH_FPOLL_TIME64[\s\S]*?POLL_ARG\(3\) << 32\) \| \(ULONG\)POLL_ARG\(4\)[\s\S]*?#if ARCH_M68K\s+if \(fn == GEMDOS_FPOLL\)[\s\S]*?if \(fn == GEMDOS_FSELECT\)/);
+const sdkPoll = fromSdk('sources/fpoll_time64.c');
+assert.match(sdkPoll, /trap_1_wllll\(GEMDOS_FPOLL_TIME64,[^;]+\(bits >> 32\), \(long\)\(uint32_t\)bits\)/);
+assert.match(sdkPoll, /timeout \? \(int64_t\)timeout : -1/);
+assert.match(sdkPoll, /masks\[i\] \|= masks\[j\];\s+output\[j\] = NULL;/);
+assert.equal(define(fromKernel('bdos/fs.h'), 'GEMDOS_FCNTL'), 0x104);
+assert.equal(define(fromKernel('bdos/fs.h'), 'GEMDOS_F_GETFL'), 3);
+assert.match(dispatch, /#if CONF_WITH_USER_ASPACE\s+if \(fn == GEMDOS_FCNTL\)/);
+assert.match(fromKernel('bdos/fsclose.c'), /if \(command != GEMDOS_F_GETFL\)\s+return EINVFN;/);
+console.log('Verified Fpoll_time64 layout and event masks, polling adapters and Fcntl(F_GETFL)');
 assert.ok(m68k.includes(get('Pexecve').prototype.replace(/\s+/g, ' ')));
 assert.deepEqual(get('Pexecve').args.map(([, bytes]) => bytes), [2, 4, 4, 4]);
 assert.match(fromSdk('sources/pexecve.c'), /trap_1_wwlll\(PEXECVE_NATIVE, mode, \(long\)path, \(long\)argv, \(long\)envp\)/);
@@ -176,6 +204,7 @@ assert.match(fork, /depends on CONF_WITH_EXEC_REPLACE[\s\S]+!CONF_M68K_ROM_WINDO
 assert.doesNotMatch(fork, /CONF_WITH_DEMAND_PAGING/);
 assert.match(configBody('CONF_WITH_MMAP'), /depends on CONF_WITH_USER_ASPACE && CONF_WITH_DEMAND_PAGING/);
 assert.match(configBody('CONF_WITH_PROCESS_EXEC'), /depends on CONF_WITH_USER_ASPACE && CONF_WITH_MULTITHREADING && CONF_WITH_SSYSTEM/);
+assert.match(configBody('CONF_WITH_FPOLL_TIME64'), /def_bool CONF_WITH_PROCESS_FILES && CONF_WITH_USER_COPY\s+depends on !TARGET_AMIGA_ROM \|\| CONF_AMIGA_ROM_512K/);
 assert.match(fromKernel('bdos/proc.c'), /#if CONF_WITH_EXEC_REPLACE\s+if \(flag == PE_EXEC_REPLACE\) return proc_exec_replace/);
 assert.match(fromKernel('lib/aes/application.c'), /global->ap_id = \(short\)identity.client_id/);
 assert.match(fromSdk('include/mint/mintbind.h'), /#define Ptermgrp\(status\).*0x192/);

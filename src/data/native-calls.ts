@@ -1,4 +1,5 @@
 import type { CPU, Source } from './catalog';
+import { pollConfig, pollFlags } from './polling.ts';
 
 type Argument = [name: string, bytes: 2 | 4, meaning: string];
 export interface NativeCall {
@@ -7,6 +8,7 @@ export interface NativeCall {
   opcode: number;
   prototype: string;
   args: Argument[];
+  params?: [name: string, detail: string][];
   description: string[];
   result: string;
   config: string;
@@ -14,6 +16,7 @@ export interface NativeCall {
   sources: Source[];
   related: string[];
   modes?: [mode: string, description: string][];
+  eventFlags?: [name: string, value: number, detail: string][];
   historical?: string;
   mode?: number;
   embeddedInSsystem?: true;
@@ -68,6 +71,46 @@ const ssystemSource: Source = ['ptos', 'bdos/ssystem.c', 'Ssystem dispatch and d
 const ssystemHeader: Source = ['ptos', 'bdos/ssystem.h', 'Mode constants and structure declarations'];
 
 export const nativeCalls: NativeCall[] = [
+  {
+    name: 'Fpoll_time64', title: 'Wait for file descriptor readiness with a 64-bit timeout', opcode: 0x194,
+    prototype: 'long Fpoll_time64(POLLFD *fds, uint32_t nfds, int64_t timeout_ms);',
+    params: [
+      ['fds', 'Pointer to a readable and writable array of native POLLFD records. The kernel ignores the pointer when nfds is zero.'],
+      ['nfds', 'Number of array entries, from 0 to 1024. Each entry has its own result, including repeated descriptors.'],
+      ['timeout_ms', 'Signed milliseconds. Zero takes a readiness snapshot, −1 waits indefinitely, and positive values up to INT64_MAX wait for readiness or the deadline.'],
+    ],
+    args: [
+      ['fds', 4, '32-bit user address of the POLLFD array. Zero-extend on x32.'],
+      ['nfds', 4, 'Unsigned count. Zero-extend on x32.'],
+      ['timeout_hi', 4, 'Bits 63–32 of the signed timeout. Pass this half first on every target.'],
+      ['timeout_lo', 4, 'Bits 31–0 of the signed timeout.'],
+    ],
+    description: [
+      'Include <mint/poll.h> for the C declaration, POLLFD and the event constants. The raw trap passes the timeout as two 32-bit halves, high half first. For an indefinite wait both halves are 0xFFFFFFFF.',
+      'Initialize fd and events. The kernel copies the input once, ignores the initial revents and writes the resulting records on success. Keep the array contents stable for the duration of the call. Negative descriptors are ignored and receive revents = 0. Missing or invalidated nonnegative descriptors receive POLLNVAL even when events is zero.',
+      'Readiness follows the original descriptor binding. Closing, rebinding or revoking it invalidates the entry. The wait does not follow a reused numeric descriptor. Regular FAT files report read and write readiness according to their open access mode. BIOS character devices use their status vectors. PFS files depend on the provider’s readiness callback. Current pTOS has no pipe or socket readiness providers.',
+      'Positive timeouts use one monotonic deadline on the kernel’s 200 Hz clock, with rounding that avoids an early timeout. A request with zero descriptors can wait for the deadline without reading or writing an array.',
+    ],
+    eventFlags: pollFlags,
+    result: 'Returns the number of entries whose revents is nonzero, zero if none are ready or the wait expires, or a negative GEMDOS error. EINVAL covers counts above 1024 and timeouts below −1. An invalid buffer can return EIMBA. Unavailable builds and unsupported caller contexts return EINVFN. Errors before copyout leave the array untouched.',
+    config: `Requires ${pollConfig}, derived from native PROCESS file tables and checked user copy. The caller must be a managed THREAD outside user callback continuations. Available on eligible x32, ARMv7 and 68k builds. The 256 KiB Amiga ROM returns EINVFN. Eligible 512 KiB Amiga ROM builds support polling with scheduling on 68030, 68040 and 68060.`,
+    paraTos: noGuestOpcode,
+    sources: [
+      ['libcmini', 'include/mint/poll.h', 'Public declaration and event constants'],
+      ['libcmini', 'sources/fpoll_time64.c', 'SDK trap binding and legacy adapters'],
+      ['ptos', 'include/fpoll_abi.h', 'GEMDOS opcode, event values and record size'],
+      ['ptos', 'bdos/bdosmain.c', 'Raw dispatch and timeout word order'],
+      ['ptos', 'bdos/fpoll.c', 'Descriptor readiness, deadline and result handling'],
+      ['ptos', 'doc/fpoll-time64.txt', 'Polling contract and build availability'],
+      ['ptos', 'tests/pclone/fpoll_time64.h', 'Native polling regression'], procConfig, paraDispatch, paraPosixDispatch,
+    ],
+    related: ['Fpoll', 'Fselect', 'Fcntl', 'Fclose'],
+    layout: { caption: 'POLLFD record', bytes: 8, alignment: 4, align68k: 2, fields: [
+      { name: 'fd', offset: 0, bytes: 4, detail: 'Signed 32-bit file descriptor.' },
+      { name: 'events', offset: 4, bytes: 2, detail: 'Unsigned 16-bit input event mask.' },
+      { name: 'revents', offset: 6, bytes: 2, detail: 'Unsigned 16-bit output event mask.' },
+    ] },
+  },
   {
     name: 'Pexecve', title: 'Launch or replace an executable with explicit argument and environment vectors', opcode: 0x193,
     prototype: 'long Pexecve(short mode,\n    const char *path,\n    char *const argv[],\n    char *const envp[]);',

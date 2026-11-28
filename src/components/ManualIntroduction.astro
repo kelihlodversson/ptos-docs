@@ -1,6 +1,7 @@
 ---
 import { elfEntryPath, systemVariablesPath } from '../data/manual-structure';
 import { cuisPath } from '../data/cuis-calls';
+import { pollPath } from '../data/polling';
 
 interface Props { subject: string }
 const { subject } = Astro.props;
@@ -89,10 +90,21 @@ const { subject } = Astro.props;
   through <code>Pclone</code>, plus process waits and executable replacement. On eligible MMU
   builds, <code>Pfork</code> and <code>Pvfork</code> create private copy-on-write
   children. FreeMiNT’s <code>Pvfork</code> allows the child to share ordinary memory with the parent.</p>}
-{subject === 'support-for-alternative-file-systems' && <p>pTOS provides GEMDOS file and directory services on its
-  built-in FAT filesystem. The FreeMiNT <code>XFS</code> driver interface and calls such as <code>Dopendir</code> and
-  <code>Dreaddir</code> are outside the current pTOS implementation. The interfaces below describe the options
-  introduced by MiNT and other TOS variants.</p>}
+{subject === 'file-functions' && <>
+  <p>On managed pTOS builds, threads in one process use the same descriptor table. Duplicated or inherited descriptors
+    have separate close rights and share the underlying open file and its current position. Separate opens of a regular file
+    have independent positions. Readiness waits keep track of the original descriptor binding, so closing and reusing its
+    number does not redirect a pending wait. <a href={pollPath}>Fpoll_time64</a></p>
+  <p>Use <code>F_GETFL</code> to read a native descriptor’s open access mode. <a href="/historical/en/fcntl/#ptos-file-notes">Fcntl</a></p>
+</>}
+{subject === 'support-for-alternative-file-systems' && <>
+  <p>pTOS provides GEMDOS file and directory services on its built-in FAT filesystem. Eligible ARM and 68k builds can
+    enable <code>CONF_WITH_PLUGGABLE_FS</code>, allowing an integrated provider such as virtio-9p to expose a GEMDOS drive.
+    A provider can supply a readiness callback for its open files. Polling a provider file without that callback
+    reports <code>POLLERR</code>. <a href={pollPath}>Fpoll_time64</a></p>
+  <p>The FreeMiNT <code>XFS</code> driver interface and calls such as <code>Dopendir</code> and <code>Dreaddir</code> are outside
+    the current pTOS implementation. The interfaces below describe the options introduced by MiNT and other TOS variants.</p>
+</>}
 {subject === 'gemdos-error-messages' && <p>pTOS GEMDOS reports errors as negative return values. Use each function’s
   return-value documentation for its pTOS behavior. The table includes codes defined by other TOS variants.</p>}
 {subject === 'signals' && <p>pTOS provides native process and thread control through the

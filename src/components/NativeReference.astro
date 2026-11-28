@@ -7,6 +7,7 @@ import ParameterList from './ParameterList.astro';
 import TargetPanels from './TargetPanels.astro';
 import GfaBinding from './GfaBinding.astro';
 import SourceList from './SourceList.astro';
+import TableScroll from './TableScroll.astro';
 import NativeTarget from './NativeTarget.astro';
 import { catalog, paratosSourceTree, ptosSourceTree } from '../data/catalog';
 import { nativeCalls, nativePath } from '../data/native-calls';
@@ -18,7 +19,7 @@ import { ssystemModePath } from '../data/ssystem-modes';
 
 interface Props { call: NativeCall }
 const { call } = Astro.props;
-const params: [string, string][] = call.args.map(([name, , info]) => [name, info]);
+const params: [string, string][] = call.params ?? call.args.map(([name, , info]) => [name, info]);
 const relatedPath = (name: string) => nativeCalls.some(entry => entry.name === name && entry.embeddedInSsystem)
   ? ssystemModePath(name)
   : catalog.find(entry => entry.name === name)?.href ?? nativePath(name);
@@ -44,6 +45,19 @@ const historicalAvailability = historicalFact('Availability:');
       {params.length > 0 && <Fact label="Parameters"><ParameterList entries={params} /></Fact>}
       <Fact label="Description">{call.description.map(text => <p>{text}</p>)}</Fact>
       {call.modes && <Fact label="Modes"><ParameterList entries={call.modes} /></Fact>}
+      {call.eventFlags && <Fact label="Event flags">
+        <TableScroll label="Poll event flags">
+          <table class="prm-rule-table">
+            <caption>Poll event flags</caption>
+            <thead><tr><th scope="col">Flag</th><th scope="col">Value</th><th scope="col">Meaning</th></tr></thead>
+            <tbody>{call.eventFlags.map(([name, value, detail]) => <tr>
+              <th scope="row"><code>{name}</code></th>
+              <td><code>{`0x${value.toString(16).toUpperCase().padStart(3, '0')}`}</code></td>
+              <td class="table-prose">{detail}</td>
+            </tr>)}</tbody>
+          </table>
+        </TableScroll>
+      </Fact>}
       <Fact label="Return Value">{call.result}</Fact>
       <Fact label="Availability">
         <p><strong>pTOS</strong> · {call.config} <a href={ptosSourceTree}>master snapshot</a></p>

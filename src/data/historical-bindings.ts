@@ -3,8 +3,9 @@ import abi from './abi.json';
 import type { HistoricalPage } from './historical';
 import type { Binding, Register } from './overlays';
 import type { CPU } from './targets';
+import { pollConfig } from './polling';
 
-type Result = Binding & { source: string; extraSource?: string; limitation?: string };
+type Result = Binding & { source: string; extraSource?: string; sdkSource?: string; limitation?: string };
 type Gemdos = { args: string; config?: string; source?: string };
 type AesOperation = { opcode: number; config?: string };
 const gemdos: Record<number, Gemdos> = inventory.gemdos;
@@ -119,6 +120,17 @@ export function historicalBinding(page: HistoricalPage, cpu: CPU): Result {
 
   if (page.subsystem === 'GEMDOS') {
     const entry = gemdos[opcode];
+    if (name === 'fpoll' || name === 'fselect') {
+      const limitation = requires(pollConfig);
+      if (cpu === '68k') return trap('bdos/bdosmain.c', [], limitation);
+      const adapter = t('C adapter in libcmini over Fpoll_time64.', 'C-Adapter in libcmini über Fpoll_time64.');
+      return {
+        status: 'implemented', scope: `${scope} · libcmini`, source: 'bdos/bdosmain.c', sdkSource: 'sources/fpoll_time64.c',
+        limitation: `${limitation} ${adapter}`,
+        detail: `${adapter} ${limitation} ` + t('The legacy opcode returns EINVFN on this target.',
+          'Der historische Opcode liefert auf diesem Ziel EINVFN.'),
+      };
+    }
     if (opcode === 0x4b && cpu !== '68k') return unavailable('bdos/bdosmain.c', t(
       'Raw Pexec returns EINVFN before reading its arguments. Use Pexecve for native launch.',
       'Der direkte Pexec-Aufruf liefert EINVFN, bevor er die Argumente liest. Native Programme verwenden Pexecve.'));
@@ -137,6 +149,8 @@ export function historicalBinding(page: HistoricalPage, cpu: CPU): Result {
         'Prüft nur den aktuellen Adressraum. Ist der Flags-Zeiger nicht null, wird dort ein 32-Bit-Nullwert abgelegt.'),
     };
     const limitations: Record<string, string> = {
+      fcntl: t('Supports F_GETFL (3) to report open access mode. Other commands return EINVFN.',
+        'Unterstützt F_GETFL (3) zur Abfrage des Zugriffsmodus. Andere Befehle liefern EINVFN.'),
       super: t('Switching to supervisor mode requires a single address space. Otherwise Super(1) reports user mode and attempts to switch return EACCDN.',
         'Der Wechsel in den Supervisormodus ist nur ohne getrennte Adressräume verfügbar. Andernfalls meldet Super(1) den Benutzermodus und ein Wechsel liefert EACCDN.'),
       maddalt: singleSpace,

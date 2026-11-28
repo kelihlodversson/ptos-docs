@@ -23,7 +23,7 @@ const sources = binding ? [...new Set([binding.source, binding.extraSource].filt
   {binding.x32Selector && <RaxSelector selector={binding.x32Selector} language={page.language} />}
   <p class="revision-note">{english ? 'pTOS source' : 'pTOS-Quellcode'} · {sources.map((path, index) => <>
     {index > 0 && ' · '}<a href={sourceLink(['ptos', path, path]).href}><code>{path}</code></a>
-  </>)}</p>
+  </>)}{binding.sdkSource && <> · <a href={sourceLink(['libcmini', binding.sdkSource, 'libcmini']).href}>libcmini</a></>}</p>
 </> : <p><a href={page.native + '#calling-convention'}>
   {english ? `See the pTOS ${cpuName} calling convention.` : `${cpuName}-Aufrufkonvention für pTOS`}
 </a></p>}

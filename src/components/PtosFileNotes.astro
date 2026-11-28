@@ -1,0 +1,54 @@
+---
+import SourceList from './SourceList.astro';
+import type { Source } from '../data/catalog';
+import { pollPath } from '../data/polling';
+
+interface Props { slug: 'fpoll' | 'fselect' | 'fcntl' }
+const { slug } = Astro.props;
+const control = slug === 'fcntl';
+const sources: Source[] = [
+  ['ptos', 'bdos/bdosmain.c', 'GEMDOS dispatch'],
+  ...(control ? [
+    ['ptos', 'bdos/fsclose.c', 'Descriptor lookup and F_GETFL behavior'],
+    ['ptos', 'doc/open-file-description-audit.md', 'Open-file description and close semantics'],
+  ] satisfies Source[] : [
+    ['ptos', 'doc/fpoll-time64.txt', 'Legacy polling behavior and build requirements'],
+    ['libcmini', 'include/mint/mintbind.h', '68k macros and ARM and x32 declarations'],
+    ['libcmini', 'sources/fpoll_time64.c', 'libcmini compatibility adapters'],
+    ['libcmini', 'tests/fpoll_time64/test.c', 'Legacy timeout and bitmap regression tests'],
+  ] satisfies Source[]),
+  ['paratos', 'host/posix/file.c', 'ParaTOS POSIX file operations'],
+  ['paratos', 'host/ptos/dispatch.c', 'ParaTOS pTOS-hosted GEMDOS dispatch'],
+];
+---
+<section aria-labelledby="ptos-file-notes">
+  <h2 id="ptos-file-notes" class="prm-section-heading ruled">pTOS behavior</h2>
+  {control ? <>
+    <p>Native pTOS builds with <code>CONF_WITH_USER_ASPACE</code> implement <code>Fcntl(handle, 0L, F_GETFL)</code>
+      with command value <code>3</code>. The <code>arg</code> slot is ignored. The result is the open access mode
+      <code>0</code> for read-only, <code>1</code> for write-only or <code>2</code> for read/write. BIOS device handles
+      report <code>2</code>. Invalid descriptors return a negative lookup error such as <code>EIHNDL</code>.</p>
+    <p>Other commands return <code>EINVFN</code>. The internal PFS <code>ioctl</code> callback is a kernel interface.
+      For native readiness, use <a href={pollPath}>Fpoll_time64</a>.</p>
+  </> : <>
+    {slug === 'fpoll' ? <>
+      <p><code>Fpoll</code> uses the eight-byte <code>POLLFD</code> record and a signed 32-bit timeout in milliseconds.
+        Zero polls immediately. Every negative value means an indefinite wait. The return value counts entries with a
+        nonzero <code>revents</code> field. Use <a href={pollPath}>Fpoll_time64</a> for the record, event flags and a 64-bit timeout.</p>
+      <pre class="prm-code"><code>long Fpoll(void *fds, unsigned long nfds, long timeout_ms);</code></pre>
+    </> : <>
+      <p><code>Fselect</code> accepts an unsigned 16-bit timeout in milliseconds. Zero waits indefinitely. Each non-null
+        mask points to a 32-bit input/output bitmap for descriptors 0–31. The fourth argument can select exceptional
+        readiness. Errors or hangups set the bit in every requested mask, including an exception-only wait.</p>
+      <p>The result counts ready bits across the supplied masks before any output masks are combined. Masks that share
+        an address receive the bitwise union of their results. An invalid selected descriptor clears the masks and returns
+        <code>EIHNDL</code>. See <a href={pollPath}>Fpoll_time64</a> for the underlying readiness semantics.</p>
+      <pre class="prm-code"><code>int Fselect(unsigned short timeout, void *read_mask, void *write_mask, void *except_mask);</code></pre>
+    </>}
+    <p>These C declarations describe the ARM and x32 libcmini adapters. They call the native <code>0x194</code> trap.
+      On 68k, libcmini uses the original <code>TRAP #1</code> opcode shown on this page. Both paths require
+      <code>CONF_WITH_FPOLL_TIME64</code> and a supported managed caller.</p>
+  </>}
+  <p>ParaTOS supports this legacy call through its POSIX backend. The pTOS-hosted guest dispatcher leaves it unimplemented.</p>
+  <SourceList {sources} />
+</section>

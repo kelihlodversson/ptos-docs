@@ -24,6 +24,13 @@ assert.match(dispatch, /#if ARCH_ARM \|\| \(CONF_WITH_NATIVE_ABI && CONF_WITH_US
 const { GEMDOS_PEXECVE } = defineNumbers(source('include/pexecve.h'));
 assert.match(dispatch, /if \(fn == GEMDOS_PEXECVE\)/);
 gemdos[GEMDOS_PEXECVE] = { args: 'WPPP', source: 'bdos/bdosmain.c' };
+const pollNumbers = defineNumbers(source('include/fpoll_abi.h'));
+for (const [symbol, args] of [
+  ['GEMDOS_FPOLL_TIME64', 'PLLL'], ['GEMDOS_FPOLL', 'PLL'], ['GEMDOS_FSELECT', 'WPPP'],
+]) {
+  assert.ok(symbol in pollNumbers && dispatch.includes(`if (fn == ${symbol})`), symbol);
+  gemdos[pollNumbers[symbol]] = { args, config: 'CONF_WITH_FPOLL_TIME64', source: 'bdos/bdosmain.c' };
+}
 
 const mint = source('bdos/mintproc.c');
 const mintNumbers = defineNumbers(source('bdos/mintproc.h'));
@@ -36,9 +43,10 @@ for (const [name, args] of Object.entries(mintArgs)) {
   assert.ok(symbol in mintNumbers && mint.includes('case ' + symbol + ':'), symbol);
   gemdos[mintNumbers[symbol]] = { args, config: 'CONF_WITH_KPROC', source: 'bdos/mintproc.c' };
 }
-const extendedNumbers = defineNumbers([dispatch, source('bdos/ssystem.h'), source('include/shutdown.h')].join('\n'));
+const extendedNumbers = defineNumbers([dispatch, source('bdos/fs.h'), source('bdos/ssystem.h'), source('include/shutdown.h')].join('\n'));
 for (const [name, args, config] of [
   ['SUPER', 'L', undefined], ['PSETLIMIT', 'WL', 'CONF_WITH_USER_ASPACE'],
+  ['FCNTL', 'WLW', 'CONF_WITH_USER_ASPACE'],
   ['MVALIDATE', 'WPLP', 'CONF_WITH_USER_ASPACE'], ['MACCESS', 'PLW', 'CONF_WITH_USER_ASPACE'],
   ['SYSCONF', 'W', 'CONF_WITH_SSYSTEM'], ['SHUTDOWN', 'L', 'CONF_WITH_GEMDOS_SHUTDOWN'],
 ]) {
