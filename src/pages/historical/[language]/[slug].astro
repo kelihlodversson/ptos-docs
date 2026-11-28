@@ -9,6 +9,7 @@ import HistoricalNativeTarget from '../../../components/HistoricalNativeTarget.a
 import HistoricalPtosAvailability from '../../../components/HistoricalPtosAvailability.astro';
 import HistoricalRedirect from '../../../components/HistoricalRedirect.astro';
 import SourceList from '../../../components/SourceList.astro';
+import PtosFileNotes from '../../../components/PtosFileNotes.astro';
 import { pages } from '../../../data/historical';
 import { importedNavigation } from '../../../data/manual-structure';
 import type { HistoricalPage } from '../../../data/historical';
@@ -48,6 +49,7 @@ const destination = (historicalMerges as Record<string, string>)[page.slug];
         <HistoricalPtosAvailability {page} />
       </Fact>}
     </dl>}
+    {english && (page.slug === 'fpoll' || page.slug === 'fselect' || page.slug === 'fcntl') && <PtosFileNotes slug={page.slug} />}
     {english && page.slug === 'shel-write' && <section aria-labelledby="ptos-launch">
       <h2 id="ptos-launch" class="prm-section-heading ruled">Launching from x32 libaes</h2>
       <p><code>SWM_LAUNCHACC</code> (3) starts an ELF accessory with any filename. <code>SWM_LAUNCH</code> (0)

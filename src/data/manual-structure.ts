@@ -254,6 +254,7 @@ function breadcrumbLinks(nodes: (Area | ManualTopic | undefined)[]) {
 }
 
 export function nativeSection(name: string) {
+  if (name === 'Fpoll_time64') return 'file-functions';
   if (['Mmap', 'Mprot', 'Munmap', 'S_MEMINFO', 'S_MMUPROBE'].includes(name)) return 'memory-management';
   if (['Ssystem', 'Syield'].includes(name)) return 'system-functions';
   return 'process-functions';

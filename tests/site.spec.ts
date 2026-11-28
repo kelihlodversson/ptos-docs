@@ -157,7 +157,7 @@ test('mobile x32 diagram shows both selector words and their bit boundaries', as
   expect(await diagram.evaluate(el => el.scrollWidth === el.clientWidth)).toBe(true);
 });
 
-for (const path of ['/', '/reference/fclose/', '/reference/pexec/', '/reference/pexecve/', '/reference/appl_init/', '/reference/ssystem/', cuisOverview, '/reference/cuis-endpoint-barrier/', '/os-variants/ptos/elf-entry/', '/os-variants/ptos/desktop-and-console/', '/subsystems/gemdos/', '/subsystems/gemdos/legacy-extensions/', '/conventions/protocols/argv-procedure/', '/search/', '/gfa-basic/']) {
+for (const path of ['/', '/reference/fclose/', '/reference/pexec/', '/reference/pexecve/', '/reference/fpoll-time64/', '/reference/appl_init/', '/reference/ssystem/', cuisOverview, '/reference/cuis-endpoint-barrier/', '/os-variants/ptos/elf-entry/', '/os-variants/ptos/desktop-and-console/', '/subsystems/gemdos/', '/subsystems/gemdos/legacy-extensions/', '/conventions/protocols/argv-procedure/', '/search/', '/gfa-basic/']) {
   test(`WCAG A/AA smoke audit at ${path}`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(path);
@@ -998,6 +998,57 @@ test('AES vector shell calls and static ELF startup are linked through the manua
   await expect(page.getByRole('row', { name: /AT_PTOS_GUEST_LAUNCH/ })).toHaveCount(0);
   await page.goto('/reference/cuis-launch-attach/');
   await expect(page.getByText('select observation without a console lease', { exact: false })).toBeVisible();
+});
+
+test('Fpoll_time64 belongs to File functions and keeps the C and trap interfaces distinct', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/subsystems/gemdos/file-functions/');
+  await page.locator('.manual-index').getByRole('link', { name: 'Fpoll_time64', exact: true }).click();
+  await expect(page).toHaveURL('/reference/fpoll-time64/');
+  const prototype = page.locator('.prm-prototype');
+  await expect(prototype).toHaveText('long Fpoll_time64(POLLFD *fds, uint32_t nfds, int64_t timeout_ms);');
+  const stack = page.getByRole('table', { name: 'Caller stack at TRAP #1' });
+  await expect(stack.getByRole('row', { name: /timeout_hi/ })).toContainText('+10');
+  await expect(stack.getByRole('row', { name: /timeout_lo/ })).toContainText('+14');
+  const record = page.getByRole('table', { name: 'POLLFD record' });
+  await expect(record.getByRole('row', { name: /revents/ })).toContainText('+6');
+  await expect(page.getByRole('table', { name: 'Poll event flags' }).getByRole('row', { name: /^POLLNVAL/ })).toContainText('0x020');
+  await expect(page.getByText('The 256 KiB Amiga ROM returns EINVFN', { exact: false })).toBeVisible();
+  await selectTarget(page).selectOption('arm');
+  await expect(page.getByRole('row', { name: /R3 timeout_hi/ })).toBeVisible();
+  await selectTarget(page).selectOption('x32');
+  await expect(page.locator('.prm-bit-fields code')).toHaveText(['0x1', '0x194']);
+  await expect(page.getByRole('row', { name: /R10 timeout_lo/ })).toBeVisible();
+  await selectTarget(page).selectOption('gfa');
+  await expect(prototype).toBeVisible();
+  await expect(page.getByRole('tabpanel', { name: 'GFA BASIC' })).toContainText('&H194');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
+test('legacy polling and Fcntl describe native pTOS support alongside historical availability', async ({ page }) => {
+  for (const { name, text, legacy } of [
+    { name: 'fpoll', text: 'Every negative value means an indefinite wait', legacy: 'FreeMiNT 1.15.12' },
+    { name: 'fselect', text: 'An invalid selected descriptor clears the masks', legacy: 'MiNT version 1.04' },
+  ]) {
+    await page.goto(`/historical/en/${name}/`);
+    await expect(page.locator('.prm-facts')).toContainText(legacy);
+    const notes = page.getByRole('region', { name: 'pTOS behavior' });
+    await expect(notes).toContainText(text);
+    await expect(notes.getByRole('link', { name: 'Fpoll_time64' }).first()).toHaveAttribute('href', '/reference/fpoll-time64/');
+    await selectTarget(page).selectOption('x32');
+    const binding = page.getByRole('tabpanel', { name: 'x32' });
+    await expect(binding).toContainText('C adapter in libcmini over Fpoll_time64');
+    await expect(binding).toContainText('The legacy opcode returns EINVFN');
+    await expect(binding.locator('.prm-bit-fields')).toHaveCount(0);
+    await selectTarget(page).selectOption('68k');
+    await expect(page.getByRole('tabpanel', { name: '68k' })).toBeVisible();
+  }
+  await page.goto('/historical/en/fcntl/');
+  await expect(page.getByRole('region', { name: 'pTOS behavior' })).toContainText('0 for read-only, 1 for write-only or 2 for read/write');
+  await selectTarget(page).selectOption('x32');
+  const fcntl = page.getByRole('tabpanel', { name: 'x32' });
+  await expect(fcntl).toContainText('Supports F_GETFL (3)');
+  await expect(fcntl.locator('.prm-bit-fields code')).toHaveText(['0x1', '0x104']);
 });
 
 test('search covers historical sections outside the function index', async ({ page }) => {
